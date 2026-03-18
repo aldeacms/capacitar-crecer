@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-server'
 import { Eye } from 'lucide-react'
+import DeleteCourseButton from '@/components/admin/DeleteCourseButton'
 
 export default async function CursosPage() {
   const supabase = await createClient()
@@ -150,6 +151,7 @@ export default async function CursosPage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                           </svg>
                         </Link>
+                        <DeleteCourseButton cursoId={curso.id} cursoTitulo={curso.titulo} variant="icon" />
                       </div>
                     </td>
                   </tr>

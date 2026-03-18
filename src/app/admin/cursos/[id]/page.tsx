@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import CurriculumBuilder from './CurriculumBuilder'
+import DeleteCourseButton from '@/components/admin/DeleteCourseButton'
 
 export default async function DetalleCursoPage({
   params,
@@ -132,6 +133,10 @@ export default async function DetalleCursoPage({
             </svg>
             Ver página pública
           </Link>
+
+          <hr className="my-4 border-gray-100" />
+
+          <DeleteCourseButton cursoId={id} cursoTitulo={curso.titulo} variant="full" />
         </aside>
 
         {/* CONTENIDO PRINCIPAL (CURRICULUM) */}

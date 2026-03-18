@@ -66,17 +66,27 @@ export async function inscribir(cursoId: string) {
       throw new Error('CURSO_NO_ENCONTRADO')
     }
 
-    // Solo permitir inscripción gratuita en cursos gratis
-    // Cursos pago-inmediato solo si precio es 0
-    // Otros tipos (pago, gratis_cert_pago, cotizar) requieren procesamiento adicional
-    const esInscripcionDirecta =
-      curso.tipo_acceso === 'gratis' ||
-      (curso.tipo_acceso === 'pago-inmediato' && curso.precio_curso === 0)
+    // Validar tipo de acceso y permitir/rechazar inscripción
+    // gratis: inscripción directa
+    // gratis_cert_pago: inscripción directa (contenido gratis, certificado se paga después)
+    // pago: rechazar, redirigir a checkout
+    // cotizar: rechazar, redirigir a formulario
 
-    if (!esInscripcionDirecta) {
-      // Los cursos de pago o requieren cotización deben procesarse en checkout/pagos
-      throw new Error('CURSO_REQUIERE_PAGO_O_COTIZACION')
+    if (curso.tipo_acceso === 'pago') {
+      throw new Error('CURSO_REQUIERE_PAGO')
     }
+
+    if (curso.tipo_acceso === 'cotizar') {
+      throw new Error('CURSO_REQUIERE_COTIZACION')
+    }
+
+    if (curso.tipo_acceso !== 'gratis' && curso.tipo_acceso !== 'gratis_cert_pago') {
+      throw new Error('TIPO_ACCESO_INVALIDO')
+    }
+
+    // Insertamos la matrícula con estado_pago_curso en true (acceso permitido)
+    // Para gratis_cert_pago, estado_pago_certificado será false hasta que pague el certificado
+    const estadoPagoCertificado = curso.tipo_acceso === 'gratis_cert_pago' ? false : true
 
     const { error: insertError } = await admin
       .from('matriculas')
@@ -84,6 +94,7 @@ export async function inscribir(cursoId: string) {
         perfil_id: session.user.id,
         curso_id: cursoId,
         estado_pago_curso: true, // true = usuario tiene acceso permitido
+        estado_pago_certificado: estadoPagoCertificado, // false para gratis_cert_pago hasta que pague
         progreso_porcentaje: 0
       })
 

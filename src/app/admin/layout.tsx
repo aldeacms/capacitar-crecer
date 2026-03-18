@@ -18,6 +18,7 @@ export default async function AdminLayout({
     { label: 'Dashboard', href: '/admin' },
     { label: 'Cursos', href: '/admin/cursos' },
     { label: 'Categorías', href: '/admin/categorias' },
+    { label: 'Cupones', href: '/admin/cupones' },
     { label: 'Alumnos', href: '/admin/alumnos' },
     { label: 'Configuración', href: '/admin/config' },
   ]

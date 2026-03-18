@@ -147,13 +147,29 @@ export default function DeleteCourseModal({ cursoId, onClose }: DeleteCourseModa
 
                   {/* Warning de alumnos */}
                   {summary.totalAlumnos > 0 && (
-                    <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                      <p className="text-red-800 font-bold text-sm">
-                        ⚠️ Advertencia: {summary.totalAlumnos} alumno(s) inscrito(s)
-                      </p>
-                      <p className="text-red-600 text-xs mt-1">
-                        Se eliminarán todas sus matriculas y progreso. Esta acción NO se puede deshacer.
-                      </p>
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
+                      <div>
+                        <p className="text-red-800 font-bold text-sm">
+                          ⚠️ Advertencia: {summary.totalAlumnos} alumno(s) inscrito(s)
+                        </p>
+                        <p className="text-red-600 text-xs mt-1">
+                          Se eliminarán todas sus matriculas y progreso. Esta acción NO se puede deshacer.
+                        </p>
+                      </div>
+
+                      {summary.alumnos && summary.alumnos.length > 0 && (
+                        <div className="bg-white rounded-lg p-3 border border-red-100">
+                          <p className="text-xs font-bold text-red-700 mb-2">Alumnos inscritos:</p>
+                          <div className="space-y-2 max-h-48 overflow-y-auto">
+                            {summary.alumnos.map(alumno => (
+                              <div key={alumno.id} className="text-xs text-red-600 border-l-2 border-red-300 pl-2">
+                                <p className="font-semibold">{alumno.nombre}</p>
+                                <p className="text-red-500">{alumno.email}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -187,7 +203,7 @@ export default function DeleteCourseModal({ cursoId, onClose }: DeleteCourseModa
                   value={confirmInput}
                   onChange={(e) => setConfirmInput(e.target.value)}
                   placeholder="Escribe el nombre exacto..."
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500/10 focus:border-red-400 outline-none transition-all text-sm disabled:bg-gray-50 disabled:text-gray-400"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-red-500/10 focus:border-red-400 outline-none transition-all text-sm disabled:bg-gray-50 disabled:text-gray-400 placeholder:text-gray-400 text-gray-900"
                 />
               </div>
 

@@ -47,7 +47,7 @@ export default function CourseForm({
   const [estadoCurso, setEstadoCurso] = useState(initialData?.estado || "borrador")
 
   // PESTAÑA 2: COMERCIAL & CERTIFICACIÓN
-  const [tipoAcceso, setTipoAcceso] = useState(initialData?.tipo_acceso || 'pago-inmediato')
+  const [tipoAcceso, setTipoAcceso] = useState(initialData?.tipo_acceso || 'pago')
   const [precioCurso, setPrecioCurso] = useState(initialData?.precio_curso || 0)
   const [tieneCertificado, setTieneCertificado] = useState(initialData?.tiene_certificado || false)
   const [precioCertificado, setPrecioCertificado] = useState(initialData?.precio_certificado || 0)
@@ -82,7 +82,7 @@ export default function CourseForm({
       setModalidad(initialData.modalidad || "online-asincrono")
       setHoras(initialData.horas || 0)
       setEstadoCurso(initialData.estado || "borrador")
-      setTipoAcceso(initialData.tipo_acceso || 'pago-inmediato')
+      setTipoAcceso(initialData.tipo_acceso || 'pago')
       setPrecioCurso(initialData.precio_curso || 0)
       setTieneCertificado(initialData.tiene_certificado || false)
       setPrecioCertificado(initialData.precio_certificado || 0)
@@ -137,7 +137,7 @@ export default function CourseForm({
       formData.append('estado', estadoCurso)
 
       formData.append('tipo_acceso', tipoAcceso)
-      formData.append('precio_curso', (tipoAcceso === 'pago-inmediato' ? precioCurso : 0).toString())
+      formData.append('precio_curso', (tipoAcceso === 'pago' ? precioCurso : 0).toString())
       formData.append('tiene_certificado', tieneCertificado ? 'on' : 'off')
       formData.append('precio_certificado', (tieneCertificado && tipoAcceso !== 'cotizar' ? precioCertificado : 0).toString())
       formData.append('porcentaje_aprobacion', porcentajeAprobacion.toString())
@@ -259,15 +259,17 @@ export default function CourseForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-8">
                 <div className="space-y-2">
-                  <label className={labelClass}>Acceso Comercial</label>
+                  <label className={labelClass}>Tipo de Acceso</label>
                   <select value={tipoAcceso} onChange={(e) => setTipoAcceso(e.target.value)} className={inputBaseClass}>
-                    <option value="pago-inmediato">🛒 Pago Inmediato</option>
-                    <option value="cotizar">📝 Cotizar / SENCE</option>
-                    <option value="gratis">🎁 100% Gratis</option>
+                    <option value="gratis">🎁 Gratis — El alumno se registra sin costo</option>
+                    <option value="gratis_cert_pago">🎁 Gratis + Certificado de Pago — Contenido gratis, certificado tiene costo</option>
+                    <option value="pago">🛒 De Pago — El alumno paga antes de acceder</option>
+                    <option value="cotizar">📝 Cotizar — Precio a convenir, formulario de contacto</option>
                   </select>
                 </div>
 
-                {tipoAcceso === 'pago-inmediato' && (
+                {/* Mostrar precio del curso solo para tipo "pago" */}
+                {tipoAcceso === 'pago' && (
                   <div className="space-y-2 animate-in fade-in zoom-in-95 duration-300">
                     <label className={labelClass}>Precio del Curso ($)</label>
                     <div className="relative">
@@ -277,41 +279,68 @@ export default function CourseForm({
                   </div>
                 )}
 
-                <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-4">
-                      <div className="p-3 bg-white rounded-2xl text-[#2DB3A7] shadow-sm border border-slate-100">
-                        <Award size={24} />
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-black text-slate-900 border-none m-0 p-0">Certificación Oficial</h4>
-                        <p className="text-[11px] text-slate-500 font-medium">¿El curso otorga un diploma acreditado?</p>
-                      </div>
+                {/* Mostrar precio de certificado solo para tipo "gratis_cert_pago" */}
+                {tipoAcceso === 'gratis_cert_pago' && (
+                  <div className="space-y-2 animate-in fade-in zoom-in-95 duration-300">
+                    <label className={labelClass}>Precio del Certificado ($)</label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">$</span>
+                      <input type="number" value={precioCertificado} onChange={(e) => setPrecioCertificado(Number(e.target.value))} className={`${inputBaseClass} pl-10`} />
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" checked={tieneCertificado} onChange={(e) => setTieneCertificado(e.target.checked)} className="sr-only peer" />
-                      <div className="w-12 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-[21px] after:w-[21px] after:transition-all peer-checked:bg-[#2DB3A7]"></div>
-                    </label>
                   </div>
+                )}
 
-                  {tieneCertificado && tipoAcceso !== 'cotizar' && (
-                    <div className="space-y-2 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
-                      <label className={labelClass}>Valor del Certificado ($)</label>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#2DB3A7] font-bold">$</span>
-                        <input 
-                          type="number" 
-                          value={precioCertificado} 
-                          onChange={(e) => setPrecioCertificado(Number(e.target.value))} 
-                          className={`${inputBaseClass} pl-10 border-[#2DB3A7]/30 focus:border-[#2DB3A7] text-[#2DB3A7]`} 
-                        />
+                {/* Certificación: solo mostrar para tipos que no sean "cotizar" */}
+                {tipoAcceso !== 'cotizar' && (
+                  <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex gap-4">
+                        <div className="p-3 bg-white rounded-2xl text-[#2DB3A7] shadow-sm border border-slate-100">
+                          <Award size={24} />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-slate-900 border-none m-0 p-0">Certificación Oficial</h4>
+                          <p className="text-[11px] text-slate-500 font-medium">¿El curso otorga un diploma acreditado?</p>
+                        </div>
                       </div>
-                      <p className="text-[10px] text-[#2DB3A7] font-bold mt-2 flex items-center gap-1">
-                        <Info size={12} /> Déjalo en 0 si el certificado es gratis o ya viene incluido.
-                      </p>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={tipoAcceso === 'gratis_cert_pago' ? true : tieneCertificado}
+                          onChange={(e) => setTieneCertificado(e.target.checked)}
+                          disabled={tipoAcceso === 'gratis_cert_pago'}
+                          className="sr-only peer"
+                        />
+                        <div className="w-12 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-[21px] after:w-[21px] after:transition-all peer-checked:bg-[#2DB3A7] peer-disabled:opacity-50"></div>
+                      </label>
                     </div>
-                  )}
-                </div>
+
+                    {/* Mostrar campo de precio solo para tipos "pago" con certificado */}
+                    {tieneCertificado && tipoAcceso === 'pago' && (
+                      <div className="space-y-2 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <label className={labelClass}>Precio del Certificado ($)</label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#2DB3A7] font-bold">$</span>
+                          <input
+                            type="number"
+                            value={precioCertificado}
+                            onChange={(e) => setPrecioCertificado(Number(e.target.value))}
+                            className={`${inputBaseClass} pl-10 border-[#2DB3A7]/30 focus:border-[#2DB3A7] text-[#2DB3A7]`}
+                          />
+                        </div>
+                        <p className="text-[10px] text-[#2DB3A7] font-bold mt-2 flex items-center gap-1">
+                          <Info size={12} /> Déjalo en 0 si el certificado viene incluido en el precio del curso.
+                        </p>
+                      </div>
+                    )}
+
+                    {tipoAcceso === 'gratis_cert_pago' && (
+                      <p className="text-[10px] text-slate-500 italic">
+                        El precio del certificado se especifica arriba. El contenido del curso es siempre gratis.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-8">

@@ -116,6 +116,36 @@ export type Database = {
         }
         Relationships: []
       }
+      cupones: {
+        Row: {
+          id: string
+          codigo: string
+          descuento_porcentaje: number
+          activo: boolean
+          usos_maximos: number | null
+          usos_actuales: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          codigo: string
+          descuento_porcentaje: number
+          activo?: boolean
+          usos_maximos?: number | null
+          usos_actuales?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          codigo?: string
+          descuento_porcentaje?: number
+          activo?: boolean
+          usos_maximos?: number | null
+          usos_actuales?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
       lecciones_archivos: {
         Row: {
           id: string
@@ -276,6 +306,42 @@ export type Database = {
           },
         ]
       }
+      lecciones_completadas: {
+        Row: {
+          id: string
+          perfil_id: string
+          leccion_id: string
+          completada_at: string
+        }
+        Insert: {
+          id?: string
+          perfil_id: string
+          leccion_id: string
+          completada_at?: string
+        }
+        Update: {
+          id?: string
+          perfil_id?: string
+          leccion_id?: string
+          completada_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lecciones_completadas_perfil_id_fkey"
+            columns: ["perfil_id"]
+            isOneToOne: false
+            referencedRelation: "perfiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lecciones_completadas_leccion_id_fkey"
+            columns: ["leccion_id"]
+            isOneToOne: false
+            referencedRelation: "lecciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modulos: {
         Row: {
           created_at: string
@@ -407,7 +473,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      tipo_acceso: "gratis" | "pago-inmediato" | "pago" | "gratis_cert_pago" | "cotizar"
+      tipo_acceso: "gratis" | "pago" | "gratis_cert_pago" | "cotizar"
       tipo_leccion: "video" | "texto" | "quiz"
       tipo_pregunta: "multiple" | "vf" | "abierta"
     }
@@ -537,7 +603,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      tipo_acceso: ["gratis", "pago-inmediato", "pago", "gratis_cert_pago", "cotizar"],
+      tipo_acceso: ["gratis", "pago", "gratis_cert_pago", "cotizar"],
       tipo_leccion: ["video", "texto", "quiz"],
       tipo_pregunta: ["multiple", "vf", "abierta"],
     },

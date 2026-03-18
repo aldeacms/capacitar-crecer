@@ -8,14 +8,13 @@ interface BotonInscripcionProps {
   cursoId: string
   cursoSlug?: string
   tipoAcceso: string
-  precioCurso: number
 }
 
-export default function BotonInscripcion({ cursoId, tipoAcceso, precioCurso }: BotonInscripcionProps) {
+export default function BotonInscripcion({ cursoId, tipoAcceso }: BotonInscripcionProps) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const isGratis = tipoAcceso === 'gratis' || (tipoAcceso === 'pago-inmediato' && precioCurso === 0)
+  const isGratis = tipoAcceso === 'gratis' || tipoAcceso === 'gratis_cert_pago'
 
   const handleInscripcion = async () => {
     setLoading(true)

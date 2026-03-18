@@ -159,6 +159,7 @@ export type DeleteSummary = {
   totalLecciones: number
   totalAlumnos: number
   imagenUrl: string | null
+  alumnos: Array<{ id: string; nombre: string; email: string }>
   storagePaths: {
     portada: string | null
     archivosLecciones: string[]
@@ -193,11 +194,34 @@ export async function getDeleteSummary(
       return { error: 'Curso no encontrado' }
     }
 
-    // Query 2: contar alumnos sin descargar filas
-    const { count: totalAlumnos } = await supabaseAdmin
+    // Query 2: obtener alumnos inscritos
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: matriculas, count: totalAlumnos } = await supabaseAdmin
       .from('matriculas')
-      .select('*', { count: 'exact', head: true })
+      .select('perfil_id', { count: 'exact' })
       .eq('curso_id', cursoId)
+
+    // Query 3: obtener datos de los perfiles
+    const alumnosData: Array<{ id: string; nombre: string; email: string }> = []
+    if (matriculas && matriculas.length > 0) {
+      const perfilIds = matriculas.map((m: any) => m.perfil_id).filter(Boolean)
+      if (perfilIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: perfiles } = await supabaseAdmin
+          .from('perfiles')
+          .select('id, nombre_completo')
+          .in('id', perfilIds)
+
+        if (perfiles) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          alumnosData.push(...perfiles.map((p: any) => ({
+            id: p.id,
+            nombre: p.nombre_completo || 'Sin nombre',
+            email: 'usuario@capacitar.cl' // email está en auth.users, no en perfiles
+          })))
+        }
+      }
+    }
 
     // Calcular conteos
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -227,6 +251,7 @@ export async function getDeleteSummary(
       }
     }
 
+
     return {
       data: {
         titulo: curso.titulo,
@@ -234,6 +259,7 @@ export async function getDeleteSummary(
         totalLecciones,
         totalAlumnos: totalAlumnos ?? 0,
         imagenUrl: curso.imagen_url,
+        alumnos: alumnosData,
         storagePaths: { portada: portadaPath, archivosLecciones },
       },
     }

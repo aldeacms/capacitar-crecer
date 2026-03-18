@@ -40,6 +40,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
       tipo_acceso,
       precio_curso,
       precio_certificado,
+      tiene_certificado,
       porcentaje_aprobacion,
       modulos (
         id,
@@ -53,25 +54,37 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
     notFound()
   }
 
-  // 1. Lógica de Precios Base
-  const isCotizar = course.tipo_acceso === 'cotizar';
-  const isGratis = course.tipo_acceso === 'gratis' || (course.tipo_acceso === 'pago-inmediato' && (course.precio_curso ?? 0) === 0);
-  const isPago = course.tipo_acceso === 'pago-inmediato' && (course.precio_curso ?? 0) > 0;
+  // Contar lecciones totales
+  const leccionesTotal = (course.modulos || []).reduce((sum: number, modulo: any) => {
+    return sum + (modulo.lecciones?.length || 0)
+  }, 0)
 
-  // 2. Lógica de Certificación (determinado por si hay precio de certificado)
-  const hasCert = course.precio_certificado && course.precio_certificado > 0;
-  const isCertGratis = course.precio_certificado === 0 && course.precio_certificado !== null;
-  const isCertPago = course.precio_certificado && course.precio_certificado > 0;
+  // 1. Determinar el tipo de acceso/modelo del curso
+  const isCotizar = course.tipo_acceso === 'cotizar';
+  const isGratis = course.tipo_acceso === 'gratis';
+  const isGratisCertPago = course.tipo_acceso === 'gratis_cert_pago';
+  const isPago = course.tipo_acceso === 'pago';
+
+  // 2. Lógica de Certificación (usar tiene_certificado como fuente de verdad)
+  const hasCert = course.tiene_certificado === true;
+  const isCertGratis = hasCert && (course.precio_certificado ?? 0) === 0;
+  const isCertPago = hasCert && (course.precio_certificado ?? 0) > 0;
 
   // 3. Textos Formateados
-  const precioCursoFormatted = isGratis ? 'Gratis' : `$${course.precio_curso?.toLocaleString('es-CL')}`;
+  const precioCursoFormatted = (isGratis || isGratisCertPago) ? 'Gratis' : `$${course.precio_curso?.toLocaleString('es-CL')}`;
   const precioCertFormatted = isCertPago ? `$${course.precio_certificado?.toLocaleString('es-CL')}` : '';
 
-  const mainButtonText = isCotizar
-    ? 'Solicitar Cotización'
-    : isPago
-      ? 'Inscribirme y Pagar'
-      : 'Comenzar Gratis';
+  // 4. CTA Principal (buttons y links)
+  const sinLecciones = leccionesTotal === 0
+  const mainButtonText = sinLecciones
+    ? '⚠️ Curso en construcción'
+    : isCotizar
+      ? 'Solicitar Cotización'
+      : isPago
+        ? `Comprar Curso · ${precioCursoFormatted}`
+        : isGratisCertPago
+          ? 'Acceder al Curso Gratis'
+          : 'Comenzar Gratis';
 
   const heroButtonLink = isCotizar ? '#contacto-corporativo' : '#cta-inscripcion';
 
@@ -81,9 +94,9 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
       ? `/checkout/${course.id}`
       : `/registro?curso=${course.slug}`;
 
-  // DINAMISMO INTELIGENTE: Puntos de valor
+  // DINAMISMO INTELIGENTE: Puntos de valor según tipo de curso
   const valuePoints = [
-    isPago ? 'Acceso inmediato y de por vida 24/7' : 'Acceso completo al material de estudio',
+    isPago || isGratisCertPago ? 'Acceso completo al material de estudio' : 'Acceso completo al material de estudio',
     'Contenido actualizado a estándares industriales',
   ];
 
@@ -91,7 +104,11 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
     if (isCertGratis) {
       valuePoints.unshift('Certificación oficial incluida sin costo');
     } else if (isCertPago) {
-      valuePoints.unshift(`Certificación oficial opcional (+ ${precioCertFormatted})`);
+      if (isGratisCertPago) {
+        valuePoints.unshift(`Certificación oficial (${precioCertFormatted}) al completar`);
+      } else {
+        valuePoints.unshift(`Certificación oficial incluida`);
+      }
     }
   }
 
@@ -129,7 +146,11 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
               </p>
 
               <div className="flex flex-wrap gap-4 pt-4">
-                {isCotizar ? (
+                {sinLecciones ? (
+                  <div className="inline-flex justify-center items-center gap-2 py-4 px-8 rounded-xl font-black text-gray-500 bg-gray-300 cursor-not-allowed opacity-60" title="Este curso está siendo preparado">
+                    ⚠️ Curso en construcción
+                  </div>
+                ) : isCotizar ? (
                   <a href="#contacto-corporativo" className="inline-flex justify-center items-center gap-2 py-4 px-8 rounded-xl font-black text-white bg-[#2DB3A7] hover:bg-[#26a095] transition-all">
                     Solicitar Cotización <ArrowRight size={20} />
                   </a>
@@ -196,7 +217,22 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
       </section>
 
       {/* CTA Section Dinámica */}
-      {!isCotizar && (
+      {/* Banner de curso en construcción */}
+      {sinLecciones && (
+        <section className="py-24 bg-amber-50 border-y border-amber-200">
+          <div className="container mx-auto px-6 text-center space-y-4">
+            <h2 className="text-2xl font-black text-amber-900">⚠️ Curso en Construcción</h2>
+            <p className="text-amber-700 max-w-lg mx-auto">
+              Este curso está siendo preparado y se hará disponible próximamente. Por favor, intenta nuevamente en algunos días.
+            </p>
+            <a href="/cursos" className="inline-flex items-center gap-2 text-amber-900 hover:text-amber-800 font-bold">
+              Ver otros cursos →
+            </a>
+          </div>
+        </section>
+      )}
+
+      {!isCotizar && !sinLecciones && (
         <section id="cta-inscripcion" className="py-24 bg-white border-y border-slate-200">
           <div className="container mx-auto px-6">
             <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-5 bg-slate-50 border border-slate-200 rounded-[3rem] overflow-hidden shadow-2xl">
@@ -226,7 +262,6 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
                     cursoId={course.id}
                     cursoSlug={course.slug}
                     tipoAcceso={course.tipo_acceso || 'gratis'}
-                    precioCurso={course.precio_curso || 0}
                   />
                 </div>
               </div>

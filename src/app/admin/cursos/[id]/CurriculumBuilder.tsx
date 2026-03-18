@@ -220,7 +220,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
   return (
     <div className="relative">
       {isPending && (
-        <div className="fixed top-8 right-8 z-[150] flex items-center gap-3 bg-white/80 backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl border border-emerald-100 text-[#28B4AD] text-[10px] font-black uppercase tracking-widest">
+        <div className="fixed top-8 right-8 flex items-center gap-3 bg-white/80 backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl border border-emerald-100 text-[#28B4AD] text-[10px] font-black uppercase tracking-widest">
           <div className="h-2 w-2 rounded-full bg-[#28B4AD] animate-pulse"></div>
           Actualizando Datos...
         </div>
@@ -399,7 +399,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
       {/* --- MODAL MÓDULO --- */}
       {showModuleModal && (
         <div 
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[300] p-4 animate-in fade-in duration-300"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 animate-in fade-in duration-300"
             onClick={() => setShowModuleModal(null)}
         >
           <div 
@@ -433,7 +433,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
       {/* --- MODAL LECCIÓN --- */}
       {lessonModal && (
         <div 
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-[300] p-4 overflow-y-auto animate-in fade-in duration-300"
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto animate-in fade-in duration-300"
             onClick={() => setLessonModal(null)}
         >
           <div 

@@ -478,15 +478,16 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
 
               {/* Video URL */}
               <div>
-                <label className="text-xs font-black text-gray-600 uppercase tracking-widest block mb-2">URL del Video</label>
+                <label className="text-xs font-black text-gray-600 uppercase tracking-widest block mb-2">Video o Embed</label>
                 <input
                     name="video_url"
                     defaultValue={lessonModal.leccion?.video_url}
-                    placeholder="YouTube, Vimeo, Loom, Tella.tv o embed code"
+                    placeholder="URL o código embed"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-gray-900 font-semibold focus:border-[#28B4AD] focus:ring-1 focus:ring-[#28B4AD] transition-all text-sm"
                 />
-                <p className="mt-1.5 text-xs text-slate-500">
-                  Soporta: YouTube • Vimeo • Loom • Tella.tv
+                <p className="mt-2 text-xs text-slate-600 space-y-1">
+                  <div>✓ <strong>URLs:</strong> YouTube • Vimeo • Loom • Tella.tv</div>
+                  <div>✓ <strong>Embed:</strong> Pega directamente el código &lt;iframe&gt;</div>
                 </p>
               </div>
 

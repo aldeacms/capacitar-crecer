@@ -6,7 +6,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
 export async function marcarLeccionCompletada(
   leccionId: string
-): Promise<{ success: true } | { error: string }> {
+): Promise<{ success: true; nextLeccionId?: string } | { error: string }> {
   try {
     // Verificar sesión
     const supabase = await createClient()
@@ -29,10 +29,10 @@ export async function marcarLeccionCompletada(
       return { error: 'Perfil no encontrado' }
     }
 
-    // Obtener la lección para verificar que existe
+    // Obtener la lección actual para verificar que existe
     const { data: leccion, error: leccionError } = await supabase
       .from('lecciones')
-      .select('id, modulo_id')
+      .select('id, modulo_id, orden')
       .eq('id', leccionId)
       .single()
 
@@ -43,7 +43,7 @@ export async function marcarLeccionCompletada(
     // Obtener el módulo para verificar que existe
     const { data: modulo, error: moduloError } = await supabase
       .from('modulos')
-      .select('id, curso_id')
+      .select('id, curso_id, orden')
       .eq('id', leccion.modulo_id)
       .single()
 
@@ -63,7 +63,7 @@ export async function marcarLeccionCompletada(
       return { error: 'No tienes acceso a este curso' }
     }
 
-    // Insertar en lecciones_completadas (upsert)
+    // Insertar en lecciones_completadas
     const { error: insertError } = await supabase
       .from('lecciones_completadas')
       .insert({
@@ -73,9 +73,49 @@ export async function marcarLeccionCompletada(
       .select()
 
     // Si ya existe la relación (UNIQUE constraint), ignorar el error
-    // código 23505 = UNIQUE constraint violation en Postgres
     if (insertError && insertError.code !== '23505') {
       return { error: `Error al marcar como completada: ${insertError.message}` }
+    }
+
+    // Buscar la siguiente lección
+    let nextLeccionId: string | undefined
+
+    // Primero intenta la siguiente lección en el mismo módulo
+    const { data: siguienteLeccion } = await supabase
+      .from('lecciones')
+      .select('id')
+      .eq('modulo_id', leccion.modulo_id)
+      .gt('orden', leccion.orden)
+      .order('orden', { ascending: true })
+      .limit(1)
+      .single()
+
+    if (siguienteLeccion) {
+      nextLeccionId = siguienteLeccion.id
+    } else {
+      // Si no hay más lecciones en este módulo, busca en el siguiente módulo
+      const { data: siguienteModulo } = await supabase
+        .from('modulos')
+        .select('id')
+        .eq('curso_id', modulo.curso_id)
+        .gt('orden', modulo.orden)
+        .order('orden', { ascending: true })
+        .limit(1)
+        .single()
+
+      if (siguienteModulo) {
+        const { data: primeraLeccionModulo } = await supabase
+          .from('lecciones')
+          .select('id')
+          .eq('modulo_id', siguienteModulo.id)
+          .order('orden', { ascending: true })
+          .limit(1)
+          .single()
+
+        if (primeraLeccionModulo) {
+          nextLeccionId = primeraLeccionModulo.id
+        }
+      }
     }
 
     // Recalcular progreso del curso
@@ -127,7 +167,7 @@ export async function marcarLeccionCompletada(
     revalidatePath('/dashboard')
     revalidatePath('/')
 
-    return { success: true }
+    return { success: true, nextLeccionId }
   } catch (error: unknown) {
     return { error: (error as Error).message || String(error) }
   }

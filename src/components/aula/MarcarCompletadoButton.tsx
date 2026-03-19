@@ -22,16 +22,26 @@ export default function MarcarCompletadoButton({
     setIsLoading(true)
     setError(null)
 
-    const result = await marcarLeccionCompletada(leccionId)
+    try {
+      const result = await marcarLeccionCompletada(leccionId)
 
-    if ('error' in result) {
-      setError(result.error)
+      if ('error' in result) {
+        setError(result.error)
+        setIsLoading(false)
+        return
+      }
+
+      // Actualizar la página para refrescar checkmarks y progreso
+      await router.refresh()
+
+      // Si hay una siguiente lección, navegar a ella
+      if (result.nextLeccionId) {
+        router.push(`?leccion=${result.nextLeccionId}`)
+      }
+    } catch (err) {
+      setError('Error al marcar la lección como completada')
       setIsLoading(false)
-      return
     }
-
-    // Actualizar la página para refrescar checkmarks y progreso
-    router.refresh()
   }
 
   if (yaCompletada) {

@@ -155,26 +155,17 @@ export default function LeccionSidebar({
 
           {/* Certificado - Mostrar si curso está completado */}
           {progresoPorcentaje === 100 && (
-            <div className="border-t border-gray-100">
+            <div className="border-t border-gray-100 p-4 bg-gradient-to-br from-amber-50 to-orange-50">
               <button
                 onClick={() => router.push('?leccion=certificado')}
-                className={`w-full text-left px-5 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3 group ${
+                className={`w-full px-4 py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg ${
                   leccionActivaId === 'certificado'
-                    ? 'bg-amber-50'
-                    : ''
+                    ? 'bg-amber-600 text-white hover:bg-amber-700'
+                    : 'bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-600 hover:to-orange-600'
                 }`}
               >
-                <Award
-                  size={16}
-                  className={leccionActivaId === 'certificado' ? 'text-amber-600' : 'text-amber-500'}
-                />
-                <span className={`text-xs font-bold uppercase tracking-wider ${
-                  leccionActivaId === 'certificado'
-                    ? 'text-amber-900'
-                    : 'text-amber-700 group-hover:text-amber-800'
-                }`}>
-                  Tu Certificado
-                </span>
+                <Award size={18} />
+                <span>Tu Certificado</span>
               </button>
             </div>
           )}

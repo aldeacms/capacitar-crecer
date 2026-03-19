@@ -1,0 +1,77 @@
+'use client'
+
+import { useState } from 'react'
+import { generarCertificado } from '@/actions/certificados'
+import { toast } from 'sonner'
+import { Download, Loader2 } from 'lucide-react'
+
+interface DescargarCertificadoButtonProps {
+  perfilId: string
+  cursoId: string
+  tipo?: 'gratis' | 'pago' | 'gratis_cert_pago'
+  preciosCertificado?: number | null
+}
+
+export default function DescargarCertificadoButton({
+  perfilId,
+  cursoId,
+  tipo = 'gratis',
+  preciosCertificado,
+}: DescargarCertificadoButtonProps) {
+  const [loading, setLoading] = useState(false)
+
+  const handleDescargar = async () => {
+    setLoading(true)
+
+    try {
+      const result = await generarCertificado(perfilId, cursoId)
+
+      if ('error' in result) {
+        toast.error(result.error)
+      } else {
+        // Descargar automáticamente
+        window.location.href = result.downloadUrl
+        toast.success('Certificado descargado correctamente')
+      }
+    } catch (error) {
+      toast.error('Error al generar certificado')
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Para cursos gratis o con certificado incluido
+  if (tipo === 'gratis' || tipo === 'pago') {
+    return (
+      <button
+        onClick={handleDescargar}
+        disabled={loading}
+        className="inline-flex items-center gap-2 px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? (
+          <>
+            <Loader2 size={18} className="animate-spin" />
+            Generando...
+          </>
+        ) : (
+          <>
+            <Download size={18} />
+            📄 Descargar Certificado
+          </>
+        )}
+      </button>
+    )
+  }
+
+  // Para cursos con certificado de pago (gratis_cert_pago)
+  return (
+    <button
+      disabled={loading}
+      className="inline-flex items-center gap-2 px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all shadow-lg disabled:opacity-50"
+    >
+      <span>🎓</span>
+      Obtener Certificado por ${(preciosCertificado || 0).toLocaleString('es-CL')}
+    </button>
+  )
+}

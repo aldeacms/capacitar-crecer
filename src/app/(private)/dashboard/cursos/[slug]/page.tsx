@@ -8,6 +8,7 @@ import TextViewer from '@/components/aula/TextViewer'
 import ArchivosAdjuntos from '@/components/aula/ArchivosAdjuntos'
 import QuizRunner from '@/components/aula/QuizRunner'
 import MarcarCompletadoButton from '@/components/aula/MarcarCompletadoButton'
+import DescargarCertificadoButton from '@/components/aula/DescargarCertificadoButton'
 
 export default async function CursoAulaPage({
   params,
@@ -183,16 +184,21 @@ export default async function CursoAulaPage({
                     {curso.tipo_acceso === 'gratis' || (curso.tipo_acceso === 'pago' && (curso.precio_certificado ?? 0) === 0) ? (
                       <>
                         <p className="text-amber-700 text-base">Tu certificado está listo para descargar.</p>
-                        <button className="inline-flex items-center gap-2 px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all shadow-lg">
-                          <span>📄</span> Descargar Certificado
-                        </button>
+                        <DescargarCertificadoButton
+                          perfilId={perfil.id}
+                          cursoId={curso.id}
+                          tipo={curso.tipo_acceso as any}
+                        />
                       </>
                     ) : curso.tipo_acceso === 'gratis_cert_pago' ? (
                       <>
                         <p className="text-amber-700 text-base">Obtén tu certificado pagando ${(curso.precio_certificado || 0).toLocaleString('es-CL')}.</p>
-                        <button className="inline-flex items-center gap-2 px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all shadow-lg">
-                          <span>🎓</span> Obtener Certificado por ${(curso.precio_certificado || 0).toLocaleString('es-CL')}
-                        </button>
+                        <DescargarCertificadoButton
+                          perfilId={perfil.id}
+                          cursoId={curso.id}
+                          tipo="gratis_cert_pago"
+                          preciosCertificado={curso.precio_certificado}
+                        />
                       </>
                     ) : null}
                   </div>

@@ -31,11 +31,10 @@ export function UserModal({ editingUser, onClose }: UserModalProps) {
 
     try {
       if (isEditing) {
-        // Modo edición: solo actualizar perfil
+        // Modo edición: solo actualizar perfil (rol se maneja por tabla admin_users)
         const result = await actualizarPerfil(editingUser.id, {
           nombre_completo: formData.nombre_completo,
-          rut: formData.rut,
-          rol: formData.rol
+          rut: formData.rut
         })
 
         if ('error' in result) {

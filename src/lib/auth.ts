@@ -53,6 +53,7 @@ export async function requireAuth(): Promise<AuthUser> {
 /**
  * Check if user is admin by querying admin_users table
  * Admin status is determined by presence in admin_users table with is_active=true
+ * Falls back to checking rol field in perfiles if admin_users doesn't exist yet
  *
  * @param userId UUID of user to check
  * @returns true if user is active admin
@@ -60,14 +61,40 @@ export async function requireAuth(): Promise<AuthUser> {
 async function isUserAdmin(userId: string): Promise<boolean> {
   const supabase = await createClient()
 
-  const { data } = await supabase
-    .from('admin_users')
-    .select('id')
-    .eq('id', userId)
-    .eq('is_active', true)
-    .single()
+  // Method 1: Check admin_users table (primary method)
+  try {
+    const { data } = await (supabase as any)
+      .from('admin_users')
+      .select('id')
+      .eq('id', userId)
+      .eq('is_active', true)
+      .single()
 
-  return !!data
+    if (data) {
+      return true
+    }
+  } catch (error) {
+    // admin_users table might not exist yet or user not found
+    // Fall through to method 2
+  }
+
+  // Method 2: Fallback - check perfiles table rol field (during transition)
+  try {
+    const { data } = await supabase
+      .from('perfiles')
+      .select('rol')
+      .eq('id', userId)
+      .single()
+
+    if (data?.rol === 'admin') {
+      return true
+    }
+  } catch (error) {
+    // perfiles also might not have rol field anymore
+    // or user not found, which is fine
+  }
+
+  return false
 }
 
 /**

@@ -2,7 +2,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   DndContext,
   closestCenter,
@@ -20,18 +19,21 @@ import {
   useSortable
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Trash2, HelpCircle, ArrowRightLeft, GripVertical, CheckCircle2, ListFilter, Edit2, Plus, Circle, X } from 'lucide-react'
-import { deleteQuestion, updateQuestionsOrder, updateQuestion } from '@/actions/quiz'
-import { RichTextEditor } from './RichTextEditor'
+import { Trash2, HelpCircle, ArrowRightLeft, GripVertical, CheckCircle2, ListFilter, Edit2, Plus } from 'lucide-react'
+import { deleteQuestion, updateQuestionsOrder } from '@/actions/quiz'
+import { QuestionModal } from './QuestionModal'
 import { toast } from 'sonner'
 
 interface QuestionListProps {
   initialPreguntas: any[]
+  leccionId: string
 }
 
-export default function QuestionList({ initialPreguntas }: QuestionListProps) {
+export default function QuestionList({ initialPreguntas, leccionId }: QuestionListProps) {
   const [preguntas, setPreguntas] = useState(initialPreguntas)
   const [mounted, setMounted] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingQuestion, setEditingQuestion] = useState<any>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -59,68 +61,71 @@ export default function QuestionList({ initialPreguntas }: QuestionListProps) {
     }
   }
 
+  const openCreate = () => {
+    setEditingQuestion(null)
+    setModalOpen(true)
+  }
+
+  const openEdit = (q: any) => {
+    setEditingQuestion(q)
+    setModalOpen(true)
+  }
+
+  const closeModal = () => {
+    setModalOpen(false)
+    setEditingQuestion(null)
+  }
+
   if (!mounted) return null
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between px-2">
-        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-          <ListFilter size={14} /> Estructura de la Evaluación
-        </h3>
-        <div className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-1 rounded uppercase">
-          {preguntas.length} Reactivos
+    <>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between px-2">
+          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+            <ListFilter size={14} /> Estructura de la Evaluación
+          </h3>
+          <button
+            onClick={openCreate}
+            className="text-[10px] font-bold text-[#28B4AD] bg-emerald-50 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-all flex items-center gap-1"
+          >
+            <Plus size={12} /> Añadir Pregunta
+          </button>
         </div>
+
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={preguntas.map(p => p.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-4">
+              {preguntas.length > 0 ? (
+                preguntas.map((q, qIndex) => (
+                  <SortableQuestionItem key={q.id} q={q} qIndex={qIndex} onEdit={openEdit} />
+                ))
+              ) : (
+                <div className="bg-gray-50/50 border-2 border-dashed border-gray-200 rounded-3xl p-16 text-center">
+                  <HelpCircle size={40} className="text-gray-200 mx-auto mb-4" />
+                  <p className="text-gray-400 font-bold text-sm">No hay preguntas creadas</p>
+                </div>
+              )}
+            </div>
+          </SortableContext>
+        </DndContext>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={preguntas.map(p => p.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-4">
-            {preguntas.length > 0 ? (
-              preguntas.map((q, qIndex) => (
-                <SortableQuestionItem key={q.id} q={q} qIndex={qIndex} />
-              ))
-            ) : (
-              <div className="bg-gray-50/50 border-2 border-dashed border-gray-200 rounded-3xl p-16 text-center">
-                <HelpCircle size={40} className="text-gray-200 mx-auto mb-4" />
-                <p className="text-gray-400 font-bold text-sm">No hay preguntas creadas</p>
-              </div>
-            )}
-          </div>
-        </SortableContext>
-      </DndContext>
-    </div>
+      {/* Modal */}
+      {modalOpen && (
+        <QuestionModal
+          leccionId={leccionId}
+          question={editingQuestion}
+          onClose={closeModal}
+        />
+      )}
+    </>
   )
 }
 
-function SortableQuestionItem({ q, qIndex }: { q: any, qIndex: number }) {
-  const router = useRouter()
+function SortableQuestionItem({ q, qIndex, onEdit }: { q: any; qIndex: number; onEdit: (q: any) => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: q.id })
   const [isDeleting, setIsDeleting] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
-
-  // Estados para edición
-  const [editText, setEditText] = useState(q.texto)
-  const [editPuntos, setEditPuntos] = useState(q.puntos || 10)
-  const [editOpciones, setEditOpciones] = useState<Array<{ id?: string; texto: string; es_correcta: boolean; texto_pareado?: string }>>(
-    q.tipo === 'pareados'
-      ? (() => {
-        const mid = Math.floor(q.quizzes_opciones.length / 2)
-        const terms = q.quizzes_opciones.slice(0, mid)
-        const answers = q.quizzes_opciones.slice(mid)
-        return terms.map((term: any, idx: number) => ({
-          id: term.id,
-          texto: term.texto,
-          texto_pareado: answers[idx]?.texto || '',
-          es_correcta: true
-        }))
-      })()
-      : q.quizzes_opciones.map((opt: any) => ({
-        id: opt.id,
-        texto: opt.texto,
-        es_correcta: opt.es_correcta
-      }))
-  )
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -136,201 +141,7 @@ function SortableQuestionItem({ q, qIndex }: { q: any, qIndex: number }) {
     if (!result.success) setIsDeleting(false)
   }
 
-  const handleSaveEdit = async () => {
-    setIsUpdating(true)
-    const result = await updateQuestion({
-      id: q.id,
-      texto: editText,
-      tipo: q.tipo,
-      puntos: editPuntos,
-      opciones: editOpciones,
-      leccionId: q.leccion_id
-    })
-    setIsUpdating(false)
-
-    if (result.success) {
-      setIsEditing(false)
-      toast.success("Pregunta actualizada correctamente")
-      router.refresh()
-    } else {
-      toast.error(result.error || "Error al actualizar")
-    }
-  }
-
-  const handleCancelEdit = () => {
-    setEditText(q.texto)
-    setEditPuntos(q.puntos || 10)
-    setIsEditing(false)
-  }
-
-  // Color de acento según tipo
   const accentColor = q.tipo === 'multiple' ? 'border-l-[#28B4AD]' : q.tipo === 'vf' ? 'border-l-blue-400' : q.tipo === 'pareados' ? 'border-l-violet-400' : 'border-l-gray-400'
-
-  if (isEditing) {
-    return (
-      <div
-        ref={setNodeRef}
-        style={style}
-        className={`bg-white rounded-2xl border border-gray-100 shadow-sm border-l-4 ${accentColor} transition-all overflow-hidden`}
-      >
-        <div className="p-5 space-y-4">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-gray-50 text-gray-400 flex items-center justify-center font-black text-[10px] border border-gray-100">
-                {qIndex + 1}
-              </div>
-              <h4 className="font-bold text-gray-900">Editar Pregunta</h4>
-            </div>
-            <button
-              onClick={handleCancelEdit}
-              disabled={isUpdating}
-              className="p-1.5 text-gray-300 hover:text-gray-600 rounded-lg transition-colors"
-            >
-              <X size={18} />
-            </button>
-          </div>
-
-          {/* Formulario inline */}
-          <div className="space-y-3">
-            {/* Texto */}
-            <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1 block mb-2">
-                Pregunta
-              </label>
-              <RichTextEditor
-                value={editText}
-                onChange={setEditText}
-                placeholder="Edita la pregunta..."
-              />
-            </div>
-
-            {/* Puntos */}
-            <div className="flex items-center justify-between">
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Puntaje</label>
-              <input
-                type="number"
-                value={editPuntos}
-                onChange={(e) => setEditPuntos(Number(e.target.value))}
-                className="form-input w-20 text-center text-[#28B4AD] font-black text-xs px-2 py-1"
-              />
-            </div>
-
-            {/* Opciones */}
-            {q.tipo !== 'abierta' && (
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1 block">
-                  Opciones
-                </label>
-                {editOpciones.map((opt, idx) => (
-                  <div key={idx} className="flex items-center gap-3 bg-gray-50/50 p-3 rounded-2xl border border-gray-100 group transition-all hover:bg-white hover:shadow-sm">
-                    {q.tipo !== 'pareados' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const newOpts = editOpciones.map((o, i) => ({
-                            ...o,
-                            es_correcta: i === idx ? !o.es_correcta : (q.tipo === 'multiple' ? o.es_correcta : false)
-                          }))
-                          setEditOpciones(newOpts)
-                        }}
-                        className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                          opt.es_correcta
-                            ? 'bg-[#28B4AD] text-white shadow-md'
-                            : 'bg-white text-gray-200 border border-gray-200 hover:border-[#28B4AD]'
-                        }`}
-                      >
-                        {opt.es_correcta ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-                      </button>
-                    )}
-
-                    {q.tipo === 'pareados' ? (
-                      <div className="flex-1 flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={opt.texto}
-                          onChange={(e) => {
-                            const n = [...editOpciones]
-                            n[idx].texto = e.target.value
-                            setEditOpciones(n)
-                          }}
-                          placeholder="Término A"
-                          className="form-input flex-1"
-                        />
-                        <ArrowRightLeft size={14} className="text-gray-300 shrink-0" />
-                        <input
-                          type="text"
-                          value={opt.texto_pareado || ''}
-                          onChange={(e) => {
-                            const n = [...editOpciones]
-                            n[idx].texto_pareado = e.target.value
-                            setEditOpciones(n)
-                          }}
-                          placeholder="Término B"
-                          className="form-input flex-1 text-[#28B4AD]"
-                        />
-                      </div>
-                    ) : (
-                      <input
-                        type="text"
-                        value={opt.texto}
-                        onChange={(e) => {
-                          const n = [...editOpciones]
-                          n[idx].texto = e.target.value
-                          setEditOpciones(n)
-                        }}
-                        placeholder={`Opción ${idx + 1}`}
-                        className="form-input flex-1"
-                      />
-                    )}
-
-                    {(q.tipo === 'multiple' || q.tipo === 'pareados') && editOpciones.length > 2 && (
-                      <button
-                        type="button"
-                        onClick={() => setEditOpciones(editOpciones.filter((_, i) => i !== idx))}
-                        className="p-1.5 text-gray-300 hover:text-red-500 rounded-lg transition-colors"
-                      >
-                        <X size={16} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-
-                {(q.tipo === 'multiple' || q.tipo === 'pareados') && (
-                  <button
-                    type="button"
-                    onClick={() => setEditOpciones([...editOpciones, q.tipo === 'pareados' ? { texto: '', es_correcta: true, texto_pareado: '' } : { texto: '', es_correcta: false }])}
-                    className="text-[10px] font-bold text-[#28B4AD] hover:underline flex items-center gap-1 mt-2"
-                  >
-                    <Plus size={12} /> Añadir opción
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Botones de acción */}
-          <div className="flex gap-3 justify-end border-t border-gray-50 pt-4">
-            <button
-              onClick={handleCancelEdit}
-              disabled={isUpdating}
-              className="px-4 py-2 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium transition-all disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleSaveEdit}
-              disabled={isUpdating}
-              className="px-6 py-2 bg-[#28B4AD] hover:bg-[#219892] text-white rounded-lg text-sm font-bold transition-all disabled:opacity-50 flex items-center gap-2"
-            >
-              {isUpdating && <div className="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full" />}
-              {isUpdating ? 'Guardando...' : 'Guardar cambios'}
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div
@@ -345,7 +156,8 @@ function SortableQuestionItem({ q, qIndex }: { q: any, qIndex: number }) {
             {qIndex + 1}
           </div>
           <div
-            {...attributes} {...listeners}
+            {...attributes}
+            {...listeners}
             className="p-1.5 text-gray-300 hover:text-gray-600 cursor-grab active:cursor-grabbing rounded-md transition-colors"
           >
             <GripVertical size={16} />
@@ -370,7 +182,7 @@ function SortableQuestionItem({ q, qIndex }: { q: any, qIndex: number }) {
 
             <div className="flex gap-2">
               <button
-                onClick={() => setIsEditing(true)}
+                onClick={() => onEdit(q)}
                 className="p-2 text-gray-300 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
               >
                 <Edit2 size={16} />
@@ -378,7 +190,7 @@ function SortableQuestionItem({ q, qIndex }: { q: any, qIndex: number }) {
               <button
                 onClick={handleDelete}
                 disabled={isDeleting}
-                className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                className="p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
               >
                 <Trash2 size={16} />
               </button>

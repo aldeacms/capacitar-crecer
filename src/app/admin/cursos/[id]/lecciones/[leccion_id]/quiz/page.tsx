@@ -1,9 +1,8 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
-import QuestionForm from '@/components/quiz/QuestionForm'
 import QuestionList from '@/components/quiz/QuestionList'
-import { LayoutGrid, ClipboardList, Edit3, ChevronLeft } from 'lucide-react'
+import { ClipboardList, ChevronLeft } from 'lucide-react'
 
 export default async function QuizPage({
   params,
@@ -67,53 +66,9 @@ export default async function QuizPage({
         </div>
       </header>
 
-      {/* GRID 50/50 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-
-        {/* COLUMNA IZQUIERDA: CREACIÓN */}
-        <div className="space-y-6 lg:sticky lg:top-8">
-          <div className="relative">
-            <div className="absolute -inset-1 bg-gradient-to-tr from-[#28B4AD]/20 to-transparent rounded-[2rem] blur-2xl opacity-50"></div>
-            <div className="relative bg-white border border-gray-100 rounded-[2rem] shadow-xl shadow-gray-200/40 overflow-hidden">
-              <div className="bg-gray-50/50 px-8 py-4 border-b border-gray-100 flex items-center justify-between text-[10px] font-black text-gray-400 tracking-widest uppercase">
-                <div className="flex items-center gap-2">
-                  <Edit3 size={14} className="text-[#28B4AD]" />
-                  Editor de Preguntas
-                </div>
-                <span className="text-[9px] bg-white px-2 py-0.5 rounded border border-gray-100">Modo Autor</span>
-              </div>
-              <div className="p-6 md:p-8">
-                <QuestionForm leccionId={leccion_id} />
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 bg-blue-50/40 border border-blue-100/50 rounded-2xl flex gap-4">
-            <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center shrink-0 text-blue-600">
-              <LayoutGrid size={20} />
-            </div>
-            <div>
-              <h4 className="text-xs font-bold text-blue-900 uppercase mb-1">Sugerencia pedagógica</h4>
-              <p className="text-[11px] text-blue-700/80 leading-relaxed">
-                Utiliza preguntas de alternativas para conceptos clave y pareados para definiciones de procesos. Esto mejora el engagement.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* COLUMNA DERECHA: LISTADO */}
-        <div className="space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-              <ClipboardList size={14} className="opacity-50" /> Estructura de la Evaluación
-            </h3>
-          </div>
-
-          <div className="space-y-4">
-            <QuestionList initialPreguntas={preguntas || []} />
-          </div>
-        </div>
-
+      {/* LISTA A PANTALLA COMPLETA */}
+      <div className="space-y-6">
+        <QuestionList initialPreguntas={preguntas || []} leccionId={leccion_id} />
       </div>
     </div>
   )

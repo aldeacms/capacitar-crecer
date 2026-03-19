@@ -27,6 +27,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
       Image.configure({ allowBase64: true })
     ],
     content: value,
+    immediatelyRender: false,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     }

@@ -485,10 +485,10 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                     placeholder="URL o código embed"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-gray-900 font-semibold focus:border-[#28B4AD] focus:ring-1 focus:ring-[#28B4AD] transition-all text-sm"
                 />
-                <p className="mt-2 text-xs text-slate-600 space-y-1">
+                <div className="mt-2 text-xs text-slate-600 space-y-1">
                   <div>✓ <strong>URLs:</strong> YouTube • Vimeo • Loom • Tella.tv</div>
                   <div>✓ <strong>Embed:</strong> Pega directamente el código &lt;iframe&gt;</div>
-                </p>
+                </div>
               </div>
 
               {/* Content Editor */}

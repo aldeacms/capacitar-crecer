@@ -7,7 +7,7 @@ import { resolveTemplate } from '@/lib/certificados/template-resolver'
 import { generateCertificatePDF } from '@/lib/certificados/pdf-generator'
 import { getStoragePath, uploadCertificate, certificateExistsInStorage } from '@/lib/certificados/storage'
 import { CertificateRecord, GenerateCertificateResult } from '@/lib/certificados/types'
-import { requireAuth } from '@/lib/auth'
+import { requireAuth, requireAdmin } from '@/lib/auth'
 
 /**
  * Generar certificado PDF para el usuario autenticado

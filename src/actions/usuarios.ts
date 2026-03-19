@@ -78,7 +78,7 @@ export async function crearUsuario(data: {
   // Validar input
   const parsed = UsuarioSchema.safeParse(data)
   if (!parsed.success) {
-    return { error: parsed.error.errors[0]?.message || 'Datos inválidos' }
+    return { error: parsed.error.issues[0]?.message || 'Datos inválidos' }
   }
 
   const supabaseAdmin = getSupabaseAdmin()
@@ -136,7 +136,7 @@ export async function cambiarPassword(userId: string, newPassword: string) {
     return { error: 'ID de usuario inválido' }
   }
   if (!passwordParsed.success) {
-    return { error: passwordParsed.error.errors[0]?.message || 'Contraseña inválida' }
+    return { error: passwordParsed.error.issues[0]?.message || 'Contraseña inválida' }
   }
 
   const supabaseAdmin = getSupabaseAdmin()
@@ -178,7 +178,7 @@ export async function actualizarPerfil(
     return { error: 'ID de usuario inválido' }
   }
   if (!dataParsed.success) {
-    return { error: dataParsed.error.errors[0]?.message || 'Datos inválidos' }
+    return { error: dataParsed.error.issues[0]?.message || 'Datos inválidos' }
   }
 
   const supabaseAdmin = getSupabaseAdmin()

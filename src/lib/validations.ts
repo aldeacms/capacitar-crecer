@@ -63,9 +63,7 @@ export const ModuloSchema = z.object({
 export const LeccionSchema = z.object({
   titulo: z.string().min(1, 'Título es requerido').max(200),
   contenido: z.string().optional(),
-  tipo_contenido: z.enum(['video', 'texto', 'archivo'], {
-    errorMap: () => ({ message: 'Tipo de contenido inválido' })
-  }),
+  tipo_contenido: z.enum(['video', 'texto', 'archivo']).catch('video'),
   url_video: z.string().url('URL de video inválida').optional(),
   orden: z.number().int().min(0),
 })

@@ -13,7 +13,7 @@ interface Opcion {
 interface Pregunta {
   id: string
   texto: string
-  tipo: 'multiple' | 'vf' | 'abierta'
+  tipo: 'multiple' | 'vf' | 'abierta' | 'pareadas'
   orden: number
   quizzes_opciones: Opcion[]
 }
@@ -64,6 +64,14 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
     }
   }
 
+  const handleRespuestaAbierta = (preguntaId: string, texto: string) => {
+    if (submitted) return
+    setRespuestas(prev => ({
+      ...prev,
+      [preguntaId]: texto,
+    }))
+  }
+
   const handleSubmit = () => {
     setSubmitted(true)
   }
@@ -75,12 +83,20 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
 
   if (submitted) {
     const correctas = opcionesOrdenadas.filter(p => {
+      // Para preguntas abierta y pareadas, no contamos como correctas automáticamente
+      if (p.tipo === 'abierta' || p.tipo === 'pareadas') {
+        return false
+      }
       const respuestaId = respuestas[p.id]
       if (!respuestaId) return false
       return p.quizzes_opciones.some(o => o.id === respuestaId && o.es_correcta)
     }).length
 
-    const porcentaje = Math.round((correctas / opcionesOrdenadas.length) * 100)
+    // Solo contabilizar preguntas con opciones predefinidas (multiple y vf)
+    const preguntasAutomaticas = opcionesOrdenadas.filter(p => p.tipo !== 'abierta' && p.tipo !== 'pareadas').length
+    const porcentaje = preguntasAutomaticas > 0
+      ? Math.round((correctas / preguntasAutomaticas) * 100)
+      : 0
 
     return (
       <div className="w-full bg-white rounded-xl border border-gray-200 p-8 space-y-6">
@@ -100,9 +116,61 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
         <div className="space-y-4">
           <h4 className="font-bold text-gray-900">Revisión</h4>
           {opcionesOrdenadas.map((pregunta, idx) => {
+            let esCorrecta = false
+            let respuestaTexto = ''
+
+            if (pregunta.tipo === 'abierta') {
+              respuestaTexto = respuestas[pregunta.id] || '(sin respuesta)'
+              // Preguntas abiertas no tienen evaluación automática
+              return (
+                <div
+                  key={pregunta.id}
+                  className="p-4 rounded-lg border-l-4 bg-blue-50 border-blue-500"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full border-2 border-blue-500 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-gray-900 mb-2">
+                        {idx + 1}. {pregunta.texto}
+                      </p>
+                      <p className="text-sm text-blue-700">
+                        Tu respuesta: <span className="font-medium">{respuestaTexto}</span>
+                      </p>
+                      <p className="text-xs text-blue-600 mt-1 italic">Esta pregunta será revisada manualmente</p>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
+            if (pregunta.tipo === 'pareadas') {
+              return (
+                <div
+                  key={pregunta.id}
+                  className="p-4 rounded-lg border-l-4 bg-purple-50 border-purple-500"
+                >
+                  <p className="font-semibold text-sm text-gray-900 mb-3">
+                    {idx + 1}. {pregunta.texto}
+                  </p>
+                  <div className="space-y-2">
+                    {pregunta.quizzes_opciones.map((opcion, optIdx) => (
+                      <div key={opcion.id} className="text-sm">
+                        <span className="text-gray-700">{optIdx + 1}. {opcion.texto}</span>
+                        <span className="text-purple-600 ml-2">→</span>
+                        <span className="text-purple-700 ml-2 font-medium">
+                          {respuestas[`${pregunta.id}-${opcion.id}`] || '(sin respuesta)'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-purple-600 mt-2 italic">Esta pregunta será revisada manualmente</p>
+                </div>
+              )
+            }
+
             const respuestaId = respuestas[pregunta.id]
             const opcionSeleccionada = pregunta.quizzes_opciones.find(o => o.id === respuestaId)
-            const esCorrecta = opcionSeleccionada?.es_correcta || false
+            esCorrecta = opcionSeleccionada?.es_correcta || false
 
             return (
               <div
@@ -228,11 +296,38 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
 
             {pregunta.tipo === 'abierta' && (
               <textarea
-                disabled={true}
-                placeholder="Esta es una pregunta abierta. Tu respuesta se registra automáticamente."
-                className="w-full p-3 border border-gray-200 rounded-lg text-sm text-gray-500 bg-gray-50 resize-none"
-                rows={3}
+                value={respuestas[pregunta.id] || ''}
+                onChange={(e) => handleRespuestaAbierta(pregunta.id, e.target.value)}
+                disabled={submitted}
+                placeholder="Escribe tu respuesta aquí..."
+                className="w-full p-3 border border-gray-200 rounded-lg text-sm text-gray-700 resize-none disabled:bg-gray-50 disabled:text-gray-500"
+                rows={4}
               />
+            )}
+
+            {pregunta.tipo === 'pareadas' && (
+              <div className="space-y-3">
+                {pregunta.quizzes_opciones.map((opcion, idx) => (
+                  <div key={opcion.id} className="flex items-center gap-3">
+                    <span className="text-sm font-medium text-gray-700 flex-1">
+                      {idx + 1}. {opcion.texto}
+                    </span>
+                    <input
+                      type="text"
+                      value={respuestas[`${pregunta.id}-${opcion.id}`] || ''}
+                      onChange={(e) =>
+                        setRespuestas(prev => ({
+                          ...prev,
+                          [`${pregunta.id}-${opcion.id}`]: e.target.value,
+                        }))
+                      }
+                      disabled={submitted}
+                      placeholder="Empareja con..."
+                      className="flex-1 p-2 border border-gray-200 rounded-lg text-sm disabled:bg-gray-50 disabled:text-gray-500"
+                    />
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         ))}

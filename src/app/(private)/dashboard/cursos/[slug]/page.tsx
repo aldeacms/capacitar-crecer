@@ -140,11 +140,11 @@ export default async function CursoAulaPage({
   return (
     <>
       {/* Mini-Hero */}
-      <div className="bg-slate-900 border-b border-[#28B4AD]/20 py-10 lg:py-16 px-4 lg:px-8 shadow-sm">
+      <div className="bg-slate-900 border-b border-[#28B4AD]/20 py-8 lg:py-12 px-4 lg:px-8 shadow-sm mt-16 lg:mt-20">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-black text-white leading-tight">{curso.titulo}</h1>
-            <p className="text-base text-slate-400 mt-3">Progreso: <span className="font-bold text-[#28B4AD]">{matricula.progreso_porcentaje}%</span></p>
+            <h1 className="text-3xl lg:text-4xl xl:text-5xl font-black text-white leading-tight">{curso.titulo}</h1>
+            <p className="text-sm text-slate-400 mt-2">Progreso: <span className="font-bold text-[#28B4AD]">{matricula.progreso_porcentaje}%</span></p>
           </div>
           <Link
             href="/dashboard"
@@ -156,7 +156,7 @@ export default async function CursoAulaPage({
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto pb-20 px-4 lg:px-8 pt-12">
+      <div className="max-w-7xl mx-auto pb-20 px-4 lg:px-8 pt-8 lg:pt-12">
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
         {/* Sidebar */}

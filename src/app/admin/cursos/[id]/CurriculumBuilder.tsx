@@ -437,66 +437,63 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
             onClick={() => setLessonModal(null)}
         >
           <div
-            className="bg-white rounded-[3.5rem] max-w-5xl w-full shadow-[0_35px_60px_-15px_rgba(0,0,0,0.2)] border-2 border-slate-100 my-auto animate-in slide-in-from-bottom-6 duration-300 overflow-hidden"
+            className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-slate-100 my-auto animate-in slide-in-from-bottom-6 duration-300 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="bg-gradient-to-r from-slate-50 to-emerald-50 px-10 md:px-14 py-10 border-b border-slate-100">
-              <h3 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter">
-                {lessonModal.leccion ? '✏️ Editar' : '➕ Nueva'} Lección
+            {/* Modal Header - Simplified */}
+            <div className="px-8 md:px-10 py-6 border-b border-slate-100">
+              <h3 className="text-2xl font-black text-gray-900">
+                {lessonModal.leccion ? 'Editar' : 'Nueva'} Lección
               </h3>
-              <p className="text-sm text-slate-600 font-semibold mt-2">Configura el contenido y recursos de esta lección</p>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleLessonSubmit} className="p-10 md:p-14 space-y-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-              <div className="md:col-span-2">
-                <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block mb-4">Título de la Lección</label>
-                <input 
-                    required 
-                    name="titulo" 
+            {/* Modal Body - Compact */}
+            <form onSubmit={handleLessonSubmit} className="p-8 md:p-10 space-y-6">
+              {/* Title */}
+              <div>
+                <label className="text-xs font-black text-gray-600 uppercase tracking-widest block mb-2">Título</label>
+                <input
+                    required
+                    name="titulo"
                     defaultValue={lessonModal.leccion?.titulo}
-                    autoFocus 
-                    placeholder="Ej: Cálculo de Rentabilidad Variable" 
-                    className="w-full px-8 py-5 border-2 border-gray-300 rounded-[2rem] outline-none focus:border-[#28B4AD] text-gray-900 font-bold transition-all bg-slate-50/30" 
+                    autoFocus
+                    placeholder="Ej: Cálculo de Rentabilidad"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:border-[#28B4AD] focus:ring-1 focus:ring-[#28B4AD] text-gray-900 font-semibold transition-all text-sm"
                 />
               </div>
-              
+
+              {/* Format Type */}
               <div>
-                <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block mb-4">Tipo de Formato</label>
+                <label className="text-xs font-black text-gray-600 uppercase tracking-widest block mb-2">Tipo</label>
                 <select
                     name="tipo"
                     defaultValue={lessonModal.leccion?.tipo || 'video'}
-                    className="w-full px-8 py-5 border-2 border-gray-300 rounded-2xl outline-none text-gray-900 font-black bg-white cursor-pointer appearance-none focus:border-[#28B4AD] transition-all"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-gray-900 font-semibold bg-white cursor-pointer focus:border-[#28B4AD] focus:ring-1 focus:ring-[#28B4AD] transition-all text-sm"
                 >
-                  <option value="video">🎬 Video / Streaming</option>
-                  <option value="texto">📖 Lectura Profunda</option>
-                  <option value="quiz">✅ Evaluación Quiz</option>
+                  <option value="video">🎬 Video</option>
+                  <option value="texto">📖 Lectura</option>
+                  <option value="quiz">✅ Quiz</option>
                 </select>
               </div>
 
+              {/* Video URL */}
               <div>
-                <div className="flex items-baseline justify-between mb-4">
-                  <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest">URL del Video</label>
-                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">YouTube • Vimeo • Loom • Tella.tv</span>
-                </div>
+                <label className="text-xs font-black text-gray-600 uppercase tracking-widest block mb-2">URL del Video</label>
                 <input
                     name="video_url"
                     defaultValue={lessonModal.leccion?.video_url}
-                    placeholder="Pega aquí la URL del video (YouTube, Vimeo, Loom, Tella.tv o embed code)"
-                    className="w-full px-8 py-5 border-2 border-gray-300 rounded-2xl outline-none text-gray-900 font-bold transition-all text-sm bg-white focus:border-[#28B4AD] focus:bg-slate-50/50"
+                    placeholder="YouTube, Vimeo, Loom, Tella.tv o embed code"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-gray-900 font-semibold focus:border-[#28B4AD] focus:ring-1 focus:ring-[#28B4AD] transition-all text-sm"
                 />
-                <p className="mt-3 text-[10px] text-slate-600 font-medium leading-relaxed opacity-80">
-                  Ej: https://www.youtube.com/watch?v=... | https://vimeo.com/... | https://loom.com/share/... | https://tella.tv/...
+                <p className="mt-1.5 text-xs text-slate-500">
+                  Soporta: YouTube • Vimeo • Loom • Tella.tv
                 </p>
               </div>
 
-              </div>
-
-              <div className="border-t-2 border-slate-100 pt-10">
-                <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block mb-4 flex items-center gap-2">
-                  📝 Contenido Pedagógico / Instrucciones
+              {/* Content Editor */}
+              <div className="border-t pt-6">
+                <label className="text-xs font-black text-gray-600 uppercase tracking-widest block mb-3">
+                  Contenido
                 </label>
                 <RichTextEditor
                   content={lessonContent}
@@ -504,81 +501,74 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                 />
               </div>
 
-              <div className="border-t-2 border-slate-100 pt-10">
-                <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block mb-6 flex items-center gap-2">
-                  📎 Recursos Adjuntos
+              {/* File Management */}
+              <div className="border-t pt-6">
+                <label className="text-xs font-black text-gray-600 uppercase tracking-widest block mb-4">
+                  Archivos Adjuntos
                 </label>
 
                 {/* Archivos existentes */}
                 {lessonModal.leccion?.lecciones_archivos?.length > 0 && (
-                  <div className="space-y-4 mb-8">
-                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Archivos cargados</p>
-                    <div className="grid grid-cols-1 gap-3">
-                      {lessonModal.leccion.lecciones_archivos.map((file: any) => (
-                        <div key={file.id} className="flex items-center justify-between p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl group transition-all hover:border-slate-200">
-                          <div className="flex items-center gap-4 truncate">
-                            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
-                              <FileText size={20} />
-                            </div>
-                            <span className="text-sm font-bold text-slate-900 truncate">{file.nombre_archivo}</span>
-                          </div>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            <a
-                              href={file.archivo_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2.5 text-slate-600 hover:text-[#28B4AD] hover:bg-emerald-50 rounded-xl transition-all"
-                              title="Abrir archivo"
-                            >
-                              <ExternalLink size={18} />
-                            </a>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteFile(file.id, file.archivo_url)}
-                              className="p-2.5 text-slate-600 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                              title="Eliminar archivo"
-                            >
-                              <Trash size={18} />
-                            </button>
-                          </div>
+                  <div className="space-y-2 mb-4">
+                    {lessonModal.leccion.lecciones_archivos.map((file: any) => (
+                      <div key={file.id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-all">
+                        <div className="flex items-center gap-3 truncate min-w-0">
+                          <FileText size={16} className="text-slate-400 flex-shrink-0" />
+                          <span className="text-sm text-slate-700 truncate">{file.nombre_archivo}</span>
                         </div>
-                      ))}
-                    </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                          <a
+                            href={file.archivo_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 text-slate-600 hover:text-[#28B4AD] rounded transition-colors"
+                            title="Abrir"
+                          >
+                            <ExternalLink size={16} />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFile(file.id, file.archivo_url)}
+                            className="p-1.5 text-slate-600 hover:text-red-500 rounded transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
 
-                {/* Nueva carga */}
-                <div>
-                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-3">Agregar nuevos archivos</p>
-                  <div className="p-8 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 hover:border-[#28B4AD]/40 hover:bg-emerald-50/20 transition-all">
-                    <input
-                      type="file"
-                      name="archivos"
-                      multiple
-                      className="w-full text-sm text-slate-700 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-[9px] file:font-black file:uppercase file:tracking-widest file:bg-white file:text-[#28B4AD] file:border file:border-emerald-100 hover:file:bg-emerald-50 transition-all cursor-pointer"
-                    />
-                    <p className="mt-3 text-[10px] text-slate-600 font-medium">
-                      Soporta PDF, Word, Excel, imágenes y otros documentos
-                    </p>
-                  </div>
+                {/* Agregar archivos */}
+                <div className="p-4 border border-dashed border-slate-300 rounded-lg bg-slate-50 hover:border-slate-400 hover:bg-slate-100 transition-all">
+                  <input
+                    type="file"
+                    name="archivos"
+                    multiple
+                    className="w-full text-sm text-slate-600 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#28B4AD] file:text-white hover:file:bg-[#219892] transition-all cursor-pointer"
+                  />
+                  <p className="mt-2 text-xs text-slate-500">
+                    PDF, Word, Excel, imágenes, etc.
+                  </p>
                 </div>
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t-2 border-slate-100 mt-10 pt-8 flex justify-end gap-4">
+              <div className="border-t pt-6 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setLessonModal(null)}
-                  className="px-8 py-3 text-gray-700 font-black uppercase tracking-widest text-xs hover:bg-slate-100 rounded-2xl transition-all border-2 border-transparent hover:border-slate-200"
+                  className="px-6 py-2 text-gray-600 font-semibold text-sm hover:bg-slate-100 rounded-lg transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isPending}
-                  className="px-10 py-3 bg-[#28B4AD] hover:bg-[#219892] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-emerald-200/50 disabled:opacity-50 transition-all"
+                  className="px-6 py-2 bg-[#28B4AD] hover:bg-[#219892] text-white rounded-lg font-semibold text-sm disabled:opacity-50 transition-all"
                 >
-                  {isPending ? 'Procesando...' : (lessonModal.leccion ? '💾 Guardar Cambios' : '➕ Crear Lección')}
+                  {isPending ? 'Guardando...' : (lessonModal.leccion ? 'Guardar' : 'Crear')}
                 </button>
               </div>
             </form>

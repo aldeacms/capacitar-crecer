@@ -309,7 +309,7 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
               <div className="space-y-3">
                 {pregunta.quizzes_opciones.map((opcion, idx) => (
                   <div key={opcion.id} className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-700 flex-1">
+                    <span className="text-sm font-semibold text-gray-900 flex-1">
                       {idx + 1}. {opcion.texto}
                     </span>
                     <input

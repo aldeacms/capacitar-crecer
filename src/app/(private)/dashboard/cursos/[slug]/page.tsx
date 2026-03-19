@@ -140,7 +140,7 @@ export default async function CursoAulaPage({
   return (
     <>
       {/* Mini-Hero */}
-      <div className="bg-gradient-to-r from-[#28B4AD]/10 to-[#28B4AD]/5 border-b border-[#28B4AD]/20 py-6 px-4 lg:px-8 sticky top-16 z-40">
+      <div className="bg-white border-b border-[#28B4AD]/20 py-6 px-4 lg:px-8 sticky top-[64px] z-40 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
             <h1 className="text-2xl lg:text-3xl font-black text-gray-900">{curso.titulo}</h1>

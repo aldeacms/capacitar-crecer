@@ -53,9 +53,10 @@ export default function VideoPlayer({ videoUrl }: VideoPlayerProps) {
       <div className="w-full max-w-2xl mx-auto">
         <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-lg border border-gray-200">
           <iframe
-            src={`https://www.youtube-nocookie.com/embed/${youtubeId}?rel=0&modestbranding=1&fs=0`}
+            src={`https://www.youtube-nocookie.com/embed/${youtubeId}?rel=0&modestbranding=1&fs=0&controls=1&autohide=1`}
             title="Video de la lección"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="autoplay; encrypted-media"
+            sandbox="allow-scripts allow-same-origin allow-presentation allow-popups-to-escape-sandbox"
             className="absolute inset-0 w-full h-full"
             style={{ border: 'none' }}
           />

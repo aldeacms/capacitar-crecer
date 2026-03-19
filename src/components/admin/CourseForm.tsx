@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
 import { getCategories } from '@/actions/categorias'
 import { toast } from 'sonner'
-import { CheckCircle2, ShieldCheck, Award, Info, Sparkles, CreditCard, Eye } from 'lucide-react'
+import { CheckCircle2, ShieldCheck, Award, Info, Sparkles, CreditCard, Eye, AlertCircle, Monitor, Lightbulb, Building2, Gift, ShoppingCart, FileText, Camera } from 'lucide-react'
 
 const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
   ssr: false,
@@ -118,7 +118,7 @@ export default function CourseForm({
 
   const handleSave = async () => {
     if (!categoriaId || categoriaId.trim() === "") {
-      toast.error('🛑 Error: Debes seleccionar una categoría.')
+      toast.error('Error: Debes seleccionar una categoría.')
       return
     }
 
@@ -221,9 +221,9 @@ export default function CourseForm({
               <div className="space-y-2">
                 <label className={labelClass}>Modalidad</label>
                 <select value={modalidad} onChange={(e) => setModalidad(e.target.value)} className={inputBaseClass}>
-                  <option value="online-asincrono">🖥️ Online Asíncrono</option>
-                  <option value="online-envivo">🎥 Online en Vivo</option>
-                  <option value="presencial">🏢 Presencial</option>
+                  <option value="online-asincrono">Online Asíncrono</option>
+                  <option value="online-envivo">Online en Vivo</option>
+                  <option value="presencial">Presencial</option>
                 </select>
               </div>
               <div className="space-y-2">
@@ -261,10 +261,10 @@ export default function CourseForm({
                 <div className="space-y-2">
                   <label className={labelClass}>Tipo de Acceso</label>
                   <select value={tipoAcceso} onChange={(e) => setTipoAcceso(e.target.value)} className={inputBaseClass}>
-                    <option value="gratis">🎁 Gratis — El alumno se registra sin costo</option>
-                    <option value="gratis_cert_pago">🎁 Gratis + Certificado de Pago — Contenido gratis, certificado tiene costo</option>
-                    <option value="pago">🛒 De Pago — El alumno paga antes de acceder</option>
-                    <option value="cotizar">📝 Cotizar — Precio a convenir, formulario de contacto</option>
+                    <option value="gratis">Gratis — El alumno se registra sin costo</option>
+                    <option value="gratis_cert_pago">Gratis + Certificado de Pago — Contenido gratis, certificado tiene costo</option>
+                    <option value="pago">De Pago — El alumno paga antes de acceder</option>
+                    <option value="cotizar">Cotizar — Precio a convenir, formulario de contacto</option>
                   </select>
                 </div>
 

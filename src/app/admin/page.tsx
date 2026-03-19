@@ -1,6 +1,7 @@
 'use server'
 
 import { Suspense } from 'react'
+import { Users, Zap, BookOpen, TrendingUp, ClipboardList, Award } from 'lucide-react'
 import { getDashboardMetrics, getMatriculasChart, getTopCursos } from '@/actions/dashboard'
 import { SkeletonGrid, SkeletonBarChart } from '@/components/ui/SkeletonLoader'
 import MetricCard from '@/components/admin/MetricCard'
@@ -49,37 +50,37 @@ async function MetricsSection() {
     {
       label: 'Total de Usuarios',
       value: metrics.totalUsuarios,
-      icon: '👥',
+      icon: <Users size={32} />,
       color: 'bg-blue-500',
     },
     {
       label: 'Usuarios Activos (30 días)',
       value: metrics.usuariosActivos,
-      icon: '⚡',
+      icon: <Zap size={32} />,
       color: 'bg-green-500',
     },
     {
       label: 'Cursos Disponibles',
       value: metrics.totalCursos,
-      icon: '📚',
+      icon: <BookOpen size={32} />,
       color: 'bg-purple-500',
     },
     {
       label: 'Cursos con Matrículas',
       value: metrics.cursosActivos,
-      icon: '✓',
+      icon: <TrendingUp size={32} />,
       color: 'bg-orange-500',
     },
     {
       label: 'Total de Matrículas',
       value: metrics.totalMatriculas,
-      icon: '📝',
+      icon: <ClipboardList size={32} />,
       color: 'bg-pink-500',
     },
     {
       label: 'Certificados Emitidos',
       value: metrics.certificadosEmitidos,
-      icon: '🎓',
+      icon: <Award size={32} />,
       color: 'bg-teal-500',
     },
   ]

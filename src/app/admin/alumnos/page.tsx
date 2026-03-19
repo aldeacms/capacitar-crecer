@@ -8,7 +8,7 @@ import { UserDetailPanel } from '@/components/admin/UserDetailPanel'
 import { ChangePasswordModal } from '@/components/admin/ChangePasswordModal'
 import { SendEmailModal } from '@/components/admin/SendEmailModal'
 import { toast } from 'sonner'
-import { Search, Plus, Eye, Edit2, Key, Mail, Trash2, Users } from 'lucide-react'
+import { Search, Plus, Eye, Edit2, Key, Mail, Trash2, Users, Crown, GraduationCap } from 'lucide-react'
 
 export default function AlumnosPage() {
   const [usuarios, setUsuarios] = useState<any[]>([])
@@ -205,13 +205,23 @@ export default function AlumnosPage() {
 
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                        className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${
                           usuario.rol === 'admin'
                             ? 'bg-purple-100 text-purple-700'
                             : 'bg-blue-100 text-blue-700'
                         }`}
                       >
-                        {usuario.rol === 'admin' ? '👤 Admin' : '👨‍🎓 Alumno'}
+                        {usuario.rol === 'admin' ? (
+                          <>
+                            <Crown size={14} />
+                            Admin
+                          </>
+                        ) : (
+                          <>
+                            <GraduationCap size={14} />
+                            Alumno
+                          </>
+                        )}
                       </span>
                     </td>
 

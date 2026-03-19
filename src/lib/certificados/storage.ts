@@ -21,7 +21,7 @@ export function getStoragePath(perfilId: string, cursoId: string, version: numbe
 export async function uploadCertificate(storagePath: string, buffer: Buffer): Promise<void> {
   const supabaseAdmin = getSupabaseAdmin()
 
-  console.log(`📦 Upload details: path=${storagePath}, buffer size=${buffer.length} bytes`)
+  console.log(`Upload details: path=${storagePath}, buffer size=${buffer.length} bytes`)
 
   const { data, error } = await supabaseAdmin.storage
     .from('certificados')
@@ -30,14 +30,14 @@ export async function uploadCertificate(storagePath: string, buffer: Buffer): Pr
       upsert: true,  // Sobreescribir si ya existe
     })
 
-  console.log(`📦 Upload response: error=${error}, data=${JSON.stringify(data)}`)
+  console.log(`Upload response: error=${error}, data=${JSON.stringify(data)}`)
 
   if (error) {
     throw new Error(`Error subiendo certificado a Storage: ${error.message}`)
   }
 
   if (!data) {
-    console.warn(`⚠️ Upload returned no data (might still be OK with upsert)`)
+    console.warn(`Upload returned no data (might still be OK with upsert)`)
   }
 }
 

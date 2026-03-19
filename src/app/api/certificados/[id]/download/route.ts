@@ -30,7 +30,7 @@ export async function GET(
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321'
     const publicUrl = `${supabaseUrl}/storage/v1/object/public/certificados/${storagePath}`
 
-    console.log('📥 Descargando desde URL pública:', publicUrl)
+    console.log('Descargando desde URL pública:', publicUrl)
 
     try {
       // Fetch del archivo usando la URL pública

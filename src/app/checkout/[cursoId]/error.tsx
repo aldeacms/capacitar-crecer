@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { AlertTriangle, RefreshCw, ShoppingCart } from 'lucide-react'
+import { AlertTriangle, RefreshCw, ShoppingCart, Lightbulb } from 'lucide-react'
 import Link from 'next/link'
 
 export default function CheckoutError({
@@ -47,8 +47,9 @@ export default function CheckoutError({
 
           {/* Helpful text */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-            <p className="text-xs text-blue-800">
-              💡 Tu dinero no ha sido debitado. Es seguro reintentar.
+            <p className="text-xs text-blue-800 flex items-center gap-2">
+              <Lightbulb size={14} className="flex-shrink-0" />
+              <span>Tu dinero no ha sido debitado. Es seguro reintentar.</span>
             </p>
           </div>
 

@@ -223,9 +223,12 @@ Equipo de Capacitar y Crecer`
           </div>
 
           {/* Info */}
-          <div className="text-xs text-gray-500 mb-6 p-3 bg-gray-50 rounded-lg">
-            <p>📧 El email será enviado desde: <strong>Capacitar y Crecer</strong></p>
-            <p className="mt-1">Los saltos de línea serán convertidos a párrafos en el email.</p>
+          <div className="text-xs text-gray-500 mb-6 p-3 bg-gray-50 rounded-lg space-y-1">
+            <p className="flex items-center gap-2">
+              <Mail size={14} className="flex-shrink-0" />
+              <span>El email será enviado desde: <strong>Capacitar y Crecer</strong></span>
+            </p>
+            <p>Los saltos de línea serán convertidos a párrafos en el email.</p>
           </div>
 
           {/* Botones */}

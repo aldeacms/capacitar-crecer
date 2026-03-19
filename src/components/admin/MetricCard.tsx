@@ -1,9 +1,11 @@
 'use client'
 
+import { ReactNode } from 'react'
+
 interface MetricCardProps {
   label: string
   value: number
-  icon: string
+  icon: ReactNode
   color: string
 }
 

@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { createCupon } from '@/actions/cupones'
 import { toast } from 'sonner'
-import { X, Loader2 } from 'lucide-react'
+import { X, Loader2, Lightbulb } from 'lucide-react'
 
 interface CuponModalProps {
   onClose: () => void
@@ -112,8 +112,9 @@ export function CuponModal({ onClose }: CuponModalProps) {
           </div>
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-xs text-blue-700">
-              💡 <strong>Tip:</strong> Usa cupones con 100% de descuento para hacer que los cursos de pago sean gratuitos durante pruebas.
+            <p className="text-xs text-blue-700 flex items-center gap-2">
+              <Lightbulb size={14} className="flex-shrink-0" />
+              <span><strong>Tip:</strong> Usa cupones con 100% de descuento para hacer que los cursos de pago sean gratuitos durante pruebas.</span>
             </p>
           </div>
 

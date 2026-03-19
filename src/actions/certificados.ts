@@ -79,7 +79,7 @@ export async function generarCertificado(cursoId: string): Promise<GenerateCerti
     }
 
     // ===== 2. IDEMPOTENCIA: BUSCAR CERTIFICADO EXISTENTE =====
-    console.log('🔍 Buscando certificado existente para:', { perfilId, cursoId })
+    console.log('Buscando certificado existente para:', { perfilId, cursoId })
 
     const { data: existingCert, error: searchError } = await supabaseAdmin
       .from('certificate_downloads')
@@ -94,7 +94,7 @@ export async function generarCertificado(cursoId: string): Promise<GenerateCerti
       const exists = await certificateExistsInStorage(existingCert.storage_path!)
 
       if (exists) {
-        console.log('✅ Certificado existente encontrado, retornando el mismo')
+        console.log('Certificado existente encontrado, retornando el mismo')
         return {
           success: true,
           certificateId: existingCert.id,
@@ -103,11 +103,11 @@ export async function generarCertificado(cursoId: string): Promise<GenerateCerti
         }
       }
 
-      console.log('⚠️ Certificado existente pero archivo no está en Storage, regenerando...')
+      console.log('Certificado existente pero archivo no está en Storage, regenerando...')
     }
 
     // ===== 3. RESOLVER TEMPLATE =====
-    console.log('🎨 Resolviendo template para curso:', cursoId)
+    console.log('Resolviendo template para curso:', cursoId)
     const template = await resolveTemplate(cursoId)
 
     // ===== 4. GENERAR PDF =====
@@ -115,7 +115,7 @@ export async function generarCertificado(cursoId: string): Promise<GenerateCerti
     const version = existingCert?.version ?? 1
     const storagePath = getStoragePath(perfilId, cursoId, version)
 
-    console.log('📄 Generando PDF...')
+    console.log('Generando PDF...')
     const fechaVigencia = new Date()
     fechaVigencia.setFullYear(fechaVigencia.getFullYear() + 2)
 
@@ -131,11 +131,11 @@ export async function generarCertificado(cursoId: string): Promise<GenerateCerti
     })
 
     // ===== 5. SUBIR A STORAGE =====
-    console.log('☁️ Subiendo a Storage:', storagePath)
+    console.log('Subiendo a Storage:', storagePath)
     await uploadCertificate(storagePath, pdfBuffer)
 
     // ===== 6. REGISTRAR EN BD =====
-    console.log('💾 Registrando en BD...')
+    console.log('Registrando en BD...')
     const fileName = `certificado-${curso.titulo.toLowerCase().replace(/\s+/g, '-')}.pdf`
 
     const { error: upsertError } = await supabaseAdmin

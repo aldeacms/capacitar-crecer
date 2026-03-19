@@ -8,9 +8,10 @@ import {
 } from '@/actions/curriculum'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
-import { 
-  Pencil, Trash2, X, GripVertical, FileText, 
-  ChevronDown, Paperclip, Trash, ExternalLink 
+import {
+  Pencil, Trash2, X, GripVertical, FileText,
+  ChevronDown, Paperclip, Trash, ExternalLink,
+  AlertCircle, AlertTriangle, Video, BookOpen, CheckCircle, Package
 } from 'lucide-react'
 
 // Dnd Kit Imports
@@ -171,7 +172,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
           // Mejorar mensajes de error del servidor
           let errorMsg = result.error
           if (errorMsg.includes('Body exceeded')) {
-            errorMsg = `❌ El tamaño de los datos supera el límite permitido. Intenta con archivos más pequeños o menos archivos.`
+            errorMsg = `El tamaño de los datos supera el límite permitido. Intenta con archivos más pequeños o menos archivos.`
           }
           setError(errorMsg)
         } else {
@@ -221,7 +222,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
     if (totalSize > MAX_UPLOAD_SIZE) {
       const sizeMB = (totalSize / (1024 * 1024)).toFixed(2)
       setFileSizeError(
-        `⚠️ El tamaño total de los archivos (${sizeMB} MB) supera el límite permitido de ${MAX_UPLOAD_SIZE_MB} MB. Por favor, selecciona archivos más pequeños o menos archivos.`
+        `El tamaño total de los archivos (${sizeMB} MB) supera el límite permitido de ${MAX_UPLOAD_SIZE_MB} MB. Por favor, selecciona archivos más pequeños o menos archivos.`
       )
     } else {
       setFileSizeError(null)
@@ -523,9 +524,9 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                     defaultValue={lessonModal.leccion?.tipo || 'video'}
                     className="form-select font-semibold"
                 >
-                  <option value="video">🎬 Video</option>
-                  <option value="texto">📖 Lectura</option>
-                  <option value="quiz">✅ Quiz</option>
+                  <option value="video">Video</option>
+                  <option value="texto">Lectura</option>
+                  <option value="quiz">Quiz</option>
                 </select>
               </div>
 
@@ -539,8 +540,8 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-gray-900 font-semibold focus:border-[#28B4AD] focus:ring-1 focus:ring-[#28B4AD] transition-all text-sm"
                 />
                 <div className="mt-2 text-xs text-slate-600 space-y-1">
-                  <div>✓ <strong>URLs:</strong> YouTube • Vimeo • Loom • Tella.tv</div>
-                  <div>✓ <strong>Embed:</strong> Pega directamente el código &lt;iframe&gt;</div>
+                  <div className="flex items-center gap-2"><CheckCircle size={14} /> <span><strong>URLs:</strong> YouTube • Vimeo • Loom • Tella.tv</span></div>
+                  <div className="flex items-center gap-2"><CheckCircle size={14} /> <span><strong>Embed:</strong> Pega directamente el código &lt;iframe&gt;</span></div>
                 </div>
               </div>
 
@@ -617,8 +618,9 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                         PDF, Word, Excel, imágenes, etc. Máximo {MAX_UPLOAD_SIZE_MB} MB en total
                       </p>
                       {selectedFilesSize > 0 && (
-                        <p className="mt-1 text-xs text-slate-600">
-                          📦 Tamaño actual: {(selectedFilesSize / (1024 * 1024)).toFixed(2)} MB / {MAX_UPLOAD_SIZE_MB} MB
+                        <p className="mt-1 text-xs text-slate-600 flex items-center gap-2">
+                          <Package size={14} />
+                          <span>Tamaño actual: {(selectedFilesSize / (1024 * 1024)).toFixed(2)} MB / {MAX_UPLOAD_SIZE_MB} MB</span>
                         </p>
                       )}
                     </>

@@ -55,7 +55,7 @@ export default function DescargarCertificadoButton({
         ) : (
           <>
             <Download size={18} />
-            📄 Descargar Certificado
+            Descargar Certificado
           </>
         )}
       </button>

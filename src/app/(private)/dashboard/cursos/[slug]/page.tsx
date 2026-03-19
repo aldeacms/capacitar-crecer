@@ -140,15 +140,15 @@ export default async function CursoAulaPage({
   return (
     <>
       {/* Mini-Hero */}
-      <div className="bg-white border-b border-[#28B4AD]/20 py-6 px-4 lg:px-8 sticky top-[64px] z-40 shadow-sm">
+      <div className="bg-slate-900 border-b border-[#28B4AD]/20 py-6 px-4 lg:px-8 shadow-sm">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-black text-gray-900">{curso.titulo}</h1>
-            <p className="text-sm text-gray-600 mt-1">Progreso: <span className="font-bold text-[#28B4AD]">{matricula.progreso_porcentaje}%</span></p>
+            <h1 className="text-2xl lg:text-3xl font-black text-white">{curso.titulo}</h1>
+            <p className="text-sm text-slate-400 mt-1">Progreso: <span className="font-bold text-[#28B4AD]">{matricula.progreso_porcentaje}%</span></p>
           </div>
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 text-[#28B4AD] hover:text-[#1f9593] font-medium transition-colors"
+            className="flex items-center gap-2 text-[#28B4AD] hover:text-[#26a095] font-medium transition-colors"
           >
             <ArrowLeft size={18} />
             <span className="hidden sm:inline">Volver</span>

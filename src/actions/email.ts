@@ -42,6 +42,8 @@ export async function enviarBienvenida(data: {
   nombre: string
   password: string
 }) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>¡Bienvenido a Capacitar y Crecer!</h2>
@@ -59,7 +61,7 @@ export async function enviarBienvenida(data: {
         <em>Te recomendamos cambiar tu contraseña una vez que ingreses por primera vez a la plataforma.</em>
       </p>
 
-      <a href="http://localhost:3000/login" style="display: inline-block; background-color: #28B4AD; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin-top: 20px;">
+      <a href="${appUrl}/login" style="display: inline-block; background-color: #28B4AD; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin-top: 20px;">
         Inicia Sesión
       </a>
 

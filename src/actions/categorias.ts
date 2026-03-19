@@ -41,7 +41,7 @@ export async function getCategories() {
   const supabaseAdmin = getSupabaseAdmin()
   const { data, error } = await supabaseAdmin
     .from('categorias')
-    .select('*')
+    .select('id, nombre, slug, descripcion, imagen_url, created_at')
     .order('nombre', { ascending: true })
   
   if (error) {

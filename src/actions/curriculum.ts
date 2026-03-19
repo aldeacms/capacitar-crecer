@@ -320,15 +320,15 @@ export async function updateCurriculumOrder(
   const table = type === 'module' ? 'modulos' : 'lecciones'
 
   try {
-    // Actualizamos secuencialmente para garantizar consistencia y evitar líos de triggers/PKs
-    for (const item of items) {
-      const { error } = await supabaseAdmin
-        .from(table)
-        .update({ orden: item.orden })
-        .eq('id', item.id)
-      
-      if (error) throw error
-    }
+    // Batch update: actualizar orden para todos los items de una vez
+    const { error } = await supabaseAdmin
+      .from(table)
+      .upsert(
+        items.map(item => ({ id: item.id, orden: item.orden })),
+        { onConflict: 'id' }
+      )
+
+    if (error) throw error
 
     revalidatePath(`/admin/cursos/${cursoId}`)
     return { success: true }

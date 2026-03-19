@@ -40,7 +40,7 @@ function extractVimeoId(url: string): string | null {
 export default function VideoPlayer({ videoUrl }: VideoPlayerProps) {
   if (!videoUrl || videoUrl.trim() === '') {
     return (
-      <div className="w-full aspect-video bg-gray-100 rounded-xl flex items-center justify-center border border-gray-200">
+      <div className="w-full max-w-2xl mx-auto aspect-video bg-gray-100 rounded-xl flex items-center justify-center border border-gray-200">
         <p className="text-gray-500 text-sm">No hay video para esta lección</p>
       </div>
     )
@@ -50,15 +50,17 @@ export default function VideoPlayer({ videoUrl }: VideoPlayerProps) {
   const youtubeId = extractYouTubeId(videoUrl)
   if (youtubeId) {
     return (
-      <iframe
-        width="100%"
-        height="100%"
-        src={`https://www.youtube-nocookie.com/embed/${youtubeId}`}
-        title="Video de la lección"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        className="w-full aspect-video rounded-xl"
-      />
+      <div className="w-full max-w-2xl mx-auto">
+        <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-lg border border-gray-200">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/${youtubeId}?rel=0&modestbranding=1&fs=0`}
+            title="Video de la lección"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            className="absolute inset-0 w-full h-full"
+            style={{ border: 'none' }}
+          />
+        </div>
+      </div>
     )
   }
 
@@ -66,21 +68,23 @@ export default function VideoPlayer({ videoUrl }: VideoPlayerProps) {
   const vimeoId = extractVimeoId(videoUrl)
   if (vimeoId) {
     return (
-      <iframe
-        src={`https://player.vimeo.com/video/${vimeoId}`}
-        width="100%"
-        height="100%"
-        allow="autoplay; fullscreen; picture-in-picture"
-        allowFullScreen
-        title="Video de la lección"
-        className="w-full aspect-video rounded-xl"
-      />
+      <div className="w-full max-w-2xl mx-auto">
+        <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-lg border border-gray-200">
+          <iframe
+            src={`https://player.vimeo.com/video/${vimeoId}?title=0&byline=0&portrait=0`}
+            allow="autoplay; picture-in-picture"
+            title="Video de la lección"
+            className="absolute inset-0 w-full h-full"
+            style={{ border: 'none' }}
+          />
+        </div>
+      </div>
     )
   }
 
   // Si no se reconoce el formato, mostrar link directo
   return (
-    <div className="w-full aspect-video bg-gray-100 rounded-xl flex flex-col items-center justify-center border border-gray-200 gap-3">
+    <div className="w-full max-w-2xl mx-auto aspect-video bg-gray-100 rounded-xl flex flex-col items-center justify-center border border-gray-200 gap-3">
       <p className="text-gray-500 text-sm">Formato de video no reconocido</p>
       <a
         href={videoUrl}

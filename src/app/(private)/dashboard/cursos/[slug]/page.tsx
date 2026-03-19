@@ -107,8 +107,8 @@ export default async function CursoAulaPage({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let leccionActiva: any = null
 
-  if (leccionParam) {
-    // Buscar por ID si viene en params
+  if (leccionParam && leccionParam !== 'certificado') {
+    // Buscar por ID si viene en params (no es el certificado)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     for (const modulo of (curso.modulos || []) as any[]) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -169,7 +169,45 @@ export default async function CursoAulaPage({
 
         {/* Contenido principal */}
         <main className="lg:col-span-3">
-          {leccionActiva && (
+          {/* Vista de Certificado */}
+          {leccionParam === 'certificado' ? (
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl shadow-md border border-amber-200 p-8">
+              <div className="text-center space-y-6">
+                <div>
+                  <h1 className="text-4xl font-black text-amber-900 mb-3">🏆 ¡Felicitaciones!</h1>
+                  <p className="text-lg text-amber-800 font-semibold">Has completado exitosamente este curso</p>
+                </div>
+
+                {curso.tiene_certificado ? (
+                  <div className="space-y-4 pt-4">
+                    {curso.tipo_acceso === 'gratis' || (curso.tipo_acceso === 'pago' && (curso.precio_certificado ?? 0) === 0) ? (
+                      <>
+                        <p className="text-amber-700 text-base">Tu certificado está listo para descargar.</p>
+                        <button className="inline-flex items-center gap-2 px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all shadow-lg">
+                          <span>📄</span> Descargar Certificado
+                        </button>
+                      </>
+                    ) : curso.tipo_acceso === 'gratis_cert_pago' ? (
+                      <>
+                        <p className="text-amber-700 text-base">Obtén tu certificado pagando ${(curso.precio_certificado || 0).toLocaleString('es-CL')}.</p>
+                        <button className="inline-flex items-center gap-2 px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all shadow-lg">
+                          <span>🎓</span> Obtener Certificado por ${(curso.precio_certificado || 0).toLocaleString('es-CL')}
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="text-amber-700 text-base">Este programa está enfocado en la adquisición de habilidades y no emite certificado.</p>
+                )}
+
+                <div className="border-t border-amber-200 pt-6 mt-6">
+                  <p className="text-sm text-amber-600">
+                    ¿Tienes dudas? <a href="#" className="font-bold hover:underline">Contacta con nuestro equipo</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : leccionActiva ? (
             <div className="space-y-6">
               {/* Encabezado de la lección */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -216,48 +254,8 @@ export default async function CursoAulaPage({
                   />
                 </div>
               )}
-
-              {/* Banner de Curso Completado */}
-              {matricula.progreso_porcentaje === 100 && (
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl shadow-md border border-green-200 p-8">
-                  <div className="text-center space-y-6">
-                    <div>
-                      <h2 className="text-3xl font-black text-green-900 mb-2">🎉 ¡Felicitaciones!</h2>
-                      <p className="text-green-700 font-semibold">Has completado exitosamente este curso.</p>
-                    </div>
-
-                    {curso.tiene_certificado ? (
-                      <div className="space-y-4">
-                        {curso.tipo_acceso === 'gratis' || (curso.tipo_acceso === 'pago' && (curso.precio_certificado ?? 0) === 0) ? (
-                          <>
-                            <p className="text-green-700">Tu certificado está listo para descargar.</p>
-                            <button className="inline-flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all">
-                              <span>📄</span> Descargar Certificado
-                            </button>
-                          </>
-                        ) : curso.tipo_acceso === 'gratis_cert_pago' ? (
-                          <>
-                            <p className="text-green-700">Obtén tu certificado pagando ${(curso.precio_certificado || 0).toLocaleString('es-CL')}.</p>
-                            <button className="inline-flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all">
-                              <span>🎓</span> Obtener Certificado por ${(curso.precio_certificado || 0).toLocaleString('es-CL')}
-                            </button>
-                          </>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <p className="text-green-700">Este programa está enfocado en la adquisición de habilidades y no emite certificado.</p>
-                    )}
-
-                    <div className="border-t border-green-200 pt-6">
-                      <p className="text-sm text-green-600">
-                        ¿Tienes dudas? <a href="#" className="font-bold hover:underline">Contacta con nuestro equipo</a>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
-          )}
+          ) : null}
         </main>
       </div>
     </div>

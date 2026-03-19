@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ChevronDown, Play, BookOpen, HelpCircle, CheckCircle2 } from 'lucide-react'
+import { ChevronDown, Play, BookOpen, HelpCircle, CheckCircle2, Award } from 'lucide-react'
 
 interface Leccion {
   id: string
@@ -152,6 +152,32 @@ export default function LeccionSidebar({
               </div>
             )
           })}
+
+          {/* Certificado - Mostrar si curso está completado */}
+          {progresoPorcentaje === 100 && (
+            <div className="border-t border-gray-100">
+              <button
+                onClick={() => router.push('?leccion=certificado')}
+                className={`w-full text-left px-5 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3 group ${
+                  leccionActivaId === 'certificado'
+                    ? 'bg-amber-50'
+                    : ''
+                }`}
+              >
+                <Award
+                  size={16}
+                  className={leccionActivaId === 'certificado' ? 'text-amber-600' : 'text-amber-500'}
+                />
+                <span className={`text-xs font-bold uppercase tracking-wider ${
+                  leccionActivaId === 'certificado'
+                    ? 'text-amber-900'
+                    : 'text-amber-700 group-hover:text-amber-800'
+                }`}>
+                  Tu Certificado
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </aside>

@@ -10,15 +10,15 @@ export async function POST(req: Request) {
     const { nombre_completo, rut, telefono } = body
 
     const serverSupabase = await createServerClient()
-    const { data: { session }, error: sessionError } = await serverSupabase.auth.getSession()
-    if (sessionError || !session) return NextResponse.json({ ok: false, error: 'NO_SESSION' }, { status: 401 })
+    const { data: { user }, error: userError } = await serverSupabase.auth.getUser()
+    if (userError || !user) return NextResponse.json({ ok: false, error: 'NO_SESSION' }, { status: 401 })
 
     const admin = createAdminClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
 
     const { error } = await admin.from('perfiles').upsert({
-      id: session.user.id,
-      nombre_completo: nombre_completo || session.user.user_metadata?.full_name || session.user.email || 'Alumno',
-      rut: rut || session.user.id,
+      id: user.id,
+      nombre_completo: nombre_completo || user.user_metadata?.full_name || user.email || 'Alumno',
+      rut: rut || user.id,
       telefono: telefono || null,
       rol: 'alumno'
     })

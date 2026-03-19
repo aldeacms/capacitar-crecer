@@ -185,7 +185,6 @@ export default async function CursoAulaPage({
                       <>
                         <p className="text-amber-700 text-base">Tu certificado está listo para descargar.</p>
                         <DescargarCertificadoButton
-                          perfilId={perfil.id}
                           cursoId={curso.id}
                           tipo={curso.tipo_acceso as any}
                         />
@@ -194,7 +193,6 @@ export default async function CursoAulaPage({
                       <>
                         <p className="text-amber-700 text-base">Obtén tu certificado pagando ${(curso.precio_certificado || 0).toLocaleString('es-CL')}.</p>
                         <DescargarCertificadoButton
-                          perfilId={perfil.id}
                           cursoId={curso.id}
                           tipo="gratis_cert_pago"
                           preciosCertificado={curso.precio_certificado}

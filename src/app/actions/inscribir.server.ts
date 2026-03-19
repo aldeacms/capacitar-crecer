@@ -10,9 +10,9 @@ export async function inscribir(cursoId: string) {
   // perfil exists and create a matricula (enrollment). Throws on errors.
 
   const serverSupabase = await createServerClient()
-  const { data: { session }, error: sessionError } = await serverSupabase.auth.getSession()
+  const { data: { user }, error: userError } = await serverSupabase.auth.getUser()
 
-  if (sessionError || !session) {
+  if (userError || !user) {
     throw new Error('NO_SESSION')
   }
 
@@ -23,7 +23,7 @@ export async function inscribir(cursoId: string) {
   const { data: perfilExistente, error: perfilCheckError } = await admin
     .from('perfiles')
     .select('id')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .maybeSingle()
 
   if (perfilCheckError) {
@@ -31,11 +31,11 @@ export async function inscribir(cursoId: string) {
   }
 
   if (!perfilExistente) {
-    const nombreDefault = (session.user.user_metadata as any)?.full_name || session.user.email || 'Alumno'
-    const rutPlaceholder = session.user.id
+    const nombreDefault = (user.user_metadata as any)?.full_name || user.email || 'Alumno'
+    const rutPlaceholder = user.id
     const { error: crearPerfilError } = await admin
       .from('perfiles')
-      .insert({ id: session.user.id, nombre_completo: nombreDefault, rol: 'alumno', rut: rutPlaceholder })
+      .insert({ id: user.id, nombre_completo: nombreDefault, rol: 'alumno', rut: rutPlaceholder })
 
     if (crearPerfilError) {
       throw crearPerfilError
@@ -46,7 +46,7 @@ export async function inscribir(cursoId: string) {
   const { data: yaInscrito, error: checkError } = await admin
     .from('matriculas')
     .select('id')
-    .eq('perfil_id', session.user.id)
+    .eq('perfil_id', user.id)
     .eq('curso_id', cursoId)
     .maybeSingle()
 
@@ -91,7 +91,7 @@ export async function inscribir(cursoId: string) {
     const { error: insertError } = await admin
       .from('matriculas')
       .insert({
-        perfil_id: session.user.id,
+        perfil_id: user.id,
         curso_id: cursoId,
         estado_pago_curso: true, // true = usuario tiene acceso permitido
         estado_pago_certificado: estadoPagoCertificado, // false para gratis_cert_pago hasta que pague

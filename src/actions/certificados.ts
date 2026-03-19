@@ -7,13 +7,16 @@ import { resolveTemplate } from '@/lib/certificados/template-resolver'
 import { generateCertificatePDF } from '@/lib/certificados/pdf-generator'
 import { getStoragePath, uploadCertificate, certificateExistsInStorage } from '@/lib/certificados/storage'
 import { CertificateRecord, GenerateCertificateResult } from '@/lib/certificados/types'
+import { requireAuth } from '@/lib/auth'
 
 /**
- * Generar certificado PDF para un alumno
+ * Generar certificado PDF para el usuario autenticado
  * Con idempotencia: si ya existe un certificado válido para este (perfil_id, curso_id),
  * retorna el existente en lugar de generar uno nuevo
  */
-export async function generarCertificado(perfilId: string, cursoId: string): Promise<GenerateCertificateResult> {
+export async function generarCertificado(cursoId: string): Promise<GenerateCertificateResult> {
+  const user = await requireAuth()
+  const perfilId = user.id
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
@@ -230,21 +233,12 @@ export async function validarCertificado(certificateId: string) {
 /**
  * Invalidar un certificado (solo para admins)
  */
-export async function invalidarCertificado(certificateId: string, adminId: string) {
+export async function invalidarCertificado(certificateId: string) {
+  const admin = await requireAdmin()
+  const adminId = admin.id
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
-    // Verificar que el usuario es admin
-    const { data: admin, error: adminError } = await supabaseAdmin
-      .from('perfiles')
-      .select('rol')
-      .eq('id', adminId)
-      .single()
-
-    if (adminError || admin?.rol !== 'admin') {
-      return { success: false, error: 'No tienes permisos para invalidar certificados' }
-    }
-
     // Invalidar certificado
     const { error: invalidateError } = await supabaseAdmin
       .from('certificate_downloads')

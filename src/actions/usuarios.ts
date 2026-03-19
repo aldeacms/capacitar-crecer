@@ -2,12 +2,16 @@
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { revalidatePath } from 'next/cache'
+import { requireAdmin } from '@/lib/auth'
+import { UsuarioSchema, ActualizarPerfilSchema, PasswordSchema } from '@/lib/validations'
+import { z } from 'zod'
 
 /**
  * Obtener lista de todos los usuarios (admins + alumnos)
  * Retorna: id, email, nombre_completo, rut, rol, created_at, cursos_count
  */
 export async function getUsuarios() {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
@@ -69,13 +73,21 @@ export async function crearUsuario(data: {
   rut: string
   rol: 'admin' | 'alumno'
 }) {
+  await requireAdmin()
+
+  // Validar input
+  const parsed = UsuarioSchema.safeParse(data)
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0]?.message || 'Datos inválidos' }
+  }
+
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
     // 1. Crear usuario en auth
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
+      email: parsed.data.email,
+      password: parsed.data.password,
       email_confirm: true
     })
 
@@ -89,9 +101,9 @@ export async function crearUsuario(data: {
       .insert([
         {
           id: authUser.user.id,
-          nombre_completo: data.nombre_completo,
-          rut: data.rut,
-          rol: data.rol
+          nombre_completo: parsed.data.nombre_completo,
+          rut: parsed.data.rut,
+          rol: parsed.data.rol
         }
       ])
 
@@ -114,11 +126,24 @@ export async function crearUsuario(data: {
  * Cambiar contraseña de un usuario
  */
 export async function cambiarPassword(userId: string, newPassword: string) {
+  await requireAdmin()
+
+  // Validar inputs
+  const userIdParsed = z.string().uuid().safeParse(userId)
+  const passwordParsed = PasswordSchema.safeParse(newPassword)
+
+  if (!userIdParsed.success) {
+    return { error: 'ID de usuario inválido' }
+  }
+  if (!passwordParsed.success) {
+    return { error: passwordParsed.error.errors[0]?.message || 'Contraseña inválida' }
+  }
+
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-      password: newPassword
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userIdParsed.data, {
+      password: passwordParsed.data
     })
 
     if (error) {
@@ -143,13 +168,26 @@ export async function actualizarPerfil(
     rol?: 'admin' | 'alumno'
   }
 ) {
+  await requireAdmin()
+
+  // Validar inputs
+  const userIdParsed = z.string().uuid().safeParse(userId)
+  const dataParsed = ActualizarPerfilSchema.safeParse(data)
+
+  if (!userIdParsed.success) {
+    return { error: 'ID de usuario inválido' }
+  }
+  if (!dataParsed.success) {
+    return { error: dataParsed.error.errors[0]?.message || 'Datos inválidos' }
+  }
+
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
     const { error } = await supabaseAdmin
       .from('perfiles')
-      .update(data)
-      .eq('id', userId)
+      .update(dataParsed.data)
+      .eq('id', userIdParsed.data)
 
     if (error) {
       throw new Error(`Error actualizando perfil: ${error.message}`)
@@ -168,6 +206,7 @@ export async function actualizarPerfil(
  * Eliminar un usuario (auth + perfil)
  */
 export async function eliminarUsuario(userId: string) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
@@ -211,6 +250,7 @@ export async function eliminarUsuario(userId: string) {
  * Enrolar un usuario en un curso
  */
 export async function inscribirEnCurso(perfilId: string, cursoId: string) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
@@ -255,6 +295,7 @@ export async function inscribirEnCurso(perfilId: string, cursoId: string) {
  * Desinscribir un usuario de un curso
  */
 export async function desinscribirDeCurso(matriculaId: string) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   try {

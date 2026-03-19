@@ -3,6 +3,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { requireAdmin } from '@/lib/auth'
 
 // Límite máximo de carga: 50 MB
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024
@@ -23,6 +24,7 @@ function getTotalFormDataSize(formData: FormData): number {
 // --- MÓDULOS ---
 
 export async function createModule(data: { curso_id: string, titulo: string, orden: number }) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
@@ -51,6 +53,7 @@ export async function createModule(data: { curso_id: string, titulo: string, ord
 }
 
 export async function updateModule(id: string, titulo: string, cursoId: string) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
   try {
     const { error } = await supabaseAdmin
@@ -68,6 +71,7 @@ export async function updateModule(id: string, titulo: string, cursoId: string) 
 }
 
 export async function deleteModule(id: string, cursoId: string) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
   try {
     const { error } = await supabaseAdmin
@@ -88,6 +92,7 @@ export async function deleteModule(id: string, cursoId: string) {
 // --- LECCIONES ---
 
 export async function createLesson(formData: FormData) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   const modulo_id = formData.get('modulo_id') as string
@@ -170,6 +175,7 @@ export async function createLesson(formData: FormData) {
 }
 
 export async function updateLesson(formData: FormData) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
   const id = formData.get('id') as string
   const curso_id = formData.get('curso_id') as string
@@ -238,6 +244,7 @@ export async function updateLesson(formData: FormData) {
 }
 
 export async function deleteLesson(id: string, cursoId: string) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
   try {
     const { error } = await supabaseAdmin
@@ -255,6 +262,7 @@ export async function deleteLesson(id: string, cursoId: string) {
 }
 
 export async function deleteLessonFile(fileId: string, filePath: string, cursoId: string) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
   try {
     // 1. Borrar de la base de datos
@@ -289,10 +297,11 @@ export async function deleteLessonFile(fileId: string, filePath: string, cursoId
 // --- ORDENAMIENTO (DRAG & DROP) ---
 
 export async function updateCurriculumOrder(
-  type: 'module' | 'lesson', 
+  type: 'module' | 'lesson',
   items: { id: string, orden: number }[],
   cursoId: string
 ) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
   const table = type === 'module' ? 'modulos' : 'lecciones'
 
@@ -319,6 +328,7 @@ export async function updateCurriculumOrder(
 // --- MOVIMIENTOS (DEPRECATED by Drag & Drop, but kept for safety) ---
 
 export async function moveModule(id: string, cursoId: string, direction: 'up' | 'down') {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
   try {
     const { data: modules } = await supabaseAdmin
@@ -349,6 +359,7 @@ export async function moveModule(id: string, cursoId: string, direction: 'up' | 
 }
 
 export async function moveLesson(id: string, moduloId: string, cursoId: string, direction: 'up' | 'down') {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
   try {
     const { data: lessons } = await supabaseAdmin

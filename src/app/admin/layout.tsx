@@ -1,18 +1,13 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase-server'
-import { redirect } from 'next/navigation'
 import { Toaster } from 'sonner'
+import { requireAdmin } from '@/lib/auth'
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  // Por ahora dejamos pasar si no hay user para desarrollo, pero en prod debería redirigir
-  // if (!user) redirect('/login')
+  const user = await requireAdmin()
 
   const navItems = [
     { label: 'Dashboard', href: '/admin' },

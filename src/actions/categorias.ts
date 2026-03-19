@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { requireAdmin } from '@/lib/auth'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function ensureUniqueSlug(supabase: any, table: string, baseSlug: string, currentId?: string) {
@@ -34,6 +35,7 @@ async function ensureUniqueSlug(supabase: any, table: string, baseSlug: string, 
 }
 
 export async function getCategories() {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
   const { data, error } = await supabaseAdmin
     .from('categorias')
@@ -48,8 +50,9 @@ export async function getCategories() {
 }
 
 export async function createCategory(formData: FormData) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
-  
+
   const nombre = formData.get('nombre') as string
   const slug = formData.get('slug') as string
   const descripcion = formData.get('descripcion') as string
@@ -92,8 +95,9 @@ export async function createCategory(formData: FormData) {
 }
 
 export async function updateCategory(id: string, formData: FormData) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
-  
+
   const nombre = formData.get('nombre') as string
   const slug = formData.get('slug') as string
   const descripcion = formData.get('descripcion') as string
@@ -137,6 +141,7 @@ export async function updateCategory(id: string, formData: FormData) {
 }
 
 export async function deleteCategory(id: string) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
   try {
     const { error } = await supabaseAdmin

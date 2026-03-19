@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { requireAdmin } from '@/lib/auth'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function ensureUniqueSlug(supabase: any, table: string, baseSlug: string, currentId?: string) {
@@ -25,6 +26,7 @@ async function ensureUniqueSlug(supabase: any, table: string, baseSlug: string, 
 }
 
 export async function createCourse(formData: FormData) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   const catIdStr = formData.get('categoria_id') as string
@@ -82,6 +84,7 @@ export async function createCourse(formData: FormData) {
 }
 
 export async function updateCourse(formData: FormData) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
   const id = formData.get('id') as string
 
@@ -169,6 +172,7 @@ export type DeleteSummary = {
 export async function getDeleteSummary(
   cursoId: string
 ): Promise<{ data: DeleteSummary } | { error: string }> {
+  await requireAdmin()
   try {
     const supabaseAdmin = getSupabaseAdmin()
 
@@ -271,6 +275,7 @@ export async function getDeleteSummary(
 export async function deleteCourse(
   cursoId: string
 ): Promise<{ success: true; storageWarnings?: string[] } | { error: string }> {
+  await requireAdmin()
   try {
     const supabaseAdmin = getSupabaseAdmin()
 

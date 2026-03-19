@@ -2,8 +2,10 @@
 
 import { createClient } from '@/lib/supabase-server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { requireAdmin } from '@/lib/auth'
 
 export async function getCupones() {
+  await requireAdmin()
   try {
     const supabase = await createClient()
     const { data, error } = await supabase
@@ -26,6 +28,7 @@ export async function createCupon(
   descuento_porcentaje: number,
   usos_maximos?: number
 ): Promise<{ success: true; cupon?: any } | { error: string }> {
+  await requireAdmin()
   try {
     const admin = getSupabaseAdmin()
 
@@ -62,6 +65,7 @@ export async function createCupon(
 }
 
 export async function toggleCupon(id: string, activo: boolean): Promise<{ success: true } | { error: string }> {
+  await requireAdmin()
   try {
     const admin = getSupabaseAdmin()
 
@@ -81,6 +85,7 @@ export async function toggleCupon(id: string, activo: boolean): Promise<{ succes
 }
 
 export async function deleteCupon(id: string): Promise<{ success: true } | { error: string }> {
+  await requireAdmin()
   try {
     const admin = getSupabaseAdmin()
 

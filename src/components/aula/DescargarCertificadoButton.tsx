@@ -6,14 +6,12 @@ import { toast } from 'sonner'
 import { Download, Loader2 } from 'lucide-react'
 
 interface DescargarCertificadoButtonProps {
-  perfilId: string
   cursoId: string
   tipo?: 'gratis' | 'pago' | 'gratis_cert_pago'
   preciosCertificado?: number | null
 }
 
 export default function DescargarCertificadoButton({
-  perfilId,
   cursoId,
   tipo = 'gratis',
   preciosCertificado,
@@ -24,7 +22,7 @@ export default function DescargarCertificadoButton({
     setLoading(true)
 
     try {
-      const result = await generarCertificado(perfilId, cursoId)
+      const result = await generarCertificado(cursoId)
 
       if ('error' in result) {
         toast.error(result.error)

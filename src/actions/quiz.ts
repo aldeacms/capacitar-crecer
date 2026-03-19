@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { requireAdmin } from '@/lib/auth'
 
 export async function saveQuestion(data: {
   leccion_id: string
@@ -10,6 +11,7 @@ export async function saveQuestion(data: {
   puntos: number
   opciones: { texto: string; es_correcta: boolean; texto_pareado?: string }[]
 }) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
@@ -109,6 +111,7 @@ export async function updateQuestion(data: {
   opciones: { id?: string; texto: string; es_correcta: boolean; texto_pareado?: string }[]
   leccionId: string
 }) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
@@ -190,6 +193,7 @@ export async function updateQuestion(data: {
 }
 
 export async function updateQuestionsOrder(questions: { id: string; orden: number }[]) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
@@ -212,6 +216,7 @@ export async function updateQuestionsOrder(questions: { id: string; orden: numbe
 }
 
 export async function deleteQuestion(id: string) {
+  await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
@@ -235,6 +240,7 @@ export async function deleteQuestion(id: string) {
 }
 
 export async function uploadQuestionImage(formData: FormData) {
+  await requireAdmin()
   const file = formData.get('imagen') as File
 
   if (!file) {

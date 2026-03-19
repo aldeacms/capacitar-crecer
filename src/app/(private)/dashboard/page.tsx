@@ -7,8 +7,8 @@ export default async function DashboardPage() {
   const supabase = await createClient()
 
   // 1. Verificar sesión
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
     redirect('/login')
   }
 
@@ -16,11 +16,11 @@ export default async function DashboardPage() {
   const { data: perfil } = await supabase
     .from('perfiles')
     .select('nombre_completo')
-    .eq('id', session.user.id)
+    .eq('id', user.id)
     .single()
 
   // 3. Fallback inteligente (por si el trigger demoró o no hay perfil aún)
-  const nombreMostrar = perfil?.nombre_completo || session.user.user_metadata?.full_name || 'Estudiante';
+  const nombreMostrar = perfil?.nombre_completo || user.user_metadata?.full_name || 'Estudiante';
 
   // 4. Obtener matrículas con join a cursos
   const { data: matriculas } = await supabase
@@ -35,7 +35,7 @@ export default async function DashboardPage() {
         imagen_url
       )
     `)
-    .eq('perfil_id', session.user.id)
+    .eq('perfil_id', user.id)
     .order('created_at', { ascending: false })
 
   return (

@@ -13,7 +13,7 @@ interface Opcion {
 interface Pregunta {
   id: string
   texto: string
-  tipo: 'multiple' | 'vf' | 'abierta' | 'pareadas'
+  tipo: 'multiple' | 'vf' | 'abierta' | 'pareados'
   orden: number
   quizzes_opciones: Opcion[]
 }
@@ -83,8 +83,8 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
 
   if (submitted) {
     const correctas = opcionesOrdenadas.filter(p => {
-      // Para preguntas abierta y pareadas, no contamos como correctas automáticamente
-      if (p.tipo === 'abierta' || p.tipo === 'pareadas') {
+      // Para preguntas abierta y pareados, no contamos como correctas automáticamente
+      if (p.tipo === 'abierta' || p.tipo === 'pareados') {
         return false
       }
       const respuestaId = respuestas[p.id]
@@ -93,7 +93,7 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
     }).length
 
     // Solo contabilizar preguntas con opciones predefinidas (multiple y vf)
-    const preguntasAutomaticas = opcionesOrdenadas.filter(p => p.tipo !== 'abierta' && p.tipo !== 'pareadas').length
+    const preguntasAutomaticas = opcionesOrdenadas.filter(p => p.tipo !== 'abierta' && p.tipo !== 'pareados').length
     const porcentaje = preguntasAutomaticas > 0
       ? Math.round((correctas / preguntasAutomaticas) * 100)
       : 0
@@ -143,7 +143,7 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
               )
             }
 
-            if (pregunta.tipo === 'pareadas') {
+            if (pregunta.tipo === 'pareados') {
               return (
                 <div
                   key={pregunta.id}
@@ -305,7 +305,7 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
               />
             )}
 
-            {pregunta.tipo === 'pareadas' && (
+            {pregunta.tipo === 'pareados' && (
               <div className="space-y-3">
                 {pregunta.quizzes_opciones.map((opcion, idx) => (
                   <div key={opcion.id} className="flex items-center gap-3">

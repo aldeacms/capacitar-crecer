@@ -432,16 +432,25 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
 
       {/* --- MODAL LECCIÓN --- */}
       {lessonModal && (
-        <div 
+        <div
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto animate-in fade-in duration-300"
             onClick={() => setLessonModal(null)}
         >
-          <div 
-            className="bg-white rounded-[4rem] p-10 md:p-14 max-w-5xl w-full shadow-[0_35px_60px_-15px_rgba(0,0,0,0.2)] border-2 border-slate-100 my-auto animate-in slide-in-from-bottom-6 duration-300"
+          <div
+            className="bg-white rounded-[3.5rem] max-w-5xl w-full shadow-[0_35px_60px_-15px_rgba(0,0,0,0.2)] border-2 border-slate-100 my-auto animate-in slide-in-from-bottom-6 duration-300 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-4xl font-black text-gray-900 mb-10 tracking-tighter">{lessonModal.leccion ? 'Editar' : 'Nueva'} Lección</h3>
-            <form onSubmit={handleLessonSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-slate-50 to-emerald-50 px-10 md:px-14 py-10 border-b border-slate-100">
+              <h3 className="text-3xl md:text-4xl font-black text-gray-900 tracking-tighter">
+                {lessonModal.leccion ? '✏️ Editar' : '➕ Nueva'} Lección
+              </h3>
+              <p className="text-sm text-slate-600 font-semibold mt-2">Configura el contenido y recursos de esta lección</p>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleLessonSubmit} className="p-10 md:p-14 space-y-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="md:col-span-2">
                 <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block mb-4">Título de la Lección</label>
                 <input 
@@ -456,92 +465,120 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
               
               <div>
                 <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block mb-4">Tipo de Formato</label>
-                <select 
-                    name="tipo" 
+                <select
+                    name="tipo"
                     defaultValue={lessonModal.leccion?.tipo || 'video'}
-                    className="w-full px-8 py-5 border-2 border-gray-300 rounded-2xl outline-none text-gray-900 font-black bg-slate-50 cursor-pointer appearance-none"
+                    className="w-full px-8 py-5 border-2 border-gray-300 rounded-2xl outline-none text-gray-900 font-black bg-white cursor-pointer appearance-none focus:border-[#28B4AD] transition-all"
                 >
-                  <option value="video">🎞️ Video / Streaming</option>
-                  <option value="texto">📄 Lectura Profunda</option>
-                  <option value="quiz">📝 Evaluación Quiz</option>
+                  <option value="video">🎬 Video / Streaming</option>
+                  <option value="texto">📖 Lectura Profunda</option>
+                  <option value="quiz">✅ Evaluación Quiz</option>
                 </select>
               </div>
 
               <div>
-                <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block mb-4">URL del Recurso (Video)</label>
-                <input 
-                    name="video_url" 
+                <div className="flex items-baseline justify-between mb-4">
+                  <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest">URL del Video</label>
+                  <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">YouTube • Vimeo • Loom • Tella.tv</span>
+                </div>
+                <input
+                    name="video_url"
                     defaultValue={lessonModal.leccion?.video_url}
-                    placeholder="Enlace aquí..." 
-                    className="w-full px-8 py-5 border-2 border-gray-300 rounded-2xl outline-none text-gray-900 font-bold transition-all text-sm h-full bg-slate-50/30" 
+                    placeholder="Pega aquí la URL del video (YouTube, Vimeo, Loom, Tella.tv o embed code)"
+                    className="w-full px-8 py-5 border-2 border-gray-300 rounded-2xl outline-none text-gray-900 font-bold transition-all text-sm bg-white focus:border-[#28B4AD] focus:bg-slate-50/50"
+                />
+                <p className="mt-3 text-[10px] text-slate-600 font-medium leading-relaxed opacity-80">
+                  Ej: https://www.youtube.com/watch?v=... | https://vimeo.com/... | https://loom.com/share/... | https://tella.tv/...
+                </p>
+              </div>
+
+              </div>
+
+              <div className="border-t-2 border-slate-100 pt-10">
+                <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block mb-4 flex items-center gap-2">
+                  📝 Contenido Pedagógico / Instrucciones
+                </label>
+                <RichTextEditor
+                  content={lessonContent}
+                  onChange={setLessonContent}
                 />
               </div>
 
-              <div className="md:col-span-2">
-                <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block mb-4">Contenido Pedagógico / Instrucciones</label>
-                <RichTextEditor 
-                  content={lessonContent} 
-                  onChange={setLessonContent} 
-                />
-              </div>
+              <div className="border-t-2 border-slate-100 pt-10">
+                <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block mb-6 flex items-center gap-2">
+                  📎 Recursos Adjuntos
+                </label>
 
-              {/* GESTIÓN DE ARCHIVOS EXISTENTES - REGRESO REGLA #3 */}
-              {lessonModal.leccion?.lecciones_archivos?.length > 0 && (
-                <div className="md:col-span-2 space-y-4">
-                    <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block">Archivos Adjuntos (Gestionar)</label>
+                {/* Archivos existentes */}
+                {lessonModal.leccion?.lecciones_archivos?.length > 0 && (
+                  <div className="space-y-4 mb-8">
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">Archivos cargados</p>
                     <div className="grid grid-cols-1 gap-3">
-                        {lessonModal.leccion.lecciones_archivos.map((file: any) => (
-                            <div key={file.id} className="flex items-center justify-between p-5 bg-white border-2 border-slate-100 rounded-2xl group transition-all hover:border-red-100">
-                                <div className="flex items-center gap-4 truncate">
-                                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                                        <FileText size={20} />
-                                    </div>
-                                    <span className="text-sm font-bold text-slate-900 truncate">{file.nombre_archivo}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <a 
-                                        href={file.archivo_url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="p-3 text-slate-700 hover:text-[#28B4AD] hover:bg-emerald-50 rounded-xl transition-all border border-transparent hover:border-emerald-100"
-                                        title="Abrir archivo"
-                                    >
-                                        <ExternalLink size={20} />
-                                    </a>
-                                    <button 
-                                        type="button"
-                                        onClick={() => handleDeleteFile(file.id, file.archivo_url)}
-                                        className="p-3 text-slate-700 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
-                                        title="Eliminar archivo"
-                                    >
-                                        <Trash size={20} />
-                                    </button>
-                                </div>
+                      {lessonModal.leccion.lecciones_archivos.map((file: any) => (
+                        <div key={file.id} className="flex items-center justify-between p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl group transition-all hover:border-slate-200">
+                          <div className="flex items-center gap-4 truncate">
+                            <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+                              <FileText size={20} />
                             </div>
-                        ))}
+                            <span className="text-sm font-bold text-slate-900 truncate">{file.nombre_archivo}</span>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <a
+                              href={file.archivo_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-2.5 text-slate-600 hover:text-[#28B4AD] hover:bg-emerald-50 rounded-xl transition-all"
+                              title="Abrir archivo"
+                            >
+                              <ExternalLink size={18} />
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteFile(file.id, file.archivo_url)}
+                              className="p-2.5 text-slate-600 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                              title="Eliminar archivo"
+                            >
+                              <Trash size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                </div>
-              )}
+                  </div>
+                )}
 
-              <div className="md:col-span-2">
-                <label className="text-[11px] font-black text-gray-700 uppercase tracking-widest block mb-4">Añadir Nuevos Archivos</label>
-                <div className="p-10 border-2 border-dashed border-gray-300 rounded-[2.5rem] bg-slate-50/20 group hover:border-[#28B4AD]/30 transition-all">
-                    <input 
-                        type="file" 
-                        name="archivos" 
-                        multiple
-                        className="w-full text-sm text-slate-700 file:mr-8 file:py-4 file:px-8 file:rounded-2xl file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-widest file:bg-white file:text-[#28B4AD] file:shadow-md hover:file:bg-emerald-50 transition-all cursor-pointer"
+                {/* Nueva carga */}
+                <div>
+                  <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-3">Agregar nuevos archivos</p>
+                  <div className="p-8 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 hover:border-[#28B4AD]/40 hover:bg-emerald-50/20 transition-all">
+                    <input
+                      type="file"
+                      name="archivos"
+                      multiple
+                      className="w-full text-sm text-slate-700 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-[9px] file:font-black file:uppercase file:tracking-widest file:bg-white file:text-[#28B4AD] file:border file:border-emerald-100 hover:file:bg-emerald-50 transition-all cursor-pointer"
                     />
-                    <p className="mt-4 text-[11px] text-gray-700 font-bold italic lowercase tracking-wider opacity-60">
-                        Selecciona uno o varios archivos para complementar la lección.
+                    <p className="mt-3 text-[10px] text-slate-600 font-medium">
+                      Soporta PDF, Word, Excel, imágenes y otros documentos
                     </p>
+                  </div>
                 </div>
               </div>
 
-              <div className="md:col-span-2 flex justify-end gap-4 pt-10 border-t-2 border-slate-50">
-                <button type="button" onClick={() => setLessonModal(null)} className="px-12 py-5 text-gray-700 font-black uppercase tracking-widest text-xs hover:bg-slate-50 rounded-[2rem] transition-all">Cancelar</button>
-                <button disabled={isPending} className="px-14 py-5 bg-[#28B4AD] text-white rounded-[2.2rem] font-black uppercase tracking-widest text-xs shadow-[0_20px_40px_-10px_rgba(40,180,173,0.3)] disabled:opacity-50 transition-all">
-                   {isPending ? 'Sincronizando...' : (lessonModal.leccion ? 'Guardar Cambios' : 'Crear Lección')}
+              {/* Modal Footer */}
+              <div className="border-t-2 border-slate-100 mt-10 pt-8 flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => setLessonModal(null)}
+                  className="px-8 py-3 text-gray-700 font-black uppercase tracking-widest text-xs hover:bg-slate-100 rounded-2xl transition-all border-2 border-transparent hover:border-slate-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="px-10 py-3 bg-[#28B4AD] hover:bg-[#219892] text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-lg shadow-emerald-200/50 disabled:opacity-50 transition-all"
+                >
+                  {isPending ? 'Procesando...' : (lessonModal.leccion ? '💾 Guardar Cambios' : '➕ Crear Lección')}
                 </button>
               </div>
             </form>

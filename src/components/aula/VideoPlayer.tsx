@@ -152,10 +152,6 @@ export default function VideoPlayer({ videoUrl }: VideoPlayerProps) {
             </button>
           </div>
 
-          {/* Platform Badge */}
-          <div className="absolute top-3 right-3 bg-black/60 text-white text-xs font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider">
-            {videoSource.platform}
-          </div>
         </div>
       </div>
 

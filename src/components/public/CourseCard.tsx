@@ -67,7 +67,7 @@ export default function CourseCard({
             <Clock size={13} className="text-[#2DB3A7]" /> {horas || 0} hrs
           </span>
           <span className="flex items-center gap-1.5">
-            <BookOpen size={13} className="text-[#2DB3A7]" /> {lessons_count || 0} módulos
+            <BookOpen size={13} className="text-[#2DB3A7]" /> {lessons_count || 0} lecciones
           </span>
 
           {/* Badge dinámico de Sence */}

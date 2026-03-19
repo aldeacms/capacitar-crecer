@@ -8,9 +8,24 @@ export default async function CoursesPage() {
 
   // Traemos cursos y categorías en paralelo
   const [{ data: courses }, { data: categories }] = await Promise.all([
-    supabase.from('cursos').select('*, categorias(nombre)').eq('estado', 'publicado').order('created_at', { ascending: false }),
+    supabase.from('cursos').select(`
+      *,
+      categorias(nombre),
+      modulos(
+        id,
+        lecciones(id)
+      )
+    `).eq('estado', 'publicado').order('created_at', { ascending: false }),
     supabase.from('categorias').select('*').order('nombre')
   ])
+
+  // Contar lecciones para cada curso
+  const coursesWithLessonCount = courses?.map((course: any) => {
+    const leccionesTotal = (course.modulos || []).reduce((sum: number, modulo: any) => {
+      return sum + (modulo.lecciones?.length || 0)
+    }, 0)
+    return { ...course, lessons_count: leccionesTotal }
+  }) || []
 
   return (
     <div className="bg-slate-50 min-h-screen">
@@ -44,7 +59,7 @@ export default async function CoursesPage() {
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {courses?.map((course: any) => (
+            {coursesWithLessonCount?.map((course: any) => (
               <CourseCard key={course.id} {...course} categoria_nombre={course.categorias?.nombre} />
             ))}
           </div>

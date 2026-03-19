@@ -205,14 +205,14 @@ export default async function CursoAulaPage({
                       <div className="space-y-4">
                         {curso.tipo_acceso === 'gratis' || (curso.tipo_acceso === 'pago' && (curso.precio_certificado ?? 0) === 0) ? (
                           <>
-                            <p className="text-green-700">Tu certificado oficial está listo para descargar.</p>
+                            <p className="text-green-700">Tu certificado está listo para descargar.</p>
                             <button className="inline-flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all">
                               <span>📄</span> Descargar Certificado
                             </button>
                           </>
                         ) : curso.tipo_acceso === 'gratis_cert_pago' ? (
                           <>
-                            <p className="text-green-700">Obtén tu certificado oficial pagando ${(curso.precio_certificado || 0).toLocaleString('es-CL')}.</p>
+                            <p className="text-green-700">Obtén tu certificado pagando ${(curso.precio_certificado || 0).toLocaleString('es-CL')}.</p>
                             <button className="inline-flex items-center gap-2 px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold transition-all">
                               <span>🎓</span> Obtener Certificado por ${(curso.precio_certificado || 0).toLocaleString('es-CL')}
                             </button>
@@ -220,7 +220,7 @@ export default async function CursoAulaPage({
                         ) : null}
                       </div>
                     ) : (
-                      <p className="text-green-700">Este programa está enfocado en la adquisición de habilidades y no emite certificación oficial.</p>
+                      <p className="text-green-700">Este programa está enfocado en la adquisición de habilidades y no emite certificado.</p>
                     )}
 
                     <div className="border-t border-green-200 pt-6">

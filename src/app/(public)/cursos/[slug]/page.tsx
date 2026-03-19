@@ -102,12 +102,12 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
 
   if (hasCert) {
     if (isCertGratis) {
-      valuePoints.unshift('Certificación oficial incluida sin costo');
+      valuePoints.unshift('Certificado incluido sin costo');
     } else if (isCertPago) {
       if (isGratisCertPago) {
-        valuePoints.unshift(`Certificación oficial (${precioCertFormatted}) al completar`);
+        valuePoints.unshift(`Certificado (${precioCertFormatted}) al completar`);
       } else {
-        valuePoints.unshift(`Certificación oficial incluida`);
+        valuePoints.unshift(`Certificado incluido`);
       }
     }
   }
@@ -156,7 +156,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
                   </a>
                 ) : (
                   <a href="#cta-inscripcion" className="inline-flex justify-center items-center gap-2 py-4 px-8 rounded-xl font-black text-white bg-[#2DB3A7] hover:bg-[#26a095] transition-all shadow-lg shadow-[#2DB3A7]/20">
-                    {isGratis ? 'Comenzar Curso Gratis' : 'Inscribirme y Pagar'} <ArrowRight size={20} />
+                    {(isGratis || isGratisCertPago) ? 'Acceder al Curso Gratis' : 'Comprar Curso'} <ArrowRight size={20} />
                   </a>
                 )}
                 <div className="flex flex-col justify-center px-4">
@@ -242,18 +242,20 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
                     <PlayCircle size={16} /> E-learning
                   </div>
                   <h3 className="text-4xl font-black text-slate-900 tracking-tighter">
-                    {isGratis ? 'Comienza a aprender gratis' : 'Inicia tu formación ahora mismo'}
+                    {(isGratis || isGratisCertPago) ? 'Comienza a aprender gratis' : 'Inicia tu formación ahora mismo'}
                   </h3>
                 </div>
 
                 <p className="text-slate-600 text-lg leading-relaxed font-medium">
-                  Obtén acceso inmediato tras completar tu inscripción.
+                  {isGratis || isGratisCertPago ? 'Obtén acceso inmediato tras completar tu inscripción.' : 'Tras completar el pago, tendrás acceso inmediato al contenido.'}
                   {hasCert ? (
-                    isCertGratis 
-                      ? ' Este programa incluye certificación oficial sin costo adicional al finalizar.'
-                      : ` Accede al contenido sin costo. La certificación oficial es opcional y tiene un valor de ${precioCertFormatted}.`
+                    isCertGratis
+                      ? ' Este programa incluye certificado sin costo adicional al finalizar.'
+                      : isGratisCertPago
+                        ? ` El certificado es opcional y tiene un valor de ${precioCertFormatted}.`
+                        : ` El certificado está incluido o puede adquirirse como complemento.`
                   ) : (
-                    ' Este programa está enfocado en la adquisición de habilidades y no emite certificación oficial.'
+                    ' Este programa está enfocado en la adquisición de habilidades y no emite certificado.'
                   )}
                 </p>
 

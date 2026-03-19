@@ -19,15 +19,19 @@ export const PasswordSchema = z
 export const UsuarioSchema = z.object({
   email: z.string().email('Email inválido'),
   nombre_completo: z.string().min(2, 'Nombre debe tener al menos 2 caracteres').max(200),
-  rut: z.string().min(1, 'RUT es requerido'),
-  rol: z.enum(['alumno', 'admin']),
+  rut: z.string().min(1, 'RUT es requerido').optional(),
   password: PasswordSchema.optional(),
 })
 
 export const ActualizarPerfilSchema = z.object({
   nombre_completo: z.string().min(2).max(200).optional(),
   rut: z.string().optional(),
-  rol: z.enum(['alumno', 'admin']).optional(),
+})
+
+// Admin users are managed separately via admin_users table
+export const CrearAdminSchema = z.object({
+  userId: z.string().uuid('ID de usuario inválido'),
+  email: z.string().email('Email inválido').optional(),
 })
 
 // ===== COURSE SCHEMAS =====

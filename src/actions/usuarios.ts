@@ -25,11 +25,22 @@ export async function getUsuarios() {
     // Obtener perfiles
     const { data: perfiles, error: perfilesError } = await supabaseAdmin
       .from('perfiles')
-      .select('id, nombre_completo, rut, rol, created_at')
+      .select('id, nombre_completo, rut, created_at')
 
     if (perfilesError) {
       throw new Error(`Error obteniendo perfiles: ${perfilesError.message}`)
     }
+
+    // Obtener admins
+    const { data: admins, error: adminsError } = await supabaseAdmin
+      .from('admin_users')
+      .select('id')
+
+    if (adminsError) {
+      console.warn('Warning: Could not fetch admin_users, admin roles may be incomplete')
+    }
+
+    const adminIds = new Set((admins || []).map((a: any) => a.id))
 
     // Obtener count de cursos por usuario
     const { data: matriculas, error: matriculasError } = await supabaseAdmin
@@ -44,13 +55,14 @@ export async function getUsuarios() {
     const usuariosConInfo = users.map((authUser: any) => {
       const perfil = perfiles.find((p: any) => p.id === authUser.id)
       const cursosCount = matriculas.filter((m: any) => m.perfil_id === authUser.id).length
+      const isAdmin = adminIds.has(authUser.id)
 
       return {
         id: authUser.id,
         email: authUser.email,
         nombre_completo: perfil?.nombre_completo || 'Sin nombre',
         rut: perfil?.rut || '-',
-        rol: perfil?.rol || 'alumno',
+        rol: isAdmin ? 'admin' : 'alumno',
         created_at: perfil?.created_at || authUser.created_at,
         cursos_count: cursosCount
       }
@@ -65,13 +77,14 @@ export async function getUsuarios() {
 
 /**
  * Crear un nuevo usuario (auth + perfil)
+ * Note: rol is determined by presence in admin_users table, not stored in perfiles
  */
 export async function crearUsuario(data: {
   email: string
   password: string
   nombre_completo: string
-  rut: string
-  rol: 'admin' | 'alumno'
+  rut?: string
+  rol?: 'admin' | 'alumno'
 }) {
   await requireAdmin()
 
@@ -82,6 +95,7 @@ export async function crearUsuario(data: {
   }
 
   const supabaseAdmin = getSupabaseAdmin()
+  const isAdmin = data.rol === 'admin'
 
   try {
     // 1. Crear usuario en auth
@@ -95,15 +109,14 @@ export async function crearUsuario(data: {
       throw new Error(`Error creando usuario auth: ${authError?.message}`)
     }
 
-    // 2. Crear perfil
+    // 2. Crear perfil (sin rol - eso se maneja vía admin_users)
     const { error: perfilError } = await supabaseAdmin
       .from('perfiles')
       .insert([
         {
           id: authUser.user.id,
           nombre_completo: parsed.data.nombre_completo,
-          rut: parsed.data.rut,
-          rol: parsed.data.rol
+          rut: parsed.data.rut || null
         }
       ])
 
@@ -111,6 +124,22 @@ export async function crearUsuario(data: {
       // Si falla el perfil, eliminar el usuario auth creado
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
       throw new Error(`Error creando perfil: ${perfilError.message}`)
+    }
+
+    // 3. Si es admin, agregar a tabla admin_users
+    if (isAdmin) {
+      const { error: adminError } = await supabaseAdmin
+        .from('admin_users')
+        .insert([
+          {
+            id: authUser.user.id,
+            is_active: true
+          }
+        ])
+
+      if (adminError) {
+        throw new Error(`Error asignando rol admin: ${adminError.message}`)
+      }
     }
 
     revalidatePath('/admin/alumnos')
@@ -159,19 +188,19 @@ export async function cambiarPassword(userId: string, newPassword: string) {
 
 /**
  * Actualizar datos del perfil
+ * Note: rol is managed via admin_users table, not here
  */
 export async function actualizarPerfil(
   userId: string,
   data: {
     nombre_completo?: string
     rut?: string
-    rol?: 'admin' | 'alumno'
   }
 ) {
   await requireAdmin()
 
   // Validar inputs
-  const userIdParsed = z.string().uuid().safeParse(userId)
+  const userIdParsed = z.string().uuid('ID de usuario inválido').safeParse(userId)
   const dataParsed = ActualizarPerfilSchema.safeParse(data)
 
   if (!userIdParsed.success) {
@@ -251,6 +280,18 @@ export async function eliminarUsuario(userId: string) {
  */
 export async function inscribirEnCurso(perfilId: string, cursoId: string) {
   await requireAdmin()
+
+  // Validar UUIDs
+  const perfilIdParsed = z.string().uuid('ID de perfil inválido').safeParse(perfilId)
+  const cursoIdParsed = z.string().uuid('ID de curso inválido').safeParse(cursoId)
+
+  if (!perfilIdParsed.success) {
+    return { error: perfilIdParsed.error.issues[0]?.message || 'ID de perfil inválido' }
+  }
+  if (!cursoIdParsed.success) {
+    return { error: cursoIdParsed.error.issues[0]?.message || 'ID de curso inválido' }
+  }
+
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
@@ -258,8 +299,8 @@ export async function inscribirEnCurso(perfilId: string, cursoId: string) {
     const { data: existente } = await supabaseAdmin
       .from('matriculas')
       .select('id')
-      .eq('perfil_id', perfilId)
-      .eq('curso_id', cursoId)
+      .eq('perfil_id', perfilIdParsed.data)
+      .eq('curso_id', cursoIdParsed.data)
       .single()
 
     if (existente) {
@@ -271,8 +312,8 @@ export async function inscribirEnCurso(perfilId: string, cursoId: string) {
       .from('matriculas')
       .insert([
         {
-          perfil_id: perfilId,
-          curso_id: cursoId,
+          perfil_id: perfilIdParsed.data,
+          curso_id: cursoIdParsed.data,
           estado_pago_curso: 'gratis',
           progreso_porcentaje: 0
         }
@@ -296,13 +337,20 @@ export async function inscribirEnCurso(perfilId: string, cursoId: string) {
  */
 export async function desinscribirDeCurso(matriculaId: string) {
   await requireAdmin()
+
+  // Validar UUID
+  const matriculaIdParsed = z.string().uuid('ID de matrícula inválido').safeParse(matriculaId)
+  if (!matriculaIdParsed.success) {
+    return { error: matriculaIdParsed.error.issues[0]?.message || 'ID de matrícula inválido' }
+  }
+
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
     const { error } = await supabaseAdmin
       .from('matriculas')
       .delete()
-      .eq('id', matriculaId)
+      .eq('id', matriculaIdParsed.data)
 
     if (error) {
       throw new Error(`Error desinscribiendo usuario: ${error.message}`)

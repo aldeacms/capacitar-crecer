@@ -53,28 +53,45 @@ export default async function CursoAulaPage({
           lecciones_archivos ( id, nombre_archivo, archivo_url ),
           quizzes_preguntas (
             id, texto, tipo, orden,
-            quizzes_opciones ( id, texto, es_correcta, orden )
+            quizzes_opciones ( id, texto, es_correcta )
           )
         )
       )
     `
     )
     .eq('slug', slug)
-    .single()
+    .maybeSingle()
 
-  if (cursoError || !curso) {
+  console.log('=== AULA VIRTUAL DEBUG ===')
+  console.log('slug:', slug)
+  console.log('perfil.id:', perfil.id)
+  console.log('cursoError:', cursoError)
+  console.log('curso encontrado:', curso?.id, curso?.titulo)
+
+  if (cursoError) {
+    console.error('❌ Error al obtener curso:', cursoError)
+    redirect('/cursos')
+  }
+
+  if (!curso) {
+    console.error('❌ Curso no encontrado con slug:', slug)
     redirect('/cursos')
   }
 
   // Verificar que el usuario tenga matrícula en este curso
-  const { data: matricula } = await supabase
+  const { data: matricula, error: matriculaError } = await supabase
     .from('matriculas')
     .select('id, progreso_porcentaje')
     .eq('perfil_id', perfil.id)
     .eq('curso_id', curso.id)
-    .single()
+    .maybeSingle()
+
+  console.log('matriculaError:', matriculaError)
+  console.log('matricula encontrada:', matricula?.id)
+  console.log('========================')
 
   if (!matricula) {
+    console.error('❌ Usuario no tiene matrícula en este curso')
     redirect(`/cursos/${slug}`)
   }
 

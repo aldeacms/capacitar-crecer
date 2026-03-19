@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth'
+import { QuestionSchema } from '@/lib/validations'
+import { z } from 'zod'
 
 export async function saveQuestion(data: {
   leccion_id: string
@@ -12,6 +14,13 @@ export async function saveQuestion(data: {
   opciones: { texto: string; es_correcta: boolean; texto_pareado?: string }[]
 }) {
   await requireAdmin()
+
+  // Validar input
+  const parsed = QuestionSchema.safeParse(data)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Datos de pregunta inválidos' }
+  }
+
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
@@ -245,6 +254,17 @@ export async function uploadQuestionImage(formData: FormData) {
 
   if (!file) {
     return { error: 'No image provided' }
+  }
+
+  // Validar tipo MIME
+  const validMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+  if (!validMimes.includes(file.type)) {
+    return { error: 'Solo se permiten archivos de imagen (JPG, PNG, GIF, WebP)' }
+  }
+
+  // Validar tamaño (máximo 5MB)
+  if (file.size > 5 * 1024 * 1024) {
+    return { error: 'La imagen no puede superar 5MB' }
   }
 
   const fileExt = file.name.split('.').pop()

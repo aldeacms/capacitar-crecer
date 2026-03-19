@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth'
+import { CuponSchema } from '@/lib/validations'
 
 export async function getCupones() {
   await requireAdmin()
@@ -29,24 +30,28 @@ export async function createCupon(
   usos_maximos?: number
 ): Promise<{ success: true; cupon?: any } | { error: string }> {
   await requireAdmin()
+
+  // Validar input con Zod
+  const parsed = CuponSchema.safeParse({
+    codigo,
+    descuento_porcentaje,
+    usos_maximos,
+  })
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Datos de cupón inválidos' }
+  }
+
   try {
     const admin = getSupabaseAdmin()
-
-    if (!codigo || codigo.trim() === '') {
-      return { error: 'El código es requerido' }
-    }
-
-    if (descuento_porcentaje < 1 || descuento_porcentaje > 100) {
-      return { error: 'El descuento debe estar entre 1 y 100' }
-    }
 
     const { data, error } = await admin
       .from('cupones')
       .insert({
-        codigo: codigo.toUpperCase().trim(),
-        descuento_porcentaje,
+        codigo: parsed.data.codigo.toUpperCase().trim(),
+        descuento_porcentaje: parsed.data.descuento_porcentaje,
         activo: true,
-        usos_maximos: usos_maximos || null,
+        usos_maximos: parsed.data.usos_maximos || null,
       })
       .select()
       .single()

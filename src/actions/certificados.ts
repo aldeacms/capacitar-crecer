@@ -8,6 +8,8 @@ import { generateCertificatePDF } from '@/lib/certificados/pdf-generator'
 import { getStoragePath, uploadCertificate, certificateExistsInStorage } from '@/lib/certificados/storage'
 import { CertificateRecord, GenerateCertificateResult } from '@/lib/certificados/types'
 import { requireAuth, requireAdmin } from '@/lib/auth'
+import { CertificateGenerationSchema } from '@/lib/validations'
+import { z } from 'zod'
 
 /**
  * Generar certificado PDF para el usuario autenticado
@@ -16,6 +18,13 @@ import { requireAuth, requireAdmin } from '@/lib/auth'
  */
 export async function generarCertificado(cursoId: string): Promise<GenerateCertificateResult> {
   const user = await requireAuth()
+
+  // Validar cursoId
+  const parsed = CertificateGenerationSchema.safeParse({ cursoId })
+  if (!parsed.success) {
+    return { success: false, certificateId: '', downloadUrl: '', fileName: '', error: 'ID de curso inválido' }
+  }
+
   const perfilId = user.id
   const supabaseAdmin = getSupabaseAdmin()
 

@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth'
+import { CursoSchema } from '@/lib/validations'
+import { z } from 'zod'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function ensureUniqueSlug(supabase: any, table: string, baseSlug: string, currentId?: string) {
@@ -58,6 +60,16 @@ export async function createCourse(formData: FormData) {
   }
 
   const imageFile = formData.get('imagen_file') as File | null
+
+  // Validar datos principales
+  const dataParsed = CursoSchema.safeParse({
+    ...insertData,
+    categoria_id: insertData.categoria_id || undefined,
+  })
+
+  if (!dataParsed.success) {
+    return { error: dataParsed.error.issues[0]?.message || 'Datos de curso inválidos' }
+  }
 
   try {
     insertData.slug = await ensureUniqueSlug(supabaseAdmin, 'cursos', insertData.slug)
@@ -120,6 +132,22 @@ export async function updateCourse(formData: FormData) {
 
   const imageFile = formData.get('imagen_file') as File | null
   let imagen_url = formData.get('current_imagen_url') as string
+
+  // Validar ID del curso
+  const idParsed = z.string().uuid().safeParse(id)
+  if (!idParsed.success) {
+    return { error: 'ID del curso inválido' }
+  }
+
+  // Validar datos del curso
+  const dataParsed = CursoSchema.safeParse({
+    ...updateData,
+    categoria_id: updateData.categoria_id || undefined,
+  })
+
+  if (!dataParsed.success) {
+    return { error: dataParsed.error.issues[0]?.message || 'Datos de curso inválidos' }
+  }
 
   try {
     updateData.slug = await ensureUniqueSlug(supabaseAdmin, 'cursos', updateData.slug, id)

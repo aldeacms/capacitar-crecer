@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth'
+import { CategorySchema } from '@/lib/validations'
+import { z } from 'zod'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function ensureUniqueSlug(supabase: any, table: string, baseSlug: string, currentId?: string) {
@@ -51,13 +53,20 @@ export async function getCategories() {
 
 export async function createCategory(formData: FormData) {
   await requireAdmin()
-  const supabaseAdmin = getSupabaseAdmin()
 
   const nombre = formData.get('nombre') as string
   const slug = formData.get('slug') as string
   const descripcion = formData.get('descripcion') as string
   const imageFile = formData.get('imagen_file') as File | null
   let imagen_url = ''
+
+  // Validar input
+  const parsed = CategorySchema.safeParse({ nombre, slug, descripcion })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Datos de categoría inválidos' }
+  }
+
+  const supabaseAdmin = getSupabaseAdmin()
 
   try {
     const finalSlug = await ensureUniqueSlug(supabaseAdmin, 'categorias', slug)
@@ -96,13 +105,26 @@ export async function createCategory(formData: FormData) {
 
 export async function updateCategory(id: string, formData: FormData) {
   await requireAdmin()
-  const supabaseAdmin = getSupabaseAdmin()
 
   const nombre = formData.get('nombre') as string
   const slug = formData.get('slug') as string
   const descripcion = formData.get('descripcion') as string
   const imageFile = formData.get('imagen_file') as File | null
   let imagen_url = formData.get('current_imagen_url') as string
+
+  // Validar ID
+  const idParsed = z.string().uuid().safeParse(id)
+  if (!idParsed.success) {
+    return { error: 'ID de categoría inválido' }
+  }
+
+  // Validar datos
+  const parsed = CategorySchema.safeParse({ nombre, slug, descripcion })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Datos de categoría inválidos' }
+  }
+
+  const supabaseAdmin = getSupabaseAdmin()
 
   try {
     const finalSlug = await ensureUniqueSlug(supabaseAdmin, 'categorias', slug, id)

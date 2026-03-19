@@ -4,6 +4,8 @@
 import { revalidatePath } from 'next/cache'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth'
+import { LeccionSchema } from '@/lib/validations'
+import { z } from 'zod'
 
 // Límite máximo de carga: 50 MB
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024
@@ -93,7 +95,6 @@ export async function deleteModule(id: string, cursoId: string) {
 
 export async function createLesson(formData: FormData) {
   await requireAdmin()
-  const supabaseAdmin = getSupabaseAdmin()
 
   const modulo_id = formData.get('modulo_id') as string
   const curso_id = formData.get('curso_id') as string
@@ -111,6 +112,19 @@ export async function createLesson(formData: FormData) {
       error: `El tamaño total de los archivos (${totalSizeMB} MB) supera el límite permitido de ${MAX_UPLOAD_SIZE_MB} MB.`
     }
   }
+
+  // Validar campos requeridos
+  const parsed = z.object({
+    modulo_id: z.string().uuid(),
+    curso_id: z.string().uuid(),
+    titulo: z.string().min(1),
+  }).safeParse({ modulo_id, curso_id, titulo })
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Datos de lección inválidos' }
+  }
+
+  const supabaseAdmin = getSupabaseAdmin()
 
   try {
     const { data: lastLesson } = await supabaseAdmin

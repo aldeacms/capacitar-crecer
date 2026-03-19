@@ -69,16 +69,21 @@ function SortableItem({ id, children, className }: { id: string, children: React
 
 // --- MAIN COMPONENT ---
 
+const MAX_UPLOAD_SIZE_MB = 50
+const MAX_UPLOAD_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024
+
 export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId: string, modulosInitial: any[] }) {
   const [isPending, startTransition] = useTransition()
   const [hasMounted, setHasMounted] = useState(false)
-  
+
   // Modales
   const [showModuleModal, setShowModuleModal] = useState<{ id?: string, titulo?: string } | null>(null)
   const [lessonModal, setLessonModal] = useState<{ moduloId: string, leccion?: any } | null>(null)
-  
+
   const [error, setError] = useState<string | null>(null)
   const [lessonContent, setLessonContent] = useState('')
+  const [fileSizeError, setFileSizeError] = useState<string | null>(null)
+  const [selectedFilesSize, setSelectedFilesSize] = useState<number>(0)
 
   // Hidratación segura para DND
   useEffect(() => {
@@ -140,25 +145,43 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
   const handleLessonSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
-    
+
     const formData = new FormData(e.currentTarget)
     formData.append('curso_id', cursoId)
     formData.append('contenido_html', lessonContent)
 
-    startTransition(async () => {
-      let result
-      if (lessonModal?.leccion?.id) {
-        formData.append('id', lessonModal.leccion.id)
-        result = await updateLesson(formData)
-      } else {
-        formData.append('modulo_id', lessonModal!.moduloId)
-        result = await createLesson(formData)
-      }
+    // Validación final antes de enviar
+    if (fileSizeError) {
+      setError(fileSizeError)
+      return
+    }
 
-      if (result?.error) setError(result.error)
-      else {
-        setLessonModal(null)
-        setLessonContent('')
+    startTransition(async () => {
+      try {
+        let result
+        if (lessonModal?.leccion?.id) {
+          formData.append('id', lessonModal.leccion.id)
+          result = await updateLesson(formData)
+        } else {
+          formData.append('modulo_id', lessonModal!.moduloId)
+          result = await createLesson(formData)
+        }
+
+        if (result?.error) {
+          // Mejorar mensajes de error del servidor
+          let errorMsg = result.error
+          if (errorMsg.includes('Body exceeded')) {
+            errorMsg = `❌ El tamaño de los datos supera el límite permitido. Intenta con archivos más pequeños o menos archivos.`
+          }
+          setError(errorMsg)
+        } else {
+          setLessonModal(null)
+          setLessonContent('')
+          setFileSizeError(null)
+          setSelectedFilesSize(0)
+        }
+      } catch (err) {
+        setError(`Error inesperado: ${err instanceof Error ? err.message : 'Intenta de nuevo'}`)
       }
     })
   }
@@ -177,6 +200,32 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
       const result = await deleteLessonFile(fileId, filePath, cursoId)
       if (result?.error) setError(result.error)
     })
+  }
+
+  // Validar tamaño de archivos
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files) {
+      setFileSizeError(null)
+      setSelectedFilesSize(0)
+      return
+    }
+
+    let totalSize = 0
+    for (let i = 0; i < files.length; i++) {
+      totalSize += files[i].size
+    }
+
+    setSelectedFilesSize(totalSize)
+
+    if (totalSize > MAX_UPLOAD_SIZE) {
+      const sizeMB = (totalSize / (1024 * 1024)).toFixed(2)
+      setFileSizeError(
+        `⚠️ El tamaño total de los archivos (${sizeMB} MB) supera el límite permitido de ${MAX_UPLOAD_SIZE_MB} MB. Por favor, selecciona archivos más pequeños o menos archivos.`
+      )
+    } else {
+      setFileSizeError(null)
+    }
   }
 
   // --- Drag & Drop Handlers ---
@@ -434,7 +483,11 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
       {lessonModal && (
         <div
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto animate-in fade-in duration-300"
-            onClick={() => setLessonModal(null)}
+            onClick={() => {
+              setLessonModal(null)
+              setFileSizeError(null)
+              setSelectedFilesSize(0)
+            }}
         >
           <div
             className="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-slate-100 my-auto animate-in slide-in-from-bottom-6 duration-300 overflow-hidden"
@@ -542,16 +595,34 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                 )}
 
                 {/* Agregar archivos */}
-                <div className="p-4 border border-dashed border-slate-300 rounded-lg bg-slate-50 hover:border-slate-400 hover:bg-slate-100 transition-all">
+                <div className={`p-4 border border-dashed rounded-lg transition-all ${
+                  fileSizeError
+                    ? 'border-red-300 bg-red-50'
+                    : 'border-slate-300 bg-slate-50 hover:border-slate-400 hover:bg-slate-100'
+                }`}>
                   <input
                     type="file"
                     name="archivos"
                     multiple
+                    onChange={handleFileChange}
                     className="w-full text-sm text-slate-600 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#28B4AD] file:text-white hover:file:bg-[#219892] transition-all cursor-pointer"
                   />
-                  <p className="mt-2 text-xs text-slate-500">
-                    PDF, Word, Excel, imágenes, etc.
-                  </p>
+                  {fileSizeError ? (
+                    <p className="mt-2 text-xs text-red-600 font-semibold">
+                      {fileSizeError}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="mt-2 text-xs text-slate-500">
+                        PDF, Word, Excel, imágenes, etc. Máximo {MAX_UPLOAD_SIZE_MB} MB en total
+                      </p>
+                      {selectedFilesSize > 0 && (
+                        <p className="mt-1 text-xs text-slate-600">
+                          📦 Tamaño actual: {(selectedFilesSize / (1024 * 1024)).toFixed(2)} MB / {MAX_UPLOAD_SIZE_MB} MB
+                        </p>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -559,14 +630,18 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
               <div className="border-t pt-6 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setLessonModal(null)}
+                  onClick={() => {
+                    setLessonModal(null)
+                    setFileSizeError(null)
+                    setSelectedFilesSize(0)
+                  }}
                   className="px-6 py-2 text-gray-600 font-semibold text-sm hover:bg-slate-100 rounded-lg transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  disabled={isPending}
+                  disabled={isPending || !!fileSizeError}
                   className="px-6 py-2 bg-[#28B4AD] hover:bg-[#219892] text-white rounded-lg font-semibold text-sm disabled:opacity-50 transition-all"
                 >
                   {isPending ? 'Guardando...' : (lessonModal.leccion ? 'Guardar' : 'Crear')}

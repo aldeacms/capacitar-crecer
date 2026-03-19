@@ -1,36 +1,231 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📚 Capacitar y Crecer - LMS Production Ready
 
-## Getting Started
+**Capacitar y Crecer** es un **Learning Management System (LMS)** enterprise-grade diseñado específicamente para instituciones educativas y OTECs en Chile.
 
-First, run the development server:
+## ✨ Características Principales
+
+✅ **4 Modelos de Negocio** - Soporta gratis, pago, freemium y cotización
+✅ **Aula Virtual Completa** - Video, texto, quizzes, progreso en tiempo real
+✅ **Gestión de Usuarios** - Crear, editar, eliminar, enrolar desde admin
+✅ **Sistema de Cupones** - Descuentos dinámicos con límites de uso
+✅ **Email Integrado** - Resend para envío de bienvenida y comunicaciones
+✅ **Certificados** - Generación automática al completar cursos
+✅ **Admin Panel** - Dashboard completo para gestión de cursos y usuarios
+✅ **Responsive Design** - Mobile-first, WCAG accessibility
+
+## 🚀 Quick Start
+
+### Requisitos
+- Node.js 20+
+- npm o pnpm
+- Cuenta Supabase (gratuita)
+
+### Instalación
+
+```bash
+# Clonar repositorio
+git clone https://github.com/tu-org/capacitar-crecer.git
+cd "Capacitar y Crecer"
+
+# Instalar dependencias
+npm install
+
+# Configurar variables de entorno
+cp .env.example .env.local
+# Editar .env.local con tus credenciales de Supabase y Resend
+```
+
+### Variables de Entorno Necesarias
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+
+# Resend (Email)
+RESEND_API_KEY=re_xxxxx
+RESEND_FROM_EMAIL=no-reply@tu-dominio.com
+```
+
+### Ejecutar Desarrollo
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build para Producción
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## 📁 Estructura del Proyecto
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/                      # Next.js App Router
+│   ├── (public)/            # Rutas públicas
+│   ├── (private)/           # Rutas privadas (alumnos)
+│   ├── admin/               # Panel de administración
+│   └── api/                 # Rutas API
+├── actions/                 # Server Actions (lógica backend)
+├── components/              # React Components
+│   ├── admin/              # Componentes del admin
+│   ├── ui/                 # Componentes reutilizables
+│   └── ...
+├── lib/                     # Utilidades y helpers
+│   ├── supabase-server.ts  # Cliente Supabase servidor
+│   ├── supabase-admin.ts   # Cliente admin (service role)
+│   └── resend.ts           # Cliente Resend
+├── middleware.ts            # Middleware de autenticación
+└── types/                   # TypeScript types
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🔐 Autenticación
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+El sistema usa **Supabase Auth** con sesiones basadas en cookies:
 
-## Deploy on Vercel
+- **Registro:** `/registro` - Crea usuario en auth + perfil automático
+- **Login:** `/login` - Email/Password
+- **Logout:** Session cookie se limpia automáticamente
+- **Rutas privadas:** Protegidas por middleware en `src/middleware.ts`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📚 Funcionalidades Principales
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Para Alumnos
+- ✅ Ver catálogo de cursos públicos
+- ✅ Inscribirse a cursos gratis
+- ✅ Dashboard personal con cursos inscritos
+- ✅ Aula virtual con video, texto, quizzes
+- ✅ Marcar lecciones como completadas
+- ✅ Descargar certificados
+- ✅ Seguimiento de progreso en tiempo real
+
+### Para Administradores
+- ✅ CRUD completo de cursos
+- ✅ Editor de módulos y lecciones (Drag & Drop)
+- ✅ Upload de archivos (videos, PDFs, imágenes)
+- ✅ Sistema de quizzes con editor visual
+- ✅ Gestión de cupones (crear, activar, desactivar)
+- ✅ Gestión de usuarios (crear, editar, eliminar, enrolar)
+- ✅ Enviar emails directo a usuarios
+- ✅ Ver inscripciones y progreso de alumnos
+
+## 🔧 Stack Tecnológico
+
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | Next.js 16, React 19, TypeScript |
+| **Styling** | Tailwind CSS, Lucide Icons |
+| **Backend** | Supabase (PostgreSQL), Server Actions |
+| **Auth** | Supabase Auth, @supabase/ssr |
+| **Email** | Resend API |
+| **Upload** | Supabase Storage |
+| **State** | React Server Components |
+| **Rich Text** | TipTap Editor |
+| **UI Components** | Sonner (Toasts), @dnd-kit (Drag & Drop) |
+
+## 📊 Modelos de Acceso
+
+El sistema soporta 5 tipos de cursos:
+
+| Tipo | Inscripción | Acceso | Certificado |
+|------|-------------|--------|------------|
+| **Gratis** | Automática | Inmediato | Gratis |
+| **Gratis + Cert Pago** | Automática | Inmediato | Pago ($) |
+| **De Pago** | Requiere cupón | Post-pago | Incluido |
+| **Pago Inmediato** | Requiere cupón | Inmediato | Incluido |
+| **Cotizar** | Formulario | Manual | Manual |
+
+## 🗄️ Base de Datos
+
+PostgreSQL en Supabase con tablas para:
+- `perfiles` - Datos del usuario
+- `cursos` - Definición de cursos
+- `matriculas` - Inscripciones
+- `modulos` - Estructura del curso
+- `lecciones` - Contenido individual
+- `quizzes_preguntas` - Evaluaciones
+- `cupones` - Sistema de descuentos
+
+Ver `proyecto.md` para esquema completo.
+
+## 🔒 Seguridad
+
+- ✅ RLS (Row Level Security) en Supabase
+- ✅ Service Role Key para operaciones administrativas
+- ✅ Validación en cliente y servidor
+- ✅ Autenticación por middleware
+- ✅ CORS habilitado
+- ✅ Manejo de errores sin revelar información sensible
+
+## 📧 Email
+
+Integración con **Resend**:
+- Email de bienvenida automático al crear usuario
+- Envío de emails directo desde admin panel
+- Plantillas HTML profesionales
+- Manejo de errores controlado
+
+```typescript
+// Enviar email
+await enviarEmail({
+  to: 'usuario@ejemplo.com',
+  subject: 'Bienvenido',
+  html: '<h1>¡Hola!</h1>'
+})
+```
+
+## 📦 Límites de Carga
+
+- **Máximo por operación:** 50 MB
+- **Validación cliente:** Real-time feedback
+- **Validación servidor:** Rechazo controlado sin crashes
+
+## 🚀 Despliegue
+
+### En Vercel (Recomendado)
+
+```bash
+# 1. Conectar repositorio a Vercel
+# 2. Configurar variables de entorno en Vercel dashboard
+# 3. Push a main dispara auto-deploy
+```
+
+### Self-hosted
+
+```bash
+npm run build
+NODE_ENV=production npm start
+```
+
+## 📖 Documentación
+
+- **[proyecto.md](proyecto.md)** - Documento maestro completo
+- **[SENIOR-STANDARDS.md](SENIOR-STANDARDS.md)** - Estándares de desarrollo
+
+## 🤝 Contribuir
+
+1. Fork el repositorio
+2. Crea rama: `git checkout -b feature/mi-feature`
+3. Commit cambios: `git commit -m 'Agregar feature'`
+4. Push a rama: `git push origin feature/mi-feature`
+5. Abre Pull Request
+
+## 📧 Soporte
+
+Para reportar bugs o sugerir features, abre un issue en GitHub.
+
+## 📄 Licencia
+
+Todos los derechos reservados © 2026 Capacitar y Crecer
+
+---
+
+**Versión:** 1.0.0 (Production Ready)
+**Última actualización:** 19 de Marzo, 2026
+**Mantainer:** Daniel

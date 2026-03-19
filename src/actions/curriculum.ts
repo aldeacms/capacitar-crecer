@@ -4,6 +4,22 @@
 import { revalidatePath } from 'next/cache'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 
+// Límite máximo de carga: 50 MB
+const MAX_UPLOAD_SIZE = 50 * 1024 * 1024
+const MAX_UPLOAD_SIZE_MB = 50
+
+/**
+ * Calcula el tamaño total de los archivos en FormData
+ */
+function getTotalFormDataSize(formData: FormData): number {
+  let totalSize = 0
+  const files = formData.getAll('archivos') as File[]
+  for (const file of files) {
+    totalSize += file.size
+  }
+  return totalSize
+}
+
 // --- MÓDULOS ---
 
 export async function createModule(data: { curso_id: string, titulo: string, orden: number }) {
@@ -82,6 +98,15 @@ export async function createLesson(formData: FormData) {
   const contenido_html = formData.get('contenido_html') as string
   const files = formData.getAll('archivos') as File[]
 
+  // Validar tamaño total de archivos
+  const totalSize = getTotalFormDataSize(formData)
+  if (totalSize > MAX_UPLOAD_SIZE) {
+    const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2)
+    return {
+      error: `El tamaño total de los archivos (${totalSizeMB} MB) supera el límite permitido de ${MAX_UPLOAD_SIZE_MB} MB.`
+    }
+  }
+
   try {
     const { data: lastLesson } = await supabaseAdmin
       .from('lecciones')
@@ -153,6 +178,15 @@ export async function updateLesson(formData: FormData) {
   const video_url = formData.get('video_url') as string
   const contenido_html = formData.get('contenido_html') as string
   const files = formData.getAll('archivos') as File[]
+
+  // Validar tamaño total de archivos
+  const totalSize = getTotalFormDataSize(formData)
+  if (totalSize > MAX_UPLOAD_SIZE) {
+    const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2)
+    return {
+      error: `El tamaño total de los archivos (${totalSizeMB} MB) supera el límite permitido de ${MAX_UPLOAD_SIZE_MB} MB.`
+    }
+  }
 
   try {
     const { error: updateError } = await supabaseAdmin

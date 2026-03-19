@@ -1,60 +1,102 @@
-# Documento Maestro de Arquitectura y Desarrollo
-**Proyecto:** Capacitar y Crecer LMS
-**Fecha de Actualización:** Marzo 18, 2026
-**Estado:** MVP Funcional - Sistema de Cursos con Checkout y Cupones Operativo
+# 📚 Capacitar y Crecer LMS - Documento Maestro
+
+**Proyecto:** Capacitar y Crecer - Learning Management System para OTEC
+**Fecha de Actualización:** 19 de Marzo, 2026
+**Estado:** MVP Funcional - Production Ready
+**Versión:** 1.0.0
 
 ---
 
-## 1. Visión General
-Capacitar y Crecer es un Sistema de Gestión de Aprendizaje (LMS) diseñado para el mercado chileno. Soporta **4 modelos de negocio distintos:**
+## 📋 Tabla de Contenidos
+
+1. [Visión General](#visión-general)
+2. [Stack Tecnológico](#stack-tecnológico)
+3. [Arquitectura y Principios](#arquitectura-y-principios)
+4. [Base de Datos](#base-de-datos)
+5. [Módulos Implementados](#módulos-implementados)
+6. [Funcionalidades Recientes (Sprint 3)](#funcionalidades-recientes-sprint-3)
+7. [Server Actions](#server-actions)
+8. [Rutas Principales](#rutas-principales)
+9. [Mejoras de UX/Seguridad](#mejoras-de-uxseguridad)
+10. [Roadmap Futuro](#roadmap-futuro)
+11. [Setup y Despliegue](#setup-y-despliegue)
+
+---
+
+## 🎯 Visión General
+
+Capacitar y Crecer es un **Learning Management System (LMS) production-ready** diseñado específicamente para el mercado educativo chileno.
+
+### Soporta 4 Modelos de Negocio
 
 | Tipo | `tipo_acceso` | Inscripción | Contenido | Certificado |
-|------|--------------|-------------|-----------|-------------|
-| **Gratis** | `gratis` | Gratis | Gratis | Gratis si incluido |
-| **Gratis + Cert Pago** | `gratis_cert_pago` | Gratis | Gratis | Pago al terminar |
-| **De Pago** | `pago` | Requiere Pago (con cupones) | Acceso post-pago | Incluido o pago |
-| **Cotizar** | `cotizar` | Formulario | Manual | Manual |
+|------|--------------|-------------|-----------|------------|
+| **Gratis Completo** | `gratis` | Gratis | Gratis | Gratis |
+| **Gratis + Cert Pago** | `gratis_cert_pago` | Gratis | Gratis | Pago (Freemium) |
+| **De Pago** | `pago` | Pago | Post-pago | Incluido |
+| **Cotizar** | `cotizar` | Formulario | Previa cotización | Manual |
+| **Pago Inmediato** | `pago-inmediato` | Pago 1x | Acceso inmediato | Incluido |
 
-**Regla de Oro de UX:** "No me hagas pensar". Interfaces limpias, alto contraste, flujos sin fricción.
-
----
-
-## 2. Stack Tecnológico (Production-Ready)
-- **Framework Frontend:** Next.js 16 (App Router + Server Components)
-- **Estilos y UI:** Tailwind CSS + Lucide React (Íconos)
-- **Backend as a Service (BaaS):** Supabase (PostgreSQL, Auth, Storage)
-- **Gestión de Estado y Fetching:** React Server Components (RSC) y Server Actions (no client-side queries)
-- **Componentes UI:** Badge, ImagePlaceholder, Modal de cupones
-- **Pasarelas de Pago (Futuro):** Placeholder para integración Multi-Gateway (Flow, Transbank Webpay, Mercado Pago)
+### Principio de UX: "No me hagas pensar"
+- Interfaces limpias y de alto contraste
+- Flujos sin fricción
+- Feedback visual inmediato (loading states, toasts)
+- Validaciones claras
 
 ---
 
-## 3. Principios de Arquitectura Inquebrantables
+## 💻 Stack Tecnológico
 
-1. **Cero Lógica Transaccional en el Cliente:**
-   - Client Components **SOLO** renderiza UI y captura eventos
-   - Toda lectura/escritura en BD se realiza vía **Server Actions** (`'use server'`)
-   - Validación de datos siempre en servidor
-
-2. **Autenticación Híbrida Segura:**
-   - Gestión de sesiones vía Cookies (`@supabase/ssr`)
-   - Rutas privadas protegidas a nivel de servidor (Middleware Next.js)
-   - Admin panel con verificación de permisos en server actions
-
-3. **Manejo de Errores Explícito:**
-   - Respuestas estructuradas: `{ success: true } | { error: 'MOTIVO_CLARO' }`
-   - Cero fallas silenciosas, logging en consola del servidor
-
-4. **Validación de Datos Multi-Capa:**
-   - Validación en inputs (placeholder, disabled states)
-   - Validación en server actions (tipos TypeScript, lógica de negocio)
-   - RLS en Supabase como última línea de defensa
+| Capa | Tecnología |
+|------|-----------|
+| **Framework** | Next.js 16 (App Router + Server Components) |
+| **Estilos** | Tailwind CSS + Lucide React (Iconos) |
+| **Backend as a Service** | Supabase (PostgreSQL, Auth, Storage) |
+| **Estado** | React Server Components + Server Actions |
+| **Email** | Resend (+ API) |
+| **Drag & Drop** | @dnd-kit |
+| **Rich Text** | TipTap Editor |
+| **Notificaciones** | Sonner (Toast) |
+| **Type Safety** | TypeScript + Zod (validación) |
 
 ---
 
-## 4. Estructura de Base de Datos (PostgreSQL en Supabase)
+## 🏗 Arquitectura y Principios
 
-### Tabla: `perfiles`
+### 1. **Cero Lógica Transaccional en Cliente**
+- Client Components = **solo renderizado UI + captura de eventos**
+- Todas las operaciones de base de datos = **Server Actions** (`'use server'`)
+- Validación siempre en servidor
+
+### 2. **Autenticación Híbrida Segura**
+- Gestión de sesiones vía Cookies (`@supabase/ssr`)
+- Rutas privadas protegidas a nivel de servidor (Middleware)
+- Admin panel con verificación de permisos en server actions
+- Service Role Key para operaciones administrativas
+
+### 3. **Manejo de Errores Explícito**
+- Respuestas estructuradas: `{ success: true } | { error: 'MOTIVO_CLARO' }`
+- Cero fallas silenciosas
+- Logging descriptivo en consola del servidor
+
+### 4. **Validación Multi-Capa**
+- **Cliente:** Inputs con placeholder, disabled states, validación en tiempo real
+- **Servidor:** TypeScript + Zod para validación de esquemas
+- **Base de Datos:** RLS (Row Level Security) como última línea de defensa
+
+### 5. **Límites de Carga de Archivos**
+- **Límite global:** 50 MB por operación
+- **Validación cliente:** Real-time feedback mientras selecciona archivos
+- **Validación servidor:** Validación antes de procesar (sin caídas)
+- **Feedback:** Mensajes claros del tamaño actual vs. límite
+
+---
+
+## 📊 Base de Datos (PostgreSQL en Supabase)
+
+### Tablas Principales
+
+#### `perfiles` - Datos del usuario
 ```sql
 id UUID (PK, FK → auth.users)
 nombre_completo TEXT
@@ -63,18 +105,18 @@ rol ENUM ('alumno', 'admin')
 created_at TIMESTAMPTZ
 ```
 
-### Tabla: `cursos`
+#### `cursos` - Definición de cursos
 ```sql
 id UUID (PK)
 titulo TEXT
-slug TEXT (único)
+slug TEXT (unique)
 descripcion_breve TEXT
 contenido_programatico TEXT
 objetivos TEXT
 metodologia TEXT
 caracteristicas_generales TEXT
 imagen_url TEXT
-tipo_acceso ENUM ('gratis', 'gratis_cert_pago', 'pago', 'cotizar')
+tipo_acceso ENUM ('gratis', 'pago-inmediato', 'pago', 'gratis_cert_pago', 'cotizar')
 precio_curso INTEGER (NULL si gratis/cotizar)
 precio_certificado INTEGER (NULL si no hay cert)
 tiene_certificado BOOLEAN
@@ -83,7 +125,7 @@ categoria_id UUID (FK → categorias)
 created_at TIMESTAMPTZ
 ```
 
-### Tabla: `matriculas` (enrollment records)
+#### `matriculas` - Enrollment records
 ```sql
 id UUID (PK)
 perfil_id UUID (FK → perfiles)
@@ -95,7 +137,46 @@ created_at TIMESTAMPTZ
 UNIQUE (perfil_id, curso_id)
 ```
 
-### Tabla: `cupones` (NEW)
+#### `modulos` - Estructura del curso
+```sql
+id UUID (PK)
+curso_id UUID (FK → cursos)
+titulo TEXT
+orden INTEGER
+created_at TIMESTAMPTZ
+```
+
+#### `lecciones` - Contenido individual
+```sql
+id UUID (PK)
+modulo_id UUID (FK → modulos)
+titulo TEXT
+tipo ENUM ('video', 'texto', 'quiz')
+video_url TEXT
+contenido_html TEXT
+orden INTEGER
+created_at TIMESTAMPTZ
+```
+
+#### `lecciones_archivos` - Archivos adjuntos
+```sql
+id UUID (PK)
+leccion_id UUID (FK → lecciones)
+nombre_archivo TEXT
+archivo_url TEXT
+created_at TIMESTAMPTZ
+```
+
+#### `lecciones_completadas` - Progreso del alumno
+```sql
+id UUID (PK)
+perfil_id UUID (FK → perfiles)
+leccion_id UUID (FK → lecciones)
+created_at TIMESTAMPTZ
+UNIQUE (perfil_id, leccion_id)
+```
+
+#### `cupones` - Sistema de descuentos
 ```sql
 id UUID (PK)
 codigo TEXT (UNIQUE, uppercase)
@@ -106,226 +187,304 @@ usos_actuales INTEGER
 created_at TIMESTAMPTZ
 ```
 
-### Tabla: `matriculas_cupones` (NEW)
+#### `quizzes_preguntas` - Evaluaciones
 ```sql
 id UUID (PK)
-matricula_id UUID (FK → matriculas, ON DELETE CASCADE)
-cupon_id UUID (FK → cupones)
-descuento_aplicado INTEGER
-created_at TIMESTAMPTZ
-```
-
-### Tabla: `modulos`
-```sql
-id UUID (PK)
-curso_id UUID (FK → cursos)
-titulo TEXT
-orden INTEGER
-created_at TIMESTAMPTZ
-```
-
-### Tabla: `lecciones`
-```sql
-id UUID (PK)
-modulo_id UUID (FK → modulos)
-titulo TEXT
-tipo ENUM ('video', 'texto', 'quiz')
-video_url TEXT (Vimeo/YouTube)
-contenido_html TEXT
-orden INTEGER
-created_at TIMESTAMPTZ
-```
-
-### Tabla: `lecciones_completadas`
-```sql
-id UUID (PK)
-perfil_id UUID (FK → perfiles)
 leccion_id UUID (FK → lecciones)
+pregunta TEXT
+tipo ENUM ('multiple', 'verdadero_falso')
+puntos INTEGER
+orden INTEGER
 created_at TIMESTAMPTZ
-UNIQUE (perfil_id, leccion_id)
 ```
 
-### Tabla: `categorias`
+#### `quizzes_opciones` - Opciones de respuesta
 ```sql
 id UUID (PK)
-nombre TEXT
-slug TEXT
-imagen_url TEXT
+pregunta_id UUID (FK → quizzes_preguntas)
+opcion_texto TEXT
+es_correcta BOOLEAN
+orden INTEGER
+created_at TIMESTAMPTZ
 ```
 
 ---
 
-## 5. Módulos Implementados (MVP)
+## ✅ Módulos Implementados
 
-### ✅ Módulo 1: Autenticación y Onboarding
+### ✅ **Módulo 1: Autenticación y Onboarding**
 - [x] Registro e Inicio de Sesión por Email/Password
-- [x] Trigger SQL para creación automática de perfil tras registro
+- [x] Trigger SQL para creación automática de perfil
 - [x] Protección de rutas privadas mediante middleware
 - [x] Contraste alto en formularios UI
-- [ ] Validación de RUT chileno (Algoritmo Módulo 11) - *Próximo*
+- [x] Gestión de usuarios desde admin (crear, editar, eliminar, cambiar contraseña)
 
-### ✅ Módulo 2: Catálogo y Landing de Cursos
+### ✅ **Módulo 2: Catálogo y Landing de Cursos**
 - [x] Listado público de cursos dinámico (`/cursos`)
 - [x] Páginas individuales de curso (`/cursos/[slug]`)
-- [x] CTAs dinámicos según `tipo_acceso` (4 variantes)
-- [x] Protección: Cursos sin lecciones muestran "⚠️ En construcción"
+- [x] CTAs dinámicos según `tipo_acceso` (5 variantes)
+- [x] Protección: Cursos sin lecciones muestran warning
 - [x] ImagePlaceholder sutil cuando no hay imagen
-- [x] Enrolamiento seguro vía Server Actions
 
-### ✅ Módulo 3: Checkout y Sistema de Cupones
+### ✅ **Módulo 3: Checkout y Sistema de Cupones**
 - [x] Página de checkout (`/checkout/[cursoId]`)
-- [x] Mini-hero en checkout con nombre del curso
-- [x] Input de código de cupón funcional
-- [x] Sistema de cupones con validación
-- [x] Descuento en tiempo real (cálculo de precio final)
-- [x] Confirmación de inscripción con cupón
+- [x] Input de código de cupón con validación en tiempo real
+- [x] Sistema de cupones con límites de uso
+- [x] Descuento dinámico (cálculo de precio final)
 - [x] Admin de cupones (`/admin/cupones`)
-  - [x] Tabla con estado activo/inactivo
-  - [x] Modal de creación de cupones
+  - [x] Tabla con CRUD completo
   - [x] Toggle activar/desactivar
-  - [x] Eliminar cupones
   - [x] Copiar código al clipboard
-- [x] Cupón TEST100 (100% descuento) pre-cargado para testing
-- [x] Placeholder para integración Transbank (futuro)
 
-### ✅ Módulo 4: Área Privada del Alumno (Dashboard)
+### ✅ **Módulo 4: Área Privada del Alumno (Dashboard)**
 - [x] Protección de ruta mediante servidor
 - [x] Saludo personalizado con nombre completo
 - [x] Listado de cursos inscritos
 - [x] Progreso visual de cada curso
 - [x] Botón "Continuar aprendiendo" → aula virtual
 
-### ✅ Módulo 5: Aula Virtual (LMS Player)
+### ✅ **Módulo 5: Aula Virtual (LMS Player)**
 - [x] Layout responsivo (Sidebar + área central)
 - [x] Navegación entre módulos y lecciones
 - [x] Reproductor de video (Vimeo/YouTube)
-- [x] Visualizador de contenido de texto (HTML)
+- [x] Visualizador de contenido HTML
 - [x] Sistema de Quiz (preguntas opción múltiple)
 - [x] Descarga de archivos adjuntos
 - [x] Botón "Marcar como completada"
 - [x] Seguimiento de progreso real-time
 - [x] Banner de curso completado (100% progreso)
-  - [x] Botón "Descargar Certificado" para gratis/pago
-  - [x] Botón "Obtener Certificado por $X" para gratis_cert_pago
-  - [x] Mensaje si no hay certificado
+- [x] Descarga de certificados
 
-### ✅ Módulo 6: Administración de Cursos
+### ✅ **Módulo 6: Administración de Cursos**
 - [x] CRUD completo de cursos (`/admin/cursos`)
-- [x] Formulario mejorado con 4 opciones de tipo_acceso
-- [x] Campos condicionales según tipo (precio, certificado, etc.)
+- [x] Formulario con 5 opciones de `tipo_acceso`
+- [x] Campos condicionales según tipo
 - [x] Editor de módulos y lecciones
-- [x] Tabla de categorías (`/admin/categorias`)
-- [x] Gestión de alumnos enrolados
+- [x] Drag & Drop para reordenar módulos/lecciones
+- [x] Upload de archivos adjuntos por lección
+- [x] Sistema de Quiz con editor visual
+
+### ✅ **Módulo 7: Gestión de Usuarios (NUEVO - Sprint 3)**
+- [x] `/admin/alumnos` - Tabla de usuarios (admins + alumnos)
+- [x] Búsqueda en tiempo real (nombre, email, RUT)
+- [x] Filtros por rol (admin/alumno)
+- [x] 5 acciones por usuario:
+  - [x] Ver detalle (panel con inscripciones)
+  - [x] Editar (nombre, rol)
+  - [x] Cambiar contraseña
+  - [x] Enviar email directo
+  - [x] Eliminar usuario (cascada)
+- [x] Panel de inscripciones con progreso visual
+- [x] Enrolar/desinscribir de cursos desde admin
+- [x] Integración con Resend para envío de emails
 
 ---
 
-## 6. Server Actions Implementados
+## 🚀 Funcionalidades Recientes (Sprint 3)
 
-| Archivo | Función | Propósito |
-|---------|---------|-----------|
-| `src/actions/inscribir.server.ts` | `inscribir()` | Enrolamiento a cursos gratis/freemium |
-| `src/actions/checkout.ts` | `validarCupon()` | Valida cupón activo y límites de uso |
-| `src/actions/checkout.ts` | `inscribirConCupon()` | Procesa inscripción con descuento (100% = acceso inmediato, partial = pendiente pago) |
-| `src/actions/cupones.ts` | `getCupones()` | Lista cupones para admin |
-| `src/actions/cupones.ts` | `createCupon()` | Crea nuevo cupón |
-| `src/actions/cupones.ts` | `toggleCupon()` | Activa/desactiva cupón |
-| `src/actions/cupones.ts` | `deleteCupon()` | Elimina cupón |
-| `src/actions/progreso.ts` | `marcarCompletada()` | Marca lección completada e incrementa progreso |
-| `src/actions/cursos.ts` | `crearCurso()`, `editarCurso()`, `eliminarCurso()` | CRUD de cursos |
-| `src/actions/cursos.ts` | `obtenerAlumnos()` | Lista estudiantes enrolados |
-| `src/actions/categorias.ts` | `getCategories()`, `createCategory()`, etc. | CRUD de categorías |
+### 🔐 **Sistema de Gestión de Usuarios**
+**Archivos:** `src/app/admin/alumnos/page.tsx`, `src/actions/usuarios.ts`, `src/components/admin/*`
+
+#### Server Actions
+- `getUsuarios()` - Lista con datos combinados de auth + perfiles + matriculas
+- `crearUsuario()` - Crea auth.user + perfil, con opción de email de bienvenida
+- `cambiarPassword()` - Actualiza contraseña vía auth.admin
+- `actualizarPerfil()` - Edita nombre, RUT, rol
+- `eliminarUsuario()` - Cascada: matriculas → perfiles → auth.users
+- `inscribirEnCurso()` - Enrola usuario desde admin
+- `desinscribirDeCurso()` - Quita inscripción
+- `getInscripcionesUsuario()` - Cursos inscritos con progreso
+- `getCursosDisponibles()` - Cursos no inscritos
+
+#### Componentes
+- **UserModal.tsx** - Crear/editar usuarios con validación de contraseña
+- **UserDetailPanel.tsx** - Panel de inscripciones con progreso visual
+- **ChangePasswordModal.tsx** - Cambio de contraseña con confirmación
+- **SendEmailModal.tsx** - Composición de emails con plantillas predefinidas
+
+### 📧 **Integración Resend**
+**Archivos:** `src/lib/resend.ts`, `src/actions/email.ts`
+
+- `enviarEmail()` - Genérico para cualquier email HTML
+- `enviarBienvenida()` - Template de bienvenida con credenciales
+- Soporte para `RESEND_API_KEY` y `RESEND_FROM_EMAIL`
+- Manejo de errores controlado
+
+### 📦 **Validación de Carga de Archivos**
+**Archivos:** `src/actions/curriculum.ts`, `src/app/admin/cursos/[id]/CurriculumBuilder.tsx`
+
+#### Límites y Validación
+- **Límite global:** 50 MB por operación
+- **Validación cliente:**
+  - Real-time mientras selecciona archivos
+  - Indicador visual de tamaño actual vs. límite
+  - Botón "Guardar" deshabilitado si supera límite
+  - Feedback claro en rojo si hay error
+
+- **Validación servidor:**
+  - Función `getTotalFormDataSize()` calcula tamaño total
+  - Validación en `createLesson()` y `updateLesson()` antes de procesar
+  - Retorna error controlado sin crashes
 
 ---
 
-## 7. Rutas Principales
+## 🔧 Server Actions
 
-### Públicas
-- `GET /` - Landing público
-- `GET /cursos` - Listado de cursos
-- `GET /cursos/[slug]` - Detalle de curso
-- `GET /login` - Login
-- `GET /registro` - Registro
+### Usuarios
+| Función | Propósito |
+|---------|----------|
+| `getUsuarios()` | Lista todos los usuarios |
+| `crearUsuario()` | Crea usuario con auth + perfil |
+| `cambiarPassword()` | Actualiza contraseña |
+| `actualizarPerfil()` | Edita perfil del usuario |
+| `eliminarUsuario()` | Cascada: elimina todo |
+| `inscribirEnCurso()` | Enrola usuario en curso |
+| `desinscribirDeCurso()` | Quita inscripción |
+| `getInscripcionesUsuario()` | Cursos del usuario |
+| `getCursosDisponibles()` | Cursos no inscritos |
 
-### Privadas (Alumno)
-- `GET /dashboard` - Mis cursos
-- `GET /dashboard/cursos/[slug]` - Aula virtual (video, texto, quiz, progreso)
-- `GET /checkout/[cursoId]` - Checkout con cupones
+### Cursos
+| Función | Propósito |
+|---------|----------|
+| `getCursos()` | Lista de cursos |
+| `crearCurso()` | Crear nuevo curso |
+| `editarCurso()` | Editar propiedades |
+| `eliminarCurso()` | Eliminar curso |
 
-### Admin
-- `GET /admin` - Dashboard admin
-- `GET /admin/cursos` - Tabla de cursos
-- `POST /admin/cursos/nuevo` - Crear curso
-- `GET /admin/cursos/[id]/edit` - Editar curso
-- `GET /admin/cupones` - Gestión de cupones
-- `GET /admin/categorias` - Categorías
-- `GET /admin/alumnos` - Estudiantes del sistema
+### Curriculum
+| Función | Propósito |
+|---------|----------|
+| `createModule()` | Crear módulo |
+| `updateModule()` | Editar módulo |
+| `deleteModule()` | Eliminar módulo |
+| `createLesson()` | Crear lección (con validación 50MB) |
+| `updateLesson()` | Editar lección (con validación 50MB) |
+| `deleteLesson()` | Eliminar lección |
+| `updateCurriculumOrder()` | Reordenar módulos/lecciones |
+
+### Email
+| Función | Propósito |
+|---------|----------|
+| `enviarEmail()` | Envío genérico |
+| `enviarBienvenida()` | Template de bienvenida |
+
+### Progreso
+| Función | Propósito |
+|---------|----------|
+| `marcarCompletada()` | Marca lección como vista |
+| `getProgreso()` | Obtiene progreso del curso |
+
+### Cupones
+| Función | Propósito |
+|---------|----------|
+| `getCupones()` | Lista cupones |
+| `createCupon()` | Crear cupón |
+| `toggleCupon()` | Activar/desactivar |
+| `deleteCupon()` | Eliminar cupón |
+| `validarCupon()` | Valida en checkout |
 
 ---
 
-## 8. Mejoras de UX Implementadas
+## 🗺️ Rutas Principales
+
+### 🌐 Públicas
+```
+GET  /                           # Landing
+GET  /cursos                      # Listado de cursos
+GET  /cursos/[slug]              # Detalle de curso
+GET  /login                       # Inicio de sesión
+GET  /registro                    # Registro
+GET  /checkout/[cursoId]         # Checkout con cupones
+```
+
+### 🔒 Privadas (Alumno)
+```
+GET  /dashboard                              # Mis cursos
+GET  /dashboard/cursos/[slug]               # Aula virtual
+GET  /dashboard/cursos/[id]/lecciones/[id] # Lección específica
+```
+
+### 👨‍💼 Admin
+```
+GET  /admin                                    # Dashboard
+GET  /admin/cursos                            # Gestión de cursos
+GET  /admin/cursos/nuevo                      # Crear curso
+GET  /admin/cursos/[id]/edit                 # Editar curso
+GET  /admin/cursos/[id]                      # Detalles del curso
+GET  /admin/cupones                          # Gestión de cupones
+GET  /admin/alumnos                          # Gestión de usuarios (NUEVO)
+GET  /admin/categorias                       # Categorías
+```
+
+---
+
+## ✨ Mejoras de UX/Seguridad
 
 | Feature | Status | Detalles |
 |---------|--------|----------|
-| Contraste de inputs | ✅ | Border-2, placeholder-gray-500, text-gray-900 |
-| ImagePlaceholder | ✅ | Sutil, limpio con icono de imagen |
-| Mini-hero en checkout | ✅ | Gradiente + nombre del curso |
-| Protección sin lecciones | ✅ | Botón deshabilitado + banner "En construcción" |
-| Responsive design | ✅ | Mobile-first, tested en tablet/desktop |
-| Validación en tiempo real | ✅ | Cupones, código uppercase, disabled states |
-| Mensajes de error claros | ✅ | Alerts con motivo exacto |
+| Contraste de inputs | ✅ | Border-2, text-gray-900, visibilidad WCAG |
+| ImagePlaceholder | ✅ | Sutil, limpio con icono |
 | Loading states | ✅ | Spinners, disabled buttons, "Procesando..." |
+| Validación real-time | ✅ | Cupones, archivos, inputs |
+| Mensajes de error claros | ✅ | Alerts con motivo exacto |
+| Drag & Drop | ✅ | Reordenar módulos/lecciones con @dnd-kit |
+| RichTextEditor | ✅ | TipTap para contenido HTML |
+| Archivos adjuntos | ✅ | Upload con validación de tamaño (50MB) |
+| Tabla de usuarios | ✅ | Búsqueda, filtros, 5 acciones por fila |
+| Email directo | ✅ | Integración Resend con plantillas |
 
 ---
 
-## 9. Bugs Corregidos
+## 📈 Roadmap Futuro
 
-| Bug | Síntoma | Solución |
-|-----|---------|----------|
-| Detección de duplicados | `insertError.message.includes('duplicate')` | Cambiar a `insertError.code !== '23505'` |
-| Campo nombre en perfiles | Query seleccionaba 'email' de tabla equivocada | Cambiar a `nombre_completo` (autenticado en perfiles) |
-| Certificado inferido de precio | Lógica frágil | Usar boolean `tiene_certificado` |
-| Enum tipo_acceso con 5 valores | Redundancia (pago vs pago-inmediato) | Simplificar a 4 valores canónicos |
-| Redireccionamiento en checkout | Usaba `curso.titulo` en URL | Cambiar a `curso.slug` |
-| CheckoutForm sin estilos | Props no llegaban | Verificar hydration + agregar logging |
+### 🛠 **Fase 1: Blindaje de Infraestructura** (Próximo Sprint)
+- [ ] Auditoría de Server Actions con Zod validation
+- [ ] Revisión de RLS policies en Supabase
+- [ ] Manejo global de errores (error.tsx en rutas clave)
+- [ ] Optimización de consultas (select específicos, no `*`)
+
+### 🎨 **Fase 2: UX/UI Pro**
+- [ ] Sistema de Diseño unificado
+- [ ] Dashboard de admin con métricas reales
+- [ ] Optimización de imágenes con `next/image`
+- [ ] Skeletons elegantes para cargas
+
+### 🚀 **Fase 3: Conversión y SEO**
+- [ ] Refactorización del hero section
+- [ ] Filtros dinámicos de cursos (sin reload)
+- [ ] Landing pages vendedoras
+- [ ] Meta tags dinámicos (Open Graph)
+
+### 🎓 **Fase 4: Certificación**
+- [ ] Generación de certificados PDF
+- [ ] RUT estampado en certificado
+- [ ] Código QR dinámico para validación
+
+### 💳 **Fase 5: Pagos**
+- [ ] Integración Transbank Webpay Plus
+- [ ] Integración Flow
+- [ ] Manejo de estados de pago
+- [ ] Webhooks de confirmación
+
+### 🎯 **Fase 6: Avanzadas**
+- [ ] Lecciones en vivo (WebRTC)
+- [ ] Foros de discusión
+- [ ] Gamificación (badges, leaderboard)
+- [ ] Sistema de referidos/afiliados
+- [ ] Mobile app nativa
 
 ---
 
-## 10. Estado Actual y Próximos Pasos
-
-### ✅ Completado (MVP)
-- Sistema de autenticación y autorización
-- 4 modelos de negocio de cursos
-- Checkout funcional con cupones
-- Aula virtual con video, texto, quiz
-- Sistema de progreso y certificados (placeholder)
-- Admin completo
-
-### 📋 Tareas Inmediatas (Next Sprint)
-1. **Validación RUT chileno** - Algoritmo Módulo 11 en checkout
-2. **Generación de certificados PDF** - Nombre + RUT del alumno
-3. **Integración Transbank** - Pasarela de pago para descuentos parciales
-4. **Notificaciones por email** - Confirmación inscripción, certificado listo
-5. **Analytics y reportes** - Dashboard admin con métricas
-6. **Optimizaciones de SEO** - Open Graph, structured data
-
-### 🔮 Fase Avanzada (Roadmap)
-- Lecciones en vivo (WebRTC)
-- Foros de discussión
-- Gamificación (badges, leaderboard)
-- Sistema de refreridos/afiliados
-- Mobile app nativa
-
----
-
-## 11. Instrucciones de Instalación y Desarrollo
+## 🚀 Setup y Despliegue
 
 ### Requisitos
 - Node.js 20+
 - npm o pnpm
 - Cuenta Supabase (gratuita)
-- Variables `.env.local` con credenciales Supabase
+- Variables `.env.local` con credenciales
 
 ### Setup Local
+
 ```bash
 # Clonar y instalar
 git clone https://github.com/tu-org/capacitar-crecer.git
@@ -334,52 +493,113 @@ npm install
 
 # Configurar env
 cp .env.example .env.local
-# Editar .env.local con credenciales Supabase
+# Editar .env.local con:
+# - NEXT_PUBLIC_SUPABASE_URL
+# - NEXT_PUBLIC_SUPABASE_ANON_KEY
+# - SUPABASE_SERVICE_ROLE_KEY
+# - RESEND_API_KEY
+# - RESEND_FROM_EMAIL
 
 # Ejecutar dev
 npm run dev
 # → http://localhost:3000
+
+# Build para producción
+npm run build
 ```
 
-### Deploy a Producción
+### Variables de Entorno
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx...
+SUPABASE_SERVICE_ROLE_KEY=eyJxxx...
+RESEND_API_KEY=re_xxxxx
+RESEND_FROM_EMAIL=no-reply@tu-dominio.com
+```
+
+### Deploy a Vercel
 ```bash
 npm run build  # Verificar compilación
-git push      # Push a main
-# → Vercel auto-deploya (configurado)
+git push       # Push a main
+# → Vercel auto-deploya
 ```
 
 ---
 
-## 12. Notas Técnicas Importantes
+## 📝 Notas Técnicas
 
 ### RLS (Row Level Security)
-- Cupones: lectura pública (activos), escritura admin only
-- Matriculas: cada usuario ve solo sus propias inscripciones
-- Perfiles: cada usuario ve solo su perfil
+- **Cupones:** Lectura pública (activos), escritura admin only
+- **Matriculas:** Cada usuario ve solo sus inscripciones
+- **Perfiles:** Cada usuario ve su perfil
+- **Lecciones:** Acceso según matrícula
 
 ### Triggers SQL
 - Al registrarse → crear perfil automáticamente
-- Al marcar lección completada → actualizar progreso_porcentaje de matrícula
+- Al marcar lección completada → actualizar progreso_porcentaje
+- Al crear cupón → validar límites de uso
 
 ### Límites Conocidos
-- Cupones con descuento < 100%: se crean matriculas con `estado_pago_curso = false` (placeholder para pasarela)
-- Certificados: generación manual o vía script (no automática aún)
+- Cupones < 100%: crean matriculas con `estado_pago_curso = false` (placeholder para pasarela)
+- Certificados: generación en roadmap (no automática aún)
 - Pagos: solo TEST100 (cupón 100%) funciona sin pasarela
 
 ### Performance
 - Server-side rendering de páginas públicas (fast)
-- ISR (Incremental Static Regeneration) para cursos
+- ISR para cursos
 - Caché de Supabase habilitado
+- Archivos limitados a 50 MB
 
 ---
 
-## 13. Contacto y Soporte
+## 🏆 Estándares de Desarrollo
 
-**Mantainer:** Daniel (daniel@capacitarycrcer.cl)
-**Repo:** https://github.com/tu-org/capacitar-crecer
-**Issues:** Usar GitHub Issues con etiquetas [bug], [feature], [docs]
+**Ver:** `SENIOR-STANDARDS.md` para reglas obligatorias de:
+- UX/UI moderna (Drag & Drop, modales, feedback)
+- Accesibilidad WCAG
+- Lógica CRUD completa
+- Backend robusto (try/catch, logging)
 
 ---
 
-**Última actualización:** Marzo 18, 2026
+## 📊 Cambios Recientes
+
+### Sprint 3 (19 Marzo 2026)
+- ✅ Gestión completa de usuarios (`/admin/alumnos`)
+- ✅ Integración Resend para emails
+- ✅ Validación de carga de archivos (50MB)
+- ✅ Componentes: UserModal, UserDetailPanel, ChangePasswordModal, SendEmailModal
+- ✅ Build compila sin errores
+- ✅ Documentación actualizada
+
+### Sprint 2
+- ✅ Sistema de Quiz con editor visual
+- ✅ Tabla de cupones con CRUD
+- ✅ Validación de cupones en checkout
+- ✅ Aula virtual completa
+
+### Sprint 1
+- ✅ Autenticación y onboarding
+- ✅ Catálogo de cursos
+- ✅ Dashboard del alumno
+- ✅ Admin de cursos
+
+---
+
+## 🔗 Enlaces Importantes
+
+- **GitHub:** https://github.com/tu-org/capacitar-crecer
+- **Supabase Project:** https://app.supabase.com/projects
+- **Vercel Dashboard:** https://vercel.com/dashboard
+
+---
+
+## 📧 Contacto
+
+**Maintainer:** Daniel
+**Reportar bugs:** GitHub Issues con etiquetas [bug], [feature], [docs]
+
+---
+
 **Versión:** 1.0.0 (MVP - Production Ready)
+**Última actualización:** 19 de Marzo, 2026

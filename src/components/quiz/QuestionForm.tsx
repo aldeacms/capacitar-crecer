@@ -15,6 +15,7 @@ import {
   Split
 } from 'lucide-react'
 import { saveQuestion } from '@/actions/quiz'
+import { RichTextEditor } from './RichTextEditor'
 import { toast } from 'sonner'
 
 interface Option {
@@ -85,7 +86,7 @@ export default function QuestionForm({ leccionId }: { leccionId: string }) {
           <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Puntaje:</span>
           <input
             type="number" value={puntos} onChange={(e) => setPuntos(Number(e.target.value))}
-            className="w-16 px-2 py-1 bg-white border border-gray-200 rounded-md text-xs font-black text-[#28B4AD] outline-none focus:border-[#28B4AD]"
+            className="form-input w-16 text-center text-[#28B4AD] font-black text-xs px-2 py-1"
           />
         </div>
       </div>
@@ -124,9 +125,10 @@ export default function QuestionForm({ leccionId }: { leccionId: string }) {
         {/* ENUNCIADO */}
         <div className="space-y-2">
           <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1">Pregunta Principal</label>
-          <textarea
-            required value={texto} onChange={(e) => setTexto(e.target.value)} rows={2}
-            placeholder="¿Qué quieres preguntar?" className={`${inputBase} resize-none text-base`}
+          <RichTextEditor
+            value={texto}
+            onChange={setTexto}
+            placeholder="¿Qué quieres preguntar?"
           />
         </div>
 

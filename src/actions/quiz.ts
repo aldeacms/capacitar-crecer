@@ -233,3 +233,35 @@ export async function deleteQuestion(id: string) {
     return { error: (error as Error).message || String(error) }
   }
 }
+
+export async function uploadQuestionImage(formData: FormData) {
+  const file = formData.get('imagen') as File
+
+  if (!file) {
+    return { error: 'No image provided' }
+  }
+
+  const fileExt = file.name.split('.').pop()
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+  const supabaseAdmin = getSupabaseAdmin()
+
+  try {
+    const { error: uploadError } = await supabaseAdmin.storage
+      .from('imagenes_preguntas')
+      .upload(fileName, file, { upsert: true })
+
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError)
+      throw new Error(uploadError.message)
+    }
+
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('imagenes_preguntas')
+      .getPublicUrl(fileName)
+
+    return { url: publicUrl }
+  } catch (error: unknown) {
+    console.error('CRITICAL ERROR in uploadQuestionImage:', error)
+    return { error: (error as Error).message || String(error) }
+  }
+}

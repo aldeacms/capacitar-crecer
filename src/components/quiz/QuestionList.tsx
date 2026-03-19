@@ -22,6 +22,7 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { Trash2, HelpCircle, ArrowRightLeft, GripVertical, CheckCircle2, ListFilter, Edit2, Plus, Circle, X } from 'lucide-react'
 import { deleteQuestion, updateQuestionsOrder, updateQuestion } from '@/actions/quiz'
+import { RichTextEditor } from './RichTextEditor'
 import { toast } from 'sonner'
 
 interface QuestionListProps {
@@ -197,11 +198,10 @@ function SortableQuestionItem({ q, qIndex }: { q: any, qIndex: number }) {
               <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-1 block mb-2">
                 Pregunta
               </label>
-              <textarea
+              <RichTextEditor
                 value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                rows={2}
-                className="form-textarea"
+                onChange={setEditText}
+                placeholder="Edita la pregunta..."
               />
             </div>
 
@@ -212,7 +212,7 @@ function SortableQuestionItem({ q, qIndex }: { q: any, qIndex: number }) {
                 type="number"
                 value={editPuntos}
                 onChange={(e) => setEditPuntos(Number(e.target.value))}
-                className="w-20 px-2 py-1 bg-white border border-gray-200 rounded-md text-xs font-black text-[#28B4AD] outline-none focus:border-[#28B4AD]"
+                className="form-input w-20 text-center text-[#28B4AD] font-black text-xs px-2 py-1"
               />
             </div>
 
@@ -280,7 +280,7 @@ function SortableQuestionItem({ q, qIndex }: { q: any, qIndex: number }) {
                           setEditOpciones(n)
                         }}
                         placeholder={`Opción ${idx + 1}`}
-                        className="flex-1 px-4 py-2 border border-gray-200 rounded-xl text-sm font-medium"
+                        className="form-input flex-1"
                       />
                     )}
 
@@ -355,8 +355,11 @@ function SortableQuestionItem({ q, qIndex }: { q: any, qIndex: number }) {
         {/* Centro: Pregunta y Opciones */}
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start gap-4 mb-4">
-            <div className="space-y-1">
-              <h4 className="font-bold text-gray-900 leading-tight text-base tracking-tight">{q.texto}</h4>
+            <div className="space-y-1 flex-1">
+              <div
+                className="font-bold text-gray-900 leading-tight text-base tracking-tight prose prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: q.texto }}
+              />
               <div className="flex gap-2">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">
                   {q.tipo === 'multiple' ? 'Alternativas' : q.tipo === 'vf' ? 'V/F' : q.tipo === 'pareados' ? 'Pareados' : 'Abierta'}

@@ -131,8 +131,9 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
                   <div className="flex items-start gap-3">
                     <div className="w-5 h-5 rounded-full border-2 border-blue-500 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-gray-900 mb-2">
-                        {idx + 1}. {pregunta.texto}
+                      <p className="font-semibold text-sm text-gray-900 mb-2 prose prose-sm max-w-none">
+                        <span>{idx + 1}. </span>
+                        <span dangerouslySetInnerHTML={{ __html: pregunta.texto }} />
                       </p>
                       <p className="text-sm text-blue-700">
                         Tu respuesta: <span className="font-medium">{respuestaTexto}</span>
@@ -154,8 +155,9 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
                   key={pregunta.id}
                   className="p-4 rounded-lg border-l-4 bg-purple-50 border-purple-500"
                 >
-                  <p className="font-semibold text-sm text-gray-900 mb-3">
-                    {idx + 1}. {pregunta.texto}
+                  <p className="font-semibold text-sm text-gray-900 mb-3 prose prose-sm max-w-none">
+                    <span>{idx + 1}. </span>
+                    <span dangerouslySetInnerHTML={{ __html: pregunta.texto }} />
                   </p>
                   <div className="space-y-2">
                     {terminos.map((termino) => {
@@ -196,8 +198,9 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
                     <XCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-gray-900 mb-1">
-                      {idx + 1}. {pregunta.texto}
+                    <p className="font-semibold text-sm text-gray-900 mb-1 prose prose-sm max-w-none">
+                      <span>{idx + 1}. </span>
+                      <span dangerouslySetInnerHTML={{ __html: pregunta.texto }} />
                     </p>
                     {opcionSeleccionada && (
                       <p className={`text-sm ${esCorrecta ? 'text-emerald-700' : 'text-red-700'}`}>
@@ -247,8 +250,9 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
       <div className="space-y-6">
         {opcionesOrdenadas.map((pregunta, idx) => (
           <div key={pregunta.id} className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
-            <h4 className="font-semibold text-gray-900 mb-4">
-              {idx + 1}. {pregunta.texto}
+            <h4 className="font-semibold text-gray-900 mb-4 prose prose-sm max-w-none">
+              <span>{idx + 1}. </span>
+              <span dangerouslySetInnerHTML={{ __html: pregunta.texto }} />
             </h4>
 
             {pregunta.tipo === 'multiple' && (

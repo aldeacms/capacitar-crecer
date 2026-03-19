@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Plus,
   Trash2,
@@ -24,7 +25,9 @@ interface Option {
 }
 
 export default function QuestionForm({ leccionId }: { leccionId: string }) {
+  const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [tipo, setTipo] = useState<'multiple' | 'vf' | 'abierta' | 'pareados'>('multiple')
   const [texto, setTexto] = useState('')
   const [puntos, setPuntos] = useState(10)
@@ -49,16 +52,24 @@ export default function QuestionForm({ leccionId }: { leccionId: string }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError(null)
+
     const result = await saveQuestion({ leccion_id: leccionId, texto, tipo, puntos, opciones })
     setLoading(false)
+
     if (result.success) {
-      setTexto('');
-      handleTypeChange(tipo);
-      toast.success("Pregunta añadida correctamente");
+      setTexto('')
+      handleTypeChange(tipo)
+      setError(null)
+      toast.success("Pregunta añadida correctamente")
+      router.refresh()
+    } else {
+      setError(result.error || "Error al guardar la pregunta")
+      toast.error(result.error || "Error al guardar la pregunta")
     }
   }
 
-  const inputBase = "w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#28B4AD]/5 focus:border-[#28B4AD] outline-none transition-all text-sm text-gray-900 font-medium bg-white shadow-sm"
+  const inputBase = "form-input"
 
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden transition-all duration-300">
@@ -189,6 +200,13 @@ export default function QuestionForm({ leccionId }: { leccionId: string }) {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* ERRORES */}
+        {error && (
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+            <p className="text-xs text-red-700 font-medium">{error}</p>
           </div>
         )}
 

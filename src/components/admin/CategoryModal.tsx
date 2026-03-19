@@ -93,7 +93,7 @@ export default function CategoryModal({ category, onClose }: CategoryModalProps)
                 value={nombre}
                 onChange={handleNombreChange}
                 placeholder="Ej: Recursos Humanos"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-[#28B4AD]/10 focus:border-[#28B4AD] outline-none transition-all font-medium text-gray-900"
+                className="form-input"
               />
             </div>
 
@@ -116,7 +116,7 @@ export default function CategoryModal({ category, onClose }: CategoryModalProps)
                 rows={3}
                 defaultValue={category?.descripcion}
                 placeholder="Breve descripción para SEO y landing de categoría"
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-4 focus:ring-[#28B4AD]/10 focus:border-[#28B4AD] outline-none transition-all text-gray-900"
+                className="form-textarea"
               ></textarea>
             </div>
 

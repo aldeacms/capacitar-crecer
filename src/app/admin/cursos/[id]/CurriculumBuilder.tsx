@@ -416,7 +416,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                   defaultValue={showModuleModal.titulo}
                   autoFocus
                   placeholder="Ej: Análisis de Inversiones" 
-                  className="w-full px-8 py-5 border-2 border-gray-300 rounded-2xl outline-none focus:border-[#28B4AD] text-gray-900 font-bold placeholder:text-gray-400 transition-all bg-slate-50/30" 
+                  className="form-input font-bold" 
                 />
               </div>
               <div className="flex gap-4 pt-4">
@@ -458,7 +458,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                     defaultValue={lessonModal.leccion?.titulo}
                     autoFocus
                     placeholder="Ej: Cálculo de Rentabilidad"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:border-[#28B4AD] focus:ring-1 focus:ring-[#28B4AD] text-gray-900 font-semibold transition-all text-sm"
+                    className="form-input font-semibold"
                 />
               </div>
 
@@ -468,7 +468,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                 <select
                     name="tipo"
                     defaultValue={lessonModal.leccion?.tipo || 'video'}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none text-gray-900 font-semibold bg-white cursor-pointer focus:border-[#28B4AD] focus:ring-1 focus:ring-[#28B4AD] transition-all text-sm"
+                    className="form-select font-semibold"
                 >
                   <option value="video">🎬 Video</option>
                   <option value="texto">📖 Lectura</option>

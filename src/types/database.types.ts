@@ -405,6 +405,7 @@ export type Database = {
           id: string
           pregunta_id: string
           texto: string
+          orden: number | null
         }
         Insert: {
           created_at?: string
@@ -412,6 +413,7 @@ export type Database = {
           id?: string
           pregunta_id: string
           texto: string
+          orden?: number | null
         }
         Update: {
           created_at?: string
@@ -419,6 +421,7 @@ export type Database = {
           id?: string
           pregunta_id?: string
           texto?: string
+          orden?: number | null
         }
         Relationships: [
           {
@@ -438,6 +441,7 @@ export type Database = {
           puntos: number | null
           texto: string
           tipo: Database["public"]["Enums"]["tipo_pregunta"] | null
+          orden: number | null
         }
         Insert: {
           created_at?: string
@@ -446,6 +450,7 @@ export type Database = {
           puntos?: number | null
           texto: string
           tipo?: Database["public"]["Enums"]["tipo_pregunta"] | null
+          orden?: number | null
         }
         Update: {
           created_at?: string
@@ -454,6 +459,7 @@ export type Database = {
           puntos?: number | null
           texto?: string
           tipo?: Database["public"]["Enums"]["tipo_pregunta"] | null
+          orden?: number | null
         }
         Relationships: [
           {
@@ -475,7 +481,7 @@ export type Database = {
     Enums: {
       tipo_acceso: "gratis" | "pago" | "gratis_cert_pago" | "cotizar"
       tipo_leccion: "video" | "texto" | "quiz"
-      tipo_pregunta: "multiple" | "vf" | "abierta"
+      tipo_pregunta: "multiple" | "vf" | "abierta" | "pareados"
     }
     CompositeTypes: {
       [_ in never]: never

@@ -69,7 +69,7 @@ export function CuponModal({ onClose }: CuponModalProps) {
               onChange={(e) => setCodigo(e.target.value.toUpperCase())}
               placeholder="ej: VERANO50"
               disabled={loading}
-              className="w-full px-4 py-2.5 bg-white border-2 border-gray-300 text-gray-900 placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-[#28B4AD]/20 focus:border-[#28B4AD] outline-none transition-all disabled:bg-gray-100"
+              className="form-input"
               required
             />
             <p className="text-xs text-gray-500 mt-1">Máximo 50 caracteres, se convertirá a mayúsculas</p>
@@ -106,7 +106,7 @@ export function CuponModal({ onClose }: CuponModalProps) {
               placeholder="Dejar en blanco para ilimitado"
               disabled={loading}
               min="1"
-              className="w-full px-4 py-2.5 bg-white border-2 border-gray-300 text-gray-900 placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-[#28B4AD]/20 focus:border-[#28B4AD] outline-none transition-all disabled:bg-gray-100"
+              className="form-input"
             />
             <p className="text-xs text-gray-500 mt-1">Cantidad máxima de veces que se puede usar este cupón</p>
           </div>

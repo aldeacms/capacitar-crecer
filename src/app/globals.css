@@ -34,6 +34,51 @@ body {
   @apply text-3xl md:text-5xl font-black leading-tight tracking-tighter;
 }
 
+@layer components {
+  /* Inputs con contraste mejorado */
+  .form-input {
+    @apply w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 font-medium bg-white shadow-sm transition-all outline-none;
+  }
+
+  .form-input:focus {
+    @apply border-[#28B4AD] ring-4 ring-[#28B4AD]/20 shadow-md;
+  }
+
+  .form-input:disabled {
+    @apply bg-gray-50 text-gray-500 border-gray-200 cursor-not-allowed;
+  }
+
+  /* Textarea con los mismos estilos */
+  .form-textarea {
+    @apply w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 font-medium bg-white shadow-sm transition-all outline-none resize-none;
+  }
+
+  .form-textarea:focus {
+    @apply border-[#28B4AD] ring-4 ring-[#28B4AD]/20 shadow-md;
+  }
+
+  .form-textarea:disabled {
+    @apply bg-gray-50 text-gray-500 border-gray-200 cursor-not-allowed;
+  }
+
+  /* Select con estilos mejorados */
+  .form-select {
+    @apply w-full px-4 py-2.5 border border-gray-300 rounded-xl text-sm text-gray-900 font-medium bg-white shadow-sm transition-all outline-none appearance-none cursor-pointer pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+  }
+
+  .form-select:focus {
+    @apply border-[#28B4AD] ring-4 ring-[#28B4AD]/20 shadow-md;
+  }
+
+  .form-select:disabled {
+    @apply bg-gray-50 text-gray-500 border-gray-200 cursor-not-allowed;
+  }
+}
+
 @layer utilities {
   .animate-gradient {
     background-size: 200% auto;

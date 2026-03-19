@@ -167,7 +167,7 @@ export default function CourseForm({
   }
 
   const labelClass = "text-[11px] font-black uppercase tracking-widest text-slate-400 mb-2 block"
-  const inputBaseClass = "w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#2DB3A7]/10 focus:border-[#2DB3A7] outline-none transition-all text-gray-900 font-bold bg-white"
+  const inputBaseClass = "form-input font-bold"
   const tabClass = (tab: TabType) => `flex-1 py-4 text-sm font-black transition-all border-b-2 text-center ${activeTab === tab ? 'border-[#2DB3A7] text-[#2DB3A7] bg-[#2DB3A7]/5' : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-gray-50'}`
 
   return (

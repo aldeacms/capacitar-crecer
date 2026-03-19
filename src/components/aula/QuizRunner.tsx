@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { CheckCircle2, XCircle } from 'lucide-react'
+import PairedQuestionsMatch from './PairedQuestionsMatch'
 
 interface Opcion {
   id: string
@@ -144,6 +145,10 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
             }
 
             if (pregunta.tipo === 'pareados') {
+              const mid = Math.ceil(pregunta.quizzes_opciones.length / 2)
+              const terminos = pregunta.quizzes_opciones.slice(0, mid)
+              const respuestasOpciones = pregunta.quizzes_opciones.slice(mid)
+
               return (
                 <div
                   key={pregunta.id}
@@ -153,15 +158,18 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
                     {idx + 1}. {pregunta.texto}
                   </p>
                   <div className="space-y-2">
-                    {pregunta.quizzes_opciones.map((opcion, optIdx) => (
-                      <div key={opcion.id} className="text-sm">
-                        <span className="text-gray-700">{optIdx + 1}. {opcion.texto}</span>
-                        <span className="text-purple-600 ml-2">→</span>
-                        <span className="text-purple-700 ml-2 font-medium">
-                          {respuestas[`${pregunta.id}-${opcion.id}`] || '(sin respuesta)'}
-                        </span>
-                      </div>
-                    ))}
+                    {terminos.map((termino) => {
+                      const respuestaId = respuestas[`${pregunta.id}-${termino.id}`]
+                      const respuestaTexto = respuestasOpciones.find(o => o.id === respuestaId)?.texto || '(sin respuesta)'
+
+                      return (
+                        <div key={termino.id} className="text-sm bg-white p-2 rounded border border-purple-200">
+                          <span className="text-gray-700 font-medium">{termino.texto}</span>
+                          <span className="text-purple-600 mx-2">→</span>
+                          <span className="text-purple-700 font-medium">{respuestaTexto}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                   <p className="text-xs text-purple-600 mt-2 italic">Esta pregunta será revisada manualmente</p>
                 </div>
@@ -306,28 +314,18 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
             )}
 
             {pregunta.tipo === 'pareados' && (
-              <div className="space-y-3">
-                {pregunta.quizzes_opciones.map((opcion, idx) => (
-                  <div key={opcion.id} className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-gray-900 flex-1">
-                      {idx + 1}. {opcion.texto}
-                    </span>
-                    <input
-                      type="text"
-                      value={respuestas[`${pregunta.id}-${opcion.id}`] || ''}
-                      onChange={(e) =>
-                        setRespuestas(prev => ({
-                          ...prev,
-                          [`${pregunta.id}-${opcion.id}`]: e.target.value,
-                        }))
-                      }
-                      disabled={submitted}
-                      placeholder="Empareja con..."
-                      className="flex-1 p-2 border border-gray-200 rounded-lg text-sm disabled:bg-gray-50 disabled:text-gray-500"
-                    />
-                  </div>
-                ))}
-              </div>
+              <PairedQuestionsMatch
+                preguntaId={pregunta.id}
+                opciones={pregunta.quizzes_opciones}
+                respuestas={respuestas}
+                onRespuestaChange={(preguntaId, pairKey, value) => {
+                  setRespuestas(prev => ({
+                    ...prev,
+                    [pairKey]: value,
+                  }))
+                }}
+                submitted={submitted}
+              />
             )}
           </div>
         ))}

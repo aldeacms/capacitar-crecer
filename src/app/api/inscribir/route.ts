@@ -14,7 +14,21 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true })
   } catch (err: any) {
     console.error('API /inscribir error:', err)
-    return NextResponse.json({ ok: false, error: err.message || String(err) }, { status: 500 })
+
+    // Extraer mensaje de error - puede venir de Supabase o ser un Error regular
+    let errorMessage = 'Error desconocido al inscribir'
+
+    if (err?.message) {
+      errorMessage = err.message
+    } else if (err?.error_description) {
+      errorMessage = err.error_description
+    } else if (typeof err === 'string') {
+      errorMessage = err
+    } else if (err?.error) {
+      errorMessage = err.error
+    }
+
+    return NextResponse.json({ ok: false, error: errorMessage }, { status: 500 })
   }
 }
 

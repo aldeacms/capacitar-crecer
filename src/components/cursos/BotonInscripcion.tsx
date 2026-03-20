@@ -36,7 +36,21 @@ export default function BotonInscripcion({ cursoId, tipoAcceso }: BotonInscripci
 
       if (!res.ok || !data.ok) {
         console.error('Inscripción fallida:', data)
-        alert(`Error al inscribir: ${data.error || 'Revisa la consola'}`)
+
+        // Mapear mensajes de error a textos amigables
+        let mensajeError = data.error || 'Error desconocido'
+        const mensajesAmigables: Record<string, string> = {
+          'NO_SESSION': 'Por favor inicia sesión para inscribirte',
+          'CURSO_NO_ENCONTRADO': 'El curso no fue encontrado',
+          'CURSO_REQUIERE_PAGO': 'Este curso requiere pago. Redirigiendo a checkout...',
+          'CURSO_REQUIERE_COTIZACION': 'Este curso requiere una cotización personalizada',
+          'TIPO_ACCESO_INVALIDO': 'Tipo de acceso al curso inválido',
+          'MISSING_CURSO_ID': 'ID del curso inválido',
+        }
+
+        mensajeError = mensajesAmigables[mensajeError] || mensajeError
+
+        alert(`Error al inscribir: ${mensajeError}`)
         setLoading(false)
         return
       }

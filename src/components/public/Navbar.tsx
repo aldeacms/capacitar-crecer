@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { User, Menu, X, LogOut, Settings, BookOpen } from 'lucide-react'
+import { User, Menu, X, LogOut, Settings, BookOpen, ChevronRight } from 'lucide-react'
 import { createClient } from '@/lib/supabase-client'
 
 export default function Navbar() {
@@ -13,6 +13,7 @@ export default function Navbar() {
   const [perfil, setPerfil] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [adminSubmenuOpen, setAdminSubmenuOpen] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
 
@@ -148,16 +149,86 @@ export default function Navbar() {
                         </Link>
                       )}
 
-                      {/* Admin panel */}
+                      {/* Admin panel with submenu */}
                       {perfil?.rol === 'admin' && (
-                        <Link
-                          href="/admin"
-                          className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-emerald-400 transition-colors"
-                          onClick={() => setDropdownOpen(false)}
-                        >
-                          <Settings size={16} />
-                          <span>Panel Admin</span>
-                        </Link>
+                        <div className="relative">
+                          <button
+                            onClick={() => setAdminSubmenuOpen(!adminSubmenuOpen)}
+                            className="w-full flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-emerald-400 transition-colors justify-between"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Settings size={16} />
+                              <span>Panel Admin</span>
+                            </div>
+                            <ChevronRight
+                              size={14}
+                              className={`transition-transform ${
+                                adminSubmenuOpen ? 'rotate-90' : ''
+                              }`}
+                            />
+                          </button>
+
+                          {/* Admin Submenu */}
+                          {adminSubmenuOpen && (
+                            <div className="absolute left-0 right-0 top-full mt-1 bg-slate-700 border border-slate-600 rounded-lg shadow-lg py-2 text-sm">
+                              <Link
+                                href="/admin"
+                                className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-600 hover:text-emerald-400 transition-colors"
+                                onClick={() => {
+                                  setAdminSubmenuOpen(false)
+                                  setDropdownOpen(false)
+                                }}
+                              >
+                                <Settings size={14} />
+                                <span>Dashboard</span>
+                              </Link>
+                              <Link
+                                href="/admin/alumnos"
+                                className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-600 hover:text-emerald-400 transition-colors"
+                                onClick={() => {
+                                  setAdminSubmenuOpen(false)
+                                  setDropdownOpen(false)
+                                }}
+                              >
+                                <User size={14} />
+                                <span>Gestión de Usuarios</span>
+                              </Link>
+                              <Link
+                                href="/admin/cursos"
+                                className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-600 hover:text-emerald-400 transition-colors"
+                                onClick={() => {
+                                  setAdminSubmenuOpen(false)
+                                  setDropdownOpen(false)
+                                }}
+                              >
+                                <BookOpen size={14} />
+                                <span>Gestión de Cursos</span>
+                              </Link>
+                              <Link
+                                href="/admin/categorias"
+                                className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-600 hover:text-emerald-400 transition-colors"
+                                onClick={() => {
+                                  setAdminSubmenuOpen(false)
+                                  setDropdownOpen(false)
+                                }}
+                              >
+                                <BookOpen size={14} />
+                                <span>Gestión de Categorías</span>
+                              </Link>
+                              <Link
+                                href="/admin/cupones"
+                                className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-600 hover:text-emerald-400 transition-colors"
+                                onClick={() => {
+                                  setAdminSubmenuOpen(false)
+                                  setDropdownOpen(false)
+                                }}
+                              >
+                                <Settings size={14} />
+                                <span>Gestión de Cupones</span>
+                              </Link>
+                            </div>
+                          )}
+                        </div>
                       )}
 
                       {/* Logout */}
@@ -234,14 +305,82 @@ export default function Navbar() {
                   </Link>
                 )}
                 {perfil?.rol === 'admin' && (
-                  <Link
-                    href="/admin"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 text-slate-300 hover:text-emerald-400"
-                  >
-                    <Settings size={16} />
-                    <span>Panel Admin</span>
-                  </Link>
+                  <div>
+                    <button
+                      onClick={() => setAdminSubmenuOpen(!adminSubmenuOpen)}
+                      className="w-full flex items-center gap-2 text-slate-300 hover:text-emerald-400 justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Settings size={16} />
+                        <span>Panel Admin</span>
+                      </div>
+                      <ChevronRight
+                        size={14}
+                        className={`transition-transform ${
+                          adminSubmenuOpen ? 'rotate-90' : ''
+                        }`}
+                      />
+                    </button>
+                    {adminSubmenuOpen && (
+                      <div className="mt-2 pl-6 space-y-2 border-l border-slate-700 py-2">
+                        <Link
+                          href="/admin"
+                          onClick={() => {
+                            setAdminSubmenuOpen(false)
+                            setMobileMenuOpen(false)
+                          }}
+                          className="flex items-center gap-2 text-slate-300 hover:text-emerald-400 text-sm"
+                        >
+                          <Settings size={14} />
+                          <span>Dashboard</span>
+                        </Link>
+                        <Link
+                          href="/admin/alumnos"
+                          onClick={() => {
+                            setAdminSubmenuOpen(false)
+                            setMobileMenuOpen(false)
+                          }}
+                          className="flex items-center gap-2 text-slate-300 hover:text-emerald-400 text-sm"
+                        >
+                          <User size={14} />
+                          <span>Gestión de Usuarios</span>
+                        </Link>
+                        <Link
+                          href="/admin/cursos"
+                          onClick={() => {
+                            setAdminSubmenuOpen(false)
+                            setMobileMenuOpen(false)
+                          }}
+                          className="flex items-center gap-2 text-slate-300 hover:text-emerald-400 text-sm"
+                        >
+                          <BookOpen size={14} />
+                          <span>Gestión de Cursos</span>
+                        </Link>
+                        <Link
+                          href="/admin/categorias"
+                          onClick={() => {
+                            setAdminSubmenuOpen(false)
+                            setMobileMenuOpen(false)
+                          }}
+                          className="flex items-center gap-2 text-slate-300 hover:text-emerald-400 text-sm"
+                        >
+                          <BookOpen size={14} />
+                          <span>Gestión de Categorías</span>
+                        </Link>
+                        <Link
+                          href="/admin/cupones"
+                          onClick={() => {
+                            setAdminSubmenuOpen(false)
+                            setMobileMenuOpen(false)
+                          }}
+                          className="flex items-center gap-2 text-slate-300 hover:text-emerald-400 text-sm"
+                        >
+                          <Settings size={14} />
+                          <span>Gestión de Cupones</span>
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 )}
                 <button
                   onClick={() => {

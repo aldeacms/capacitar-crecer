@@ -12,7 +12,7 @@ export async function enviarEmail(data: {
 }) {
   try {
     // Verificar que RESEND_API_KEY está configurado
-    if (!process.env.RESEND_API_KEY) {
+    if (!process.env.RESEND_API_KEY || !resend) {
       return { error: 'RESEND_API_KEY no configurado. Los correos no pueden ser enviados.' }
     }
 

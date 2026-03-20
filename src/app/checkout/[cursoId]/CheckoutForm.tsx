@@ -3,14 +3,17 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Check, AlertCircle, Loader2 } from 'lucide-react'
-import { validarCupon, inscribirConCupon } from '@/actions/checkout'
+import { validarCupon, inscribirConCupon, comprarCertificado } from '@/actions/checkout'
 
 interface CheckoutFormProps {
   cursoId: string
-  precioCurso: number
+  precio: number
+  tipo?: 'curso' | 'certificado'
+  cursoSlug?: string
 }
 
-export default function CheckoutForm({ cursoId, precioCurso }: CheckoutFormProps) {
+export default function CheckoutForm({ cursoId, precio, tipo = 'curso', cursoSlug = '' }: CheckoutFormProps) {
+  const esCertificado = tipo === 'certificado'
   const router = useRouter()
   const [codigoCupon, setCodigoCupon] = useState('')
   const [cuponAplicado, setCuponAplicado] = useState<{
@@ -23,9 +26,9 @@ export default function CheckoutForm({ cursoId, precioCurso }: CheckoutFormProps
   const [cuponError, setCuponError] = useState<string | null>(null)
 
   const descuentoAplicado = cuponAplicado
-    ? Math.round(precioCurso * (cuponAplicado.descuento_porcentaje / 100))
+    ? Math.round(precio * (cuponAplicado.descuento_porcentaje / 100))
     : 0
-  const precioFinal = precioCurso - descuentoAplicado
+  const precioFinal = precio - descuentoAplicado
 
   const handleAplicarCupon = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,7 +49,8 @@ export default function CheckoutForm({ cursoId, precioCurso }: CheckoutFormProps
   }
 
   const handleConfirmarInscripcion = async () => {
-    if (!cuponAplicado) {
+    // Para cursos, cupón es obligatorio
+    if (!esCertificado && !cuponAplicado) {
       setError('Debes aplicar un cupón para continuar')
       return
     }
@@ -54,7 +58,15 @@ export default function CheckoutForm({ cursoId, precioCurso }: CheckoutFormProps
     setLoadingInscripcion(true)
     setError(null)
 
-    const resultado = await inscribirConCupon(cursoId, cuponAplicado.codigo)
+    let resultado
+
+    if (esCertificado) {
+      // Compra de certificado
+      resultado = await comprarCertificado(cursoId, cuponAplicado?.codigo)
+    } else {
+      // Inscripción a curso
+      resultado = await inscribirConCupon(cursoId, cuponAplicado?.codigo || '')
+    }
 
     if ('error' in resultado) {
       setError(resultado.error)
@@ -63,7 +75,7 @@ export default function CheckoutForm({ cursoId, precioCurso }: CheckoutFormProps
     }
 
     // Éxito
-    router.push(`/dashboard`)
+    router.push(esCertificado ? `/dashboard/cursos/${cursoSlug}?leccion=certificado` : `/dashboard`)
   }
 
   const handleEliminarCupon = () => {
@@ -77,8 +89,8 @@ export default function CheckoutForm({ cursoId, precioCurso }: CheckoutFormProps
       {/* Resumen de precio */}
       <div className="bg-slate-50 rounded-xl p-4 space-y-3">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Precio del curso</span>
-          <span className="font-semibold text-gray-900">${precioCurso.toLocaleString('es-CL')}</span>
+          <span className="text-gray-600">Precio {esCertificado ? 'del certificado' : 'del curso'}</span>
+          <span className="font-semibold text-gray-900">${precio.toLocaleString('es-CL')}</span>
         </div>
 
         {cuponAplicado && (
@@ -102,7 +114,9 @@ export default function CheckoutForm({ cursoId, precioCurso }: CheckoutFormProps
       {/* Sección de cupón */}
       {!cuponAplicado ? (
         <form onSubmit={handleAplicarCupon} className="space-y-3">
-          <label className="block text-sm font-semibold text-gray-900">Código de descuento (opcional)</label>
+          <label className="block text-sm font-semibold text-gray-900">
+            Código de descuento {esCertificado ? '(opcional)' : '(obligatorio)'}
+          </label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -161,7 +175,7 @@ export default function CheckoutForm({ cursoId, precioCurso }: CheckoutFormProps
       )}
 
       {/* Botón de confirmación */}
-      {cuponAplicado && (
+      {(cuponAplicado || esCertificado) && (
         <button
           onClick={handleConfirmarInscripcion}
           disabled={loadingInscripcion}
@@ -170,22 +184,31 @@ export default function CheckoutForm({ cursoId, precioCurso }: CheckoutFormProps
           {loadingInscripcion ? (
             <>
               <Loader2 size={18} className="animate-spin" />
-              Completando inscripción...
+              Procesando...
             </>
           ) : (
             <>
               <Check size={18} />
-              Confirmar Inscripción
+              {esCertificado ? 'Confirmar Compra' : 'Confirmar Inscripción'}
             </>
           )}
         </button>
       )}
 
       {/* Aviso de seguridad */}
-      {cuponAplicado && precioFinal === 0 && (
+      {(cuponAplicado && precioFinal === 0) && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
           <p className="text-xs text-blue-700">
-            ✓ Tu inscripción será confirmada inmediatamente sin requerir pago.
+            ✓ Tu {esCertificado ? 'compra' : 'inscripción'} será confirmada inmediatamente sin requerir pago.
+          </p>
+        </div>
+      )}
+
+      {/* Aviso para certificado sin cupón */}
+      {esCertificado && !cuponAplicado && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-xs text-amber-700">
+            📝 Confirma tu compra del certificado por ${precio.toLocaleString('es-CL')}.
           </p>
         </div>
       )}

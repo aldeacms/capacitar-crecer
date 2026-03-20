@@ -242,6 +242,7 @@ export default async function CursoAulaPage({
                   <QuizRunner
                     preguntas={leccionActiva.quizzes_preguntas || []}
                     cursoSlug={slug}
+                    leccionId={leccionActiva.id}
                   />
                 )}
 

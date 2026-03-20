@@ -42,6 +42,77 @@ export async function validarCupon(
 }
 
 /**
+ * Compra un certificado de un curso gratis_cert_pago
+ * Marca estado_pago_certificado en la matrícula
+ */
+export async function comprarCertificado(
+  cursoId: string,
+  codigoCupon?: string
+): Promise<{ success: true } | { error: string }> {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { error: 'No autenticado' }
+    }
+
+    const admin = getSupabaseAdmin()
+
+    // Verificar perfil
+    const { data: perfil } = await admin
+      .from('perfiles')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    if (!perfil) {
+      return { error: 'Perfil no encontrado' }
+    }
+
+    // Obtener datos del curso
+    const { data: curso } = await admin
+      .from('cursos')
+      .select('id, tipo_acceso, tiene_certificado, precio_certificado')
+      .eq('id', cursoId)
+      .single()
+
+    if (!curso || curso.tipo_acceso !== 'gratis_cert_pago' || !curso.tiene_certificado) {
+      return { error: 'Este curso no tiene certificado de pago' }
+    }
+
+    // Verificar que esté inscrito en el curso
+    const { data: matricula } = await admin
+      .from('matriculas')
+      .select('id')
+      .eq('perfil_id', perfil.id)
+      .eq('curso_id', cursoId)
+      .single()
+
+    if (!matricula) {
+      return { error: 'No estás inscrito en este curso' }
+    }
+
+    // Marcar certificado como pagado
+    const { error: updateError } = await admin
+      .from('matriculas')
+      .update({ estado_pago_certificado: true })
+      .eq('id', matricula.id)
+
+    if (updateError) {
+      return { error: `Error al registrar pago: ${updateError.message}` }
+    }
+
+    revalidatePath('/dashboard')
+    return { success: true }
+  } catch (error: unknown) {
+    return { error: (error as Error).message || String(error) }
+  }
+}
+
+/**
  * Inscribe un usuario en un curso de pago, aplicando un cupón de descuento si aplica
  * Si el cupón es 100%, inscribe directamente sin requerir pago
  * Si el cupón es menor, retorna estado pendiente de pago (para integración futura con Transbank)

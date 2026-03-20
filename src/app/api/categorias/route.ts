@@ -7,7 +7,7 @@ export async function GET() {
 
     const { data, error } = await supabaseAdmin
       .from('categorias')
-      .select('id, nombre, slug, descripcion, imagen_url, created_at')
+      .select('id, nombre, slug, descripcion, imagen_url')
       .order('nombre', { ascending: true })
 
     if (error) {

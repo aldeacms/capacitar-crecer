@@ -7,10 +7,13 @@ import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
 
 export default async function CheckoutPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ cursoId: string }>
+  searchParams: Promise<{ tipo?: string; precio?: string }>
 }) {
   const { cursoId } = await params
+  const { tipo, precio } = await searchParams
 
   // Verificar sesión (único redirect crítico)
   const supabase = await createClient()
@@ -25,7 +28,7 @@ export default async function CheckoutPage({
   // Obtener datos del curso
   const { data: curso, error } = await supabase
     .from('cursos')
-    .select('id, titulo, slug, descripcion_breve, imagen_url, precio_curso, tipo_acceso')
+    .select('id, titulo, slug, descripcion_breve, imagen_url, precio_curso, precio_certificado, tiene_certificado, tipo_acceso')
     .eq('id', cursoId)
     .single()
 
@@ -34,9 +37,23 @@ export default async function CheckoutPage({
     return <CursoNoEncontradoPage cursoId={cursoId} />
   }
 
-  // EXCEPCIÓN 2: Curso no es de pago
-  if (curso.tipo_acceso !== 'pago') {
-    return <CursoNoEsDePagoPage curso={curso} />
+  // Detectar si es compra de certificado
+  const esCompradeCertificado = tipo === 'certificado'
+  const precioAMostrar = esCompradeCertificado
+    ? Number(precio) || curso.precio_certificado || 0
+    : curso.precio_curso || 0
+
+  // EXCEPCIÓN 2: Validar tipo de acceso según compra
+  if (esCompradeCertificado) {
+    // Para certificado: debe ser gratis_cert_pago y debe tener certificado
+    if (curso.tipo_acceso !== 'gratis_cert_pago' || !curso.tiene_certificado) {
+      return <CursoNoEsDePagoPage curso={curso} />
+    }
+  } else {
+    // Para curso: debe ser pago
+    if (curso.tipo_acceso !== 'pago') {
+      return <CursoNoEsDePagoPage curso={curso} />
+    }
   }
 
   // EXCEPCIÓN 3: Verificar si ya está inscrito
@@ -67,15 +84,19 @@ export default async function CheckoutPage({
       <div className="bg-gradient-to-r from-[#28B4AD]/5 to-[#28B4AD]/10 border-b border-[#28B4AD]/20 py-8 px-4">
         <div className="max-w-2xl mx-auto">
           <Link
-            href="/dashboard"
+            href={esCompradeCertificado ? `/dashboard/cursos/${curso.slug}?leccion=certificado` : "/dashboard"}
             className="flex items-center gap-2 text-[#28B4AD] hover:text-[#1f9593] font-medium mb-6 transition-colors"
           >
             <ArrowLeft size={18} />
-            Volver al Dashboard
+            Volver
           </Link>
           <div>
-            <h1 className="text-3xl font-black text-gray-900 mb-2">Finalizar Compra</h1>
-            <p className="text-gray-600">Completa tu inscripción al curso de {curso.titulo}</p>
+            <h1 className="text-3xl font-black text-gray-900 mb-2">Finalizar {esCompradeCertificado ? 'Compra del Certificado' : 'Inscripción'}</h1>
+            <p className="text-gray-600">
+              {esCompradeCertificado
+                ? `Obtén tu certificado para ${curso.titulo}`
+                : `Completa tu inscripción al curso de ${curso.titulo}`}
+            </p>
           </div>
         </div>
       </div>
@@ -113,18 +134,23 @@ export default async function CheckoutPage({
 
                 <div className="bg-slate-50 rounded-lg p-4 space-y-3 border border-slate-200">
                   <div className="flex justify-between">
-                    <span className="text-gray-700">Curso:</span>
+                    <span className="text-gray-700">{esCompradeCertificado ? 'Certificado de:' : 'Curso:'}</span>
                     <span className="font-bold text-gray-900">{curso.titulo}</span>
                   </div>
                   <div className="flex justify-between border-t border-slate-200 pt-3">
                     <span className="text-gray-700 font-semibold">Precio total:</span>
                     <span className="font-black text-gray-900 text-lg">
-                      ${(curso.precio_curso || 0).toLocaleString('es-CL')}
+                      ${precioAMostrar.toLocaleString('es-CL')}
                     </span>
                   </div>
                 </div>
 
-                <CheckoutForm cursoId={cursoId} precioCurso={curso.precio_curso || 0} />
+                <CheckoutForm
+                  cursoId={cursoId}
+                  precio={precioAMostrar}
+                  tipo={esCompradeCertificado ? 'certificado' : 'curso'}
+                  cursoSlug={curso.slug}
+                />
               </div>
             </div>
           </div>

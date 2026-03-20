@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react'
 import PairedQuestionsMatch from './PairedQuestionsMatch'
+import { marcarLeccionCompletada } from '@/actions/progreso'
 
 interface Opcion {
   id: string
@@ -23,11 +24,13 @@ interface Pregunta {
 interface QuizRunnerProps {
   preguntas: Pregunta[]
   cursoSlug?: string
+  leccionId?: string
 }
 
-export default function QuizRunner({ preguntas, cursoSlug }: QuizRunnerProps) {
+export default function QuizRunner({ preguntas, cursoSlug, leccionId }: QuizRunnerProps) {
   const [respuestas, setRespuestas] = useState<Record<string, string>>({})
   const [submitted, setSubmitted] = useState(false)
+  const [completandoLeccion, setCompletandoLeccion] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -222,15 +225,33 @@ export default function QuizRunner({ preguntas, cursoSlug }: QuizRunnerProps) {
         <div className="space-y-3">
           {porcentaje >= 60 ? (
             <button
-              onClick={() => {
-                if (cursoSlug) {
+              onClick={async () => {
+                if (!leccionId || !cursoSlug) return
+
+                setCompletandoLeccion(true)
+                const resultado = await marcarLeccionCompletada(leccionId)
+                setCompletandoLeccion(false)
+
+                if ('error' in resultado) {
+                  console.error('Error al marcar como completada:', resultado.error)
+                } else {
                   router.push(`/dashboard/cursos/${cursoSlug}?leccion=certificado`)
                 }
               }}
-              className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+              disabled={completandoLeccion}
+              className="w-full py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-600/50 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
             >
-              <span>🏆 Ver Certificado</span>
-              <ArrowRight size={18} />
+              {completandoLeccion ? (
+                <>
+                  <span className="animate-spin inline-block">⏳</span>
+                  Completando...
+                </>
+              ) : (
+                <>
+                  <span>🏆 Ver Certificado</span>
+                  <ArrowRight size={18} />
+                </>
+              )}
             </button>
           ) : null}
           <button

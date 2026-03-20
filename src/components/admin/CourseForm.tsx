@@ -83,6 +83,13 @@ export default function CourseForm({
     loadCategories()
   }, [])
 
+  // Sincronizar certificado con tipo de acceso
+  useEffect(() => {
+    if (tipoAcceso === 'gratis_cert_pago') {
+      setTieneCertificado(true)
+    }
+  }, [tipoAcceso])
+
   useEffect(() => {
     if (initialData) {
       setTitulo(initialData.titulo || '')

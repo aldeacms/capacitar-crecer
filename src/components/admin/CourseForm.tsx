@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter, useParams } from 'next/navigation'
-import { getCategories } from '@/actions/categorias'
 import { toast } from 'sonner'
 import { CheckCircle2, ShieldCheck, Award, Info, Sparkles, CreditCard, Eye, AlertCircle, Monitor, Lightbulb, Building2, Gift, ShoppingCart, FileText, Camera } from 'lucide-react'
 
@@ -68,8 +67,18 @@ export default function CourseForm({
 
   useEffect(() => {
     async function loadCategories() {
-      const data = await getCategories()
-      setDbCategories(data)
+      try {
+        const res = await fetch('/api/categorias')
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+        }
+        const data = await res.json()
+        setDbCategories(Array.isArray(data) ? data : [])
+      } catch (err: any) {
+        console.error('Error fetching categories:', err)
+        toast.error('Error al cargar categorías')
+        setDbCategories([])
+      }
     }
     loadCategories()
   }, [])

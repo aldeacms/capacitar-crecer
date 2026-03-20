@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle2, XCircle } from 'lucide-react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react'
 import PairedQuestionsMatch from './PairedQuestionsMatch'
 
 interface Opcion {
@@ -21,11 +22,14 @@ interface Pregunta {
 
 interface QuizRunnerProps {
   preguntas: Pregunta[]
+  cursoSlug?: string
 }
 
-export default function QuizRunner({ preguntas }: QuizRunnerProps) {
+export default function QuizRunner({ preguntas, cursoSlug }: QuizRunnerProps) {
   const [respuestas, setRespuestas] = useState<Record<string, string>>({})
   const [submitted, setSubmitted] = useState(false)
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
   if (!preguntas || preguntas.length === 0) {
     return (
@@ -214,13 +218,28 @@ export default function QuizRunner({ preguntas }: QuizRunnerProps) {
           })}
         </div>
 
-        {/* Botón de reinicio */}
-        <button
-          onClick={handleReiniciar}
-          className="w-full py-2.5 bg-[#28B4AD] hover:bg-[#1f9593] text-white rounded-xl font-bold transition-all"
-        >
-          Reintentar
-        </button>
+        {/* Botones de acción */}
+        <div className="space-y-3">
+          {porcentaje >= 60 ? (
+            <button
+              onClick={() => {
+                if (cursoSlug) {
+                  router.push(`/dashboard/cursos/${cursoSlug}?leccion=certificado`)
+                }
+              }}
+              className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2"
+            >
+              <span>🏆 Ver Certificado</span>
+              <ArrowRight size={18} />
+            </button>
+          ) : null}
+          <button
+            onClick={handleReiniciar}
+            className="w-full py-2.5 bg-[#28B4AD] hover:bg-[#1f9593] text-white rounded-xl font-bold transition-all"
+          >
+            Reintentar
+          </button>
+        </div>
       </div>
     )
   }

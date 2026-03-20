@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { generarCertificado } from '@/actions/certificados'
 import { toast } from 'sonner'
-import { Download, Loader2 } from 'lucide-react'
+import { Download, Loader2, ShoppingCart } from 'lucide-react'
 
 interface DescargarCertificadoButtonProps {
   cursoId: string
@@ -17,6 +18,7 @@ export default function DescargarCertificadoButton({
   preciosCertificado,
 }: DescargarCertificadoButtonProps) {
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
 
   const handleDescargar = async () => {
     setLoading(true)
@@ -63,13 +65,29 @@ export default function DescargarCertificadoButton({
   }
 
   // Para cursos con certificado de pago (gratis_cert_pago)
+  const handleComprarCertificado = () => {
+    // Redirigir a checkout para comprar el certificado
+    // Nota: El precio es por el certificado, no el curso
+    router.push(`/checkout/${cursoId}?tipo=certificado&precio=${preciosCertificado || 0}`)
+  }
+
   return (
     <button
+      onClick={handleComprarCertificado}
       disabled={loading}
-      className="inline-flex items-center gap-2 px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all shadow-lg disabled:opacity-50"
+      className="inline-flex items-center gap-2 px-8 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
     >
-      <span>🎓</span>
-      Obtener Certificado por ${(preciosCertificado || 0).toLocaleString('es-CL')}
+      {loading ? (
+        <>
+          <Loader2 size={18} className="animate-spin" />
+          Procesando...
+        </>
+      ) : (
+        <>
+          <ShoppingCart size={18} />
+          Obtener Certificado ${(preciosCertificado || 0).toLocaleString('es-CL')}
+        </>
+      )}
     </button>
   )
 }

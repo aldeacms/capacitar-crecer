@@ -239,7 +239,10 @@ export default async function CursoAulaPage({
                 )}
 
                 {leccionActiva.tipo === 'quiz' && (
-                  <QuizRunner preguntas={leccionActiva.quizzes_preguntas || []} />
+                  <QuizRunner
+                    preguntas={leccionActiva.quizzes_preguntas || []}
+                    cursoSlug={slug}
+                  />
                 )}
 
                 {/* Archivos adjuntos */}

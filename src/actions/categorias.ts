@@ -37,18 +37,18 @@ async function ensureUniqueSlug(supabase: any, table: string, baseSlug: string, 
 }
 
 export async function getCategories() {
-  await requireAdmin()
+  // No requiere autenticación de admin - es solo lectura
   const supabaseAdmin = getSupabaseAdmin()
   const { data, error } = await supabaseAdmin
     .from('categorias')
     .select('id, nombre, slug, descripcion, imagen_url, created_at')
     .order('nombre', { ascending: true })
-  
+
   if (error) {
     console.error('Error fetching categories:', error)
     return []
   }
-  return data
+  return data || []
 }
 
 export async function createCategory(formData: FormData) {

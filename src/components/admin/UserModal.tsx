@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { crearUsuario, actualizarPerfil } from '@/actions/usuarios'
+import { crearUsuario, actualizarPerfil, cambiarRolUsuario } from '@/actions/usuarios'
 import { enviarBienvenida } from '@/actions/email'
 import { toast } from 'sonner'
 import { X, User, Mail, Lock, FileText, Briefcase } from 'lucide-react'
@@ -31,7 +31,7 @@ export function UserModal({ editingUser, onClose }: UserModalProps) {
 
     try {
       if (isEditing) {
-        // Modo edición: solo actualizar perfil (rol se maneja por tabla admin_users)
+        // Modo edición: actualizar perfil
         const result = await actualizarPerfil(editingUser.id, {
           nombre_completo: formData.nombre_completo,
           rut: formData.rut
@@ -39,10 +39,22 @@ export function UserModal({ editingUser, onClose }: UserModalProps) {
 
         if ('error' in result) {
           toast.error(result.error)
-        } else {
-          toast.success('Usuario actualizado correctamente')
-          onClose()
+          setLoading(false)
+          return
         }
+
+        // Cambiar rol si es diferente
+        if (formData.rol !== editingUser.rol) {
+          const rolResult = await cambiarRolUsuario(editingUser.id, formData.rol)
+          if ('error' in rolResult) {
+            toast.error(rolResult.error)
+            setLoading(false)
+            return
+          }
+        }
+
+        toast.success('Usuario actualizado correctamente')
+        onClose()
       } else {
         // Modo creación
         if (!formData.password) {

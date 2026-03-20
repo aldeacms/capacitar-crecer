@@ -57,8 +57,15 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics | { error:
       .select('*', { count: 'exact', head: true })
       .is('invalidado_at', null)
 
-    // Ingreso total (simulado por ahora - en el futuro vendrá de tabla de pagos)
-    const ingresoTotal = 0 // TODO: Obtener de tabla pagos cuando esté implementada
+    // Ingreso total: suma de precios de cursos donde se realizó pago
+    const { data: pagosData } = await supabaseAdmin
+      .from('matriculas')
+      .select('cursos(precio_curso)')
+      .eq('estado_pago_curso', true)
+
+    const ingresoTotal = (pagosData || []).reduce((sum: number, m: any) => {
+      return sum + ((m.cursos as any)?.precio_curso || 0)
+    }, 0)
 
     return {
       totalUsuarios: totalUsuarios || 0,

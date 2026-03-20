@@ -432,3 +432,42 @@ export async function getCursosDisponibles(perfilId: string) {
     return { error: (error as Error).message || 'Error desconocido' }
   }
 }
+
+/**
+ * Cambiar el rol de un usuario entre admin y alumno
+ * Requiere: admin
+ * Previene: auto-degradación de admin
+ */
+export async function cambiarRolUsuario(userId: string, nuevoRol: 'admin' | 'alumno') {
+  const currentAdmin = await requireAdmin()
+
+  // Prevenir que admin se degrade a sí mismo
+  if (currentAdmin.id === userId && nuevoRol === 'alumno') {
+    return { error: 'No puedes degradar tu propia cuenta de administrador' }
+  }
+
+  const supabaseAdmin = getSupabaseAdmin()
+
+  try {
+    if (nuevoRol === 'admin') {
+      // Promover a admin
+      const { error } = await supabaseAdmin
+        .from('admin_users')
+        .upsert([{ id: userId, is_active: true }], { onConflict: 'id' })
+      if (error) return { error: error.message }
+    } else {
+      // Degradar de admin
+      const { error } = await supabaseAdmin
+        .from('admin_users')
+        .delete()
+        .eq('id', userId)
+      if (error) return { error: error.message }
+    }
+
+    revalidatePath('/admin/alumnos')
+    return { success: true }
+  } catch (error: unknown) {
+    console.error('Error en cambiarRolUsuario:', error)
+    return { error: (error as Error).message || 'Error desconocido al cambiar rol' }
+  }
+}

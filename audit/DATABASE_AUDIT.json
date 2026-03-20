@@ -1,0 +1,211 @@
+{
+  "timestamp": "2026-03-20T00:15:43.018Z",
+  "sections": {
+    "auth_users": {
+      "total": 1,
+      "users": [
+        {
+          "id": "7983c049-fa7b-42d9-bfba-41fbdfc57eb2",
+          "email": "daniel@lifefocus.agency",
+          "created_at": "2026-03-18T02:43:07.988686Z",
+          "last_sign_in_at": "2026-03-19T23:25:12.063673Z"
+        }
+      ]
+    },
+    "perfiles": {
+      "total": 1,
+      "columns": [
+        "id",
+        "rut",
+        "nombre_completo",
+        "created_at"
+      ],
+      "records": [
+        {
+          "id": "7983c049-fa7b-42d9-bfba-41fbdfc57eb2",
+          "nombre_completo": "Daniel Aldea Focus",
+          "email": "N/A",
+          "rut": "rut-7983c049",
+          "created_at": "2026-03-18T15:02:09.884324+00:00"
+        }
+      ]
+    },
+    "admin_users": {
+      "total": 1,
+      "columns": [
+        "id",
+        "is_active",
+        "created_at"
+      ],
+      "records": [
+        {
+          "id": "7983c049-fa7b-42d9-bfba-41fbdfc57eb2",
+          "is_active": true,
+          "created_at": "2026-03-19T23:24:49.372257+00:00"
+        }
+      ]
+    },
+    "cursos": {
+      "total": 4,
+      "records": [
+        {
+          "id": "cca43ee7-9ff9-45d6-b41f-c123592121db",
+          "titulo": "Redes Sociales que venden",
+          "slug": "redes-sociales-que-venden",
+          "tipo_acceso": "gratis_cert_pago",
+          "created_at": "2026-03-19T14:38:08.710515+00:00"
+        },
+        {
+          "id": "2510c42c-8d6b-4589-8b82-6f6a62507b81",
+          "titulo": "Test Pago",
+          "slug": "test-pago",
+          "tipo_acceso": "pago",
+          "created_at": "2026-03-18T22:09:09.516179+00:00"
+        },
+        {
+          "id": "d487103d-3891-4c2f-b72d-71572393a6f0",
+          "titulo": "Marketing Digital",
+          "slug": "marketing-digital",
+          "tipo_acceso": "pago",
+          "created_at": "2026-03-17T15:18:38.778324+00:00"
+        },
+        {
+          "id": "e6c91bb7-0f31-4c19-8a75-4e5a8ba602fc",
+          "titulo": "Técnicas de Buenas Prácticas de Manufactura, BPM",
+          "slug": "tecnicas-de-buenas-practicas-de-manufactura-bpm",
+          "tipo_acceso": "gratis_cert_pago",
+          "created_at": "2026-03-15T01:52:11.923749+00:00"
+        }
+      ]
+    },
+    "matriculas": {
+      "total": 3,
+      "records": [
+        {
+          "id": "0fef4e40-9fbd-4892-bf24-958956b03a94",
+          "perfil_id": "7983c049-fa7b-42d9-bfba-41fbdfc57eb2",
+          "curso_id": "e6c91bb7-0f31-4c19-8a75-4e5a8ba602fc",
+          "created_at": "2026-03-19T01:10:20.456086+00:00"
+        },
+        {
+          "id": "672e348d-a210-4838-8de5-731dc9b917c2",
+          "perfil_id": "7983c049-fa7b-42d9-bfba-41fbdfc57eb2",
+          "curso_id": "2510c42c-8d6b-4589-8b82-6f6a62507b81",
+          "created_at": "2026-03-18T22:10:02.731241+00:00"
+        },
+        {
+          "id": "91eeb8e9-aadc-41ff-b27a-308b109445ea",
+          "perfil_id": "7983c049-fa7b-42d9-bfba-41fbdfc57eb2",
+          "curso_id": "d487103d-3891-4c2f-b72d-71572393a6f0",
+          "created_at": "2026-03-18T18:24:23.436776+00:00"
+        }
+      ]
+    },
+    "categorias": {
+      "total": 3,
+      "records": [
+        {
+          "id": "ff821d07-463a-45c5-bd4e-89a1b6fb6b3b",
+          "nombre": "Alimentos",
+          "slug": "alimentos"
+        },
+        {
+          "id": "c3da80f5-095e-4fe6-9d60-2dcc0176b8d5",
+          "nombre": "Industria",
+          "slug": "industria"
+        },
+        {
+          "id": "de5533cd-c713-44fa-9246-2bbfa104fd9a",
+          "nombre": "Ofimática",
+          "slug": "ofimtica"
+        }
+      ]
+    },
+    "modulos": {
+      "total": 4,
+      "records": [
+        {
+          "id": "84fd8d88-1b33-4219-b176-524c1da2ce47",
+          "curso_id": "e6c91bb7-0f31-4c19-8a75-4e5a8ba602fc",
+          "titulo": "Módulo 1",
+          "orden": 1,
+          "created_at": "2026-03-15T03:20:46.084609+00:00"
+        },
+        {
+          "id": "5ed558bc-6cd6-4e3f-8c75-583bc01f80ef",
+          "curso_id": "e6c91bb7-0f31-4c19-8a75-4e5a8ba602fc",
+          "titulo": "Módulo 2",
+          "orden": 2,
+          "created_at": "2026-03-16T07:12:14.88752+00:00"
+        },
+        {
+          "id": "2be0afda-0782-4cbb-ab59-b1e04e38cfae",
+          "curso_id": "d487103d-3891-4c2f-b72d-71572393a6f0",
+          "titulo": "Módulo 1",
+          "orden": 1,
+          "created_at": "2026-03-17T15:20:01.331278+00:00"
+        },
+        {
+          "id": "0961f293-e6a1-49a7-9358-f1a90ceb7fb6",
+          "curso_id": "cca43ee7-9ff9-45d6-b41f-c123592121db",
+          "titulo": "1. Introducción",
+          "orden": 1,
+          "created_at": "2026-03-19T14:38:47.017699+00:00"
+        }
+      ]
+    },
+    "lecciones": {
+      "total": 5,
+      "records": [
+        {
+          "id": "ccee229f-c30c-4303-89a0-47d2ddc20fd2",
+          "modulo_id": "84fd8d88-1b33-4219-b176-524c1da2ce47",
+          "titulo": "Lección 1"
+        },
+        {
+          "id": "e915983e-113e-4d7d-b4d7-8b147b7592d0",
+          "modulo_id": "84fd8d88-1b33-4219-b176-524c1da2ce47",
+          "titulo": "Lección 2"
+        },
+        {
+          "id": "9fb192d8-3bf2-4c5d-87a0-e45be9271663",
+          "modulo_id": "84fd8d88-1b33-4219-b176-524c1da2ce47",
+          "titulo": "Evaluación"
+        },
+        {
+          "id": "b4dbad0b-95ad-49ae-9b06-b5cce1b27a81",
+          "modulo_id": "2be0afda-0782-4cbb-ab59-b1e04e38cfae",
+          "titulo": "Conceptos básicos de Marketing"
+        },
+        {
+          "id": "e8e9ec20-e47c-454d-8b32-697f081ee807",
+          "modulo_id": "0961f293-e6a1-49a7-9358-f1a90ceb7fb6",
+          "titulo": "Conceptos básicos de Marketing"
+        }
+      ]
+    },
+    "cupones": {
+      "total": 1,
+      "records": [
+        {
+          "id": "42957a48-9aeb-4a9b-b2d4-972df06f28a2",
+          "codigo": "TEST100",
+          "descuento_porcentaje": 100,
+          "usos_maximos": null,
+          "activo": true,
+          "created_at": "2026-03-18T21:18:32.238799+00:00"
+        }
+      ]
+    },
+    "certificate_downloads": {
+      "total": 1,
+      "records": [
+        {
+          "id": "44076e7f-a36e-47a1-aad6-652299438619",
+          "perfil_id": "7983c049-fa7b-42d9-bfba-41fbdfc57eb2",
+          "curso_id": "d487103d-3891-4c2f-b72d-71572393a6f0"
+        }
+      ]
+    }
+  }
+}

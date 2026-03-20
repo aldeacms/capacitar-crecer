@@ -1,7 +1,7 @@
 'use server'
 
 import { Suspense } from 'react'
-import { Users, Zap, BookOpen, TrendingUp, ClipboardList, Award, DollarSign } from 'lucide-react'
+import { Users, Zap, BookOpen, TrendingUp, ClipboardList, Award } from 'lucide-react'
 import { getDashboardMetrics, getMatriculasChart, getTopCursos } from '@/actions/dashboard'
 import { SkeletonGrid, SkeletonBarChart } from '@/components/ui/SkeletonLoader'
 import MetricCard from '@/components/admin/MetricCard'
@@ -83,12 +83,13 @@ async function MetricsSection() {
       icon: <Award size={32} />,
       color: 'bg-teal-500',
     },
-    {
-      label: 'Ingresos Totales',
-      value: `$${metrics.ingresoTotal.toLocaleString('es-CL')}`,
-      icon: <DollarSign size={32} />,
-      color: 'bg-emerald-500',
-    },
+    // TODO: Mostrar ingresos cuando se implemente sistema de pagos real
+    // {
+    //   label: 'Ingresos Totales',
+    //   value: `$${metrics.ingresoTotal.toLocaleString('es-CL')}`,
+    //   icon: <DollarSign size={32} />,
+    //   color: 'bg-emerald-500',
+    // },
   ]
 
   return (

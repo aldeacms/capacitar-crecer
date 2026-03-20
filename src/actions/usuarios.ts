@@ -314,7 +314,7 @@ export async function inscribirEnCurso(perfilId: string, cursoId: string) {
         {
           perfil_id: perfilIdParsed.data,
           curso_id: cursoIdParsed.data,
-          estado_pago_curso: 'gratis',
+          estado_pago_curso: false,
           progreso_porcentaje: 0
         }
       ])

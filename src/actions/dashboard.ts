@@ -57,15 +57,25 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics | { error:
       .select('*', { count: 'exact', head: true })
       .is('invalidado_at', null)
 
-    // Ingreso total: suma de precios de cursos donde se realizó pago
-    const { data: pagosData } = await supabaseAdmin
-      .from('matriculas')
-      .select('cursos(precio_curso)')
-      .eq('estado_pago_curso', true)
-
-    const ingresoTotal = (pagosData || []).reduce((sum: number, m: any) => {
-      return sum + ((m.cursos as any)?.precio_curso || 0)
-    }, 0)
+    // TODO: Cuando se implemente sistema de pagos real, crear tabla 'pagos' y actualizar esta consulta.
+    // Por ahora, esta consulta accede a matriculas.estado_pago_curso pero es inconsistente
+    // porque enrollments y payments son conceptos separados.
+    //
+    // Schema futuro de tabla 'pagos':
+    // - id (uuid)
+    // - perfil_id (uuid, fk perfiles)
+    // - curso_id (uuid, fk cursos)
+    // - monto (numeric)
+    // - metodo_pago (text: stripe, transferencia, etc)
+    // - estado (enum: pendiente, completado, fallido)
+    // - referencia_externa (text, ej: stripe_id)
+    // - created_at (timestamp)
+    //
+    // Consulta futura:
+    // SELECT SUM(pagos.monto) FROM pagos WHERE estado = 'completado'
+    //
+    // Por ahora, sin sistema de pagos real, ingresoTotal siempre debe ser 0:
+    const ingresoTotal = 0
 
     return {
       totalUsuarios: totalUsuarios || 0,

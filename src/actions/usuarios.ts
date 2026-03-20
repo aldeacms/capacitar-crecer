@@ -98,32 +98,70 @@ export async function crearUsuario(data: {
   const isAdmin = data.rol === 'admin'
 
   try {
-    // 1. Crear usuario en auth
-    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-      email: parsed.data.email,
-      password: parsed.data.password,
-      email_confirm: true
-    })
+    // 1. Intentar crear usuario con admin API
+    let authUser: any = null
+    let authError: any = null
 
-    if (authError || !authUser.user) {
-      throw new Error(`Error creando usuario auth: ${authError?.message}`)
+    try {
+      const response = await supabaseAdmin.auth.admin.createUser({
+        email: parsed.data.email,
+        password: parsed.data.password,
+        email_confirm: true
+      })
+      authUser = response.data
+      authError = response.error
+    } catch (adminError) {
+      console.warn('Admin API falló, intentando con función SQL...', adminError)
+      authError = adminError
     }
 
-    // 2. Crear perfil (sin rol - eso se maneja vía admin_users)
-    const { error: perfilError } = await supabaseAdmin
-      .from('perfiles')
-      .insert([
+    // Si admin API falló, usar función SQL como fallback
+    if (authError || !authUser?.user) {
+      console.warn('Usando fallback: create_new_user RPC')
+      const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc(
+        'create_new_user',
         {
-          id: authUser.user.id,
-          nombre_completo: parsed.data.nombre_completo,
-          rut: parsed.data.rut || null
+          user_email: parsed.data.email,
+          user_password: parsed.data.password,
+          user_nombre: parsed.data.nombre_completo,
+          user_rut: parsed.data.rut || 'sin-rut'
         }
-      ])
+      )
 
-    if (perfilError) {
-      // Si falla el perfil, eliminar el usuario auth creado
-      await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
-      throw new Error(`Error creando perfil: ${perfilError.message}`)
+      if (rpcError || !rpcResult?.[0]?.success) {
+        throw new Error(
+          `Error creando usuario: ${rpcError?.message || rpcResult?.[0]?.error_message || 'Error desconocido'}`
+        )
+      }
+
+      authUser = { user: { id: rpcResult[0].user_id } }
+    }
+
+    if (!authUser?.user?.id) {
+      throw new Error('No se pudo obtener ID del usuario creado')
+    }
+
+    // 2. Crear perfil SOLO si usamos admin API (RPC ya lo crea)
+    if (!authError) {
+      const { error: perfilError } = await supabaseAdmin
+        .from('perfiles')
+        .insert([
+          {
+            id: authUser.user.id,
+            nombre_completo: parsed.data.nombre_completo,
+            rut: parsed.data.rut || null
+          }
+        ])
+
+      if (perfilError) {
+        // Si falla el perfil, eliminar el usuario auth creado
+        try {
+          await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
+        } catch (deleteError) {
+          console.warn('No se pudo eliminar usuario fallido:', deleteError)
+        }
+        throw new Error(`Error creando perfil: ${perfilError.message}`)
+      }
     }
 
     // 3. Si es admin, agregar a tabla admin_users

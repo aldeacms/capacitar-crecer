@@ -1,7 +1,7 @@
 'use server'
 
 import { Suspense } from 'react'
-import { Users, Zap, BookOpen, TrendingUp, ClipboardList, Award } from 'lucide-react'
+import { Users, Zap, BookOpen, TrendingUp, ClipboardList, Award, DollarSign } from 'lucide-react'
 import { getDashboardMetrics, getMatriculasChart, getTopCursos } from '@/actions/dashboard'
 import { SkeletonGrid, SkeletonBarChart } from '@/components/ui/SkeletonLoader'
 import MetricCard from '@/components/admin/MetricCard'
@@ -12,8 +12,9 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard Administrativo</h1>
-        <p className="text-gray-600">Métricas de la plataforma en tiempo real</p>
+        <p className="text-sm font-medium text-[#28B4AD] mb-2">Panel Administrativo</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+        <p className="text-gray-500 text-sm">Métricas de la plataforma en tiempo real</p>
       </div>
 
       {/* Metrics Grid */}
@@ -83,13 +84,12 @@ async function MetricsSection() {
       icon: <Award size={32} />,
       color: 'bg-teal-500',
     },
-    // TODO: Mostrar ingresos cuando se implemente sistema de pagos real
-    // {
-    //   label: 'Ingresos Totales',
-    //   value: `$${metrics.ingresoTotal.toLocaleString('es-CL')}`,
-    //   icon: <DollarSign size={32} />,
-    //   color: 'bg-emerald-500',
-    // },
+    {
+      label: 'Ingresos Totales',
+      value: `$${metrics.ingresoTotal.toLocaleString('es-CL')}`,
+      icon: <DollarSign size={32} />,
+      color: 'bg-emerald-500',
+    },
   ]
 
   return (

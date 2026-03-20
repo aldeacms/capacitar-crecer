@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { User, Menu, X, LogOut, Settings, BookOpen, ChevronRight } from 'lucide-react'
+import { User, Menu, X, LogOut, Settings, BookOpen, ChevronRight, Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase-client'
 
 export default function Navbar() {
@@ -116,6 +116,16 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           {!loading && (
             <>
+              {user && perfil?.rol === 'admin' && (
+                // Botón directo al admin para admins
+                <Link
+                  href="/admin"
+                  className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 transition-all border border-orange-500/30 font-semibold text-sm"
+                >
+                  <Shield size={18} />
+                  <span>Panel Admin</span>
+                </Link>
+              )}
               {user ? (
                 // Usuario logueado
                 <div className="relative">
@@ -294,6 +304,16 @@ export default function Navbar() {
           {user && (
             <>
               <div className="border-t border-slate-700 pt-4 space-y-3">
+                {perfil?.rol === 'admin' && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-2 text-orange-400 hover:text-orange-300 font-semibold"
+                  >
+                    <Shield size={16} />
+                    <span>Panel Admin</span>
+                  </Link>
+                )}
                 {perfil?.rol === 'alumno' && (
                   <Link
                     href="/dashboard"

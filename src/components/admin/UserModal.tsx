@@ -63,16 +63,23 @@ export function UserModal({ editingUser, onClose }: UserModalProps) {
           return
         }
 
-        const result = await crearUsuario({
-          email: formData.email,
-          password: formData.password,
-          nombre_completo: formData.nombre_completo,
-          rut: formData.rut,
-          rol: formData.rol
+        // Usar endpoint de API para crear usuario (más robusto)
+        const createResponse = await fetch('/api/admin/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            nombre_completo: formData.nombre_completo,
+            rut: formData.rut,
+            rol: formData.rol
+          })
         })
 
-        if ('error' in result) {
-          toast.error(result.error)
+        const createResult = await createResponse.json()
+
+        if (!createResponse.ok || !createResult.success) {
+          toast.error(createResult.error || 'Error creando usuario')
         } else {
           // Enviar email de bienvenida si está marcado
           if (sendWelcomeEmail) {

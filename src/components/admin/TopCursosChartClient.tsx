@@ -31,11 +31,15 @@ export default function TopCursosChartClient({ data }: TopCursosChartClientProps
   }))
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-      <h2 className="text-lg font-semibold text-gray-900 mb-6">Top 5 Cursos</h2>
-      <ResponsiveContainer width="100%" height={300}>
-        <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 80 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(0,0,0,0.06),_0_4px_16px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="px-6 py-5 border-b border-gray-100">
+        <h2 className="text-base font-semibold text-gray-900">Top 5 Cursos</h2>
+        <p className="text-sm text-gray-400 mt-1">Cursos con más inscritos</p>
+      </div>
+      <div className="p-6">
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 80 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
           <XAxis
             dataKey="titulo"
             tick={{ fontSize: 12 }}
@@ -49,13 +53,14 @@ export default function TopCursosChartClient({ data }: TopCursosChartClientProps
             contentStyle={{
               backgroundColor: '#f9fafb',
               border: '1px solid #e5e7eb',
-              borderRadius: '8px',
+              borderRadius: '12px',
             }}
             cursor={{ fill: 'rgba(40, 180, 173, 0.05)' }}
           />
-          <Bar dataKey="matriculas" fill="#28B4AD" name="Matrículas" radius={[8, 8, 0, 0]} />
-        </BarChart>
-      </ResponsiveContainer>
+            <Bar dataKey="matriculas" fill="#28B4AD" name="Matrículas" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   )
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase-server'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
+import { enviarConfirmacionInscripcion } from '@/actions/email'
 
 /**
  * Valida un cupón de descuento
@@ -214,7 +215,7 @@ export async function inscribirConCupon(
     // Obtener datos del curso
     const { data: curso, error: cursoError } = await admin
       .from('cursos')
-      .select('id, tipo_acceso, precio_curso')
+      .select('id, titulo, slug, tipo_acceso, precio_curso')
       .eq('id', cursoId)
       .single()
 
@@ -297,6 +298,19 @@ export async function inscribirConCupon(
 
       revalidatePath('/dashboard')
       revalidatePath('/')
+
+      // Email de confirmación (no bloqueante)
+      const { data: perfilEmail } = await admin
+        .from('perfiles')
+        .select('nombre_completo')
+        .eq('id', user.id)
+        .single()
+      enviarConfirmacionInscripcion({
+        email: user.email!,
+        nombre: perfilEmail?.nombre_completo || user.email!,
+        cursoTitulo: curso.titulo,
+        cursoSlug: curso.slug,
+      }).catch(() => {})
 
       return { success: true, mensaje: 'Inscripción completada exitosamente con 100% de descuento' }
     }

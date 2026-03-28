@@ -8,6 +8,7 @@ import { createTransbankPayment } from '@/lib/gateways/transbank'
 import { createFlowPayment } from '@/lib/gateways/flow'
 import { createMercadoPagoPayment } from '@/lib/gateways/mercadopago'
 import { headers } from 'next/headers'
+import { enviarConfirmacionPago } from '@/actions/email'
 
 export async function iniciarPago(
   cursoId: string,
@@ -155,10 +156,9 @@ export async function confirmarPago(
   await admin.from('pagos').update(updates).eq('id', pagoId)
 
   if (aprobado) {
-    // Obtener matricula_id
     const { data: pago } = await admin
       .from('pagos')
-      .select('matricula_id')
+      .select('matricula_id, gateway, monto, gateway_order_id, usuario_id, metadata')
       .eq('id', pagoId)
       .single()
 
@@ -167,6 +167,39 @@ export async function confirmarPago(
         .from('matriculas')
         .update({ estado_pago_curso: true })
         .eq('id', pago.matricula_id)
+
+      // Email de confirmación — obtener datos del usuario y curso
+      try {
+        const { data: matricula } = await admin
+          .from('matriculas')
+          .select('curso_id')
+          .eq('id', pago.matricula_id)
+          .single()
+
+        if (matricula) {
+          const [{ data: curso }, { data: perfil }] = await Promise.all([
+            admin.from('cursos').select('titulo, slug').eq('id', matricula.curso_id).single(),
+            admin.from('perfiles').select('nombre_completo, id').eq('id', pago.usuario_id).single(),
+          ])
+
+          // Obtener email del usuario desde auth.users vía admin
+          const { data: authUser } = await admin.auth.admin.getUserById(pago.usuario_id)
+
+          if (curso && authUser?.user?.email) {
+            enviarConfirmacionPago({
+              email: authUser.user.email,
+              nombre: perfil?.nombre_completo || authUser.user.email,
+              cursoTitulo: curso.titulo,
+              cursoSlug: curso.slug,
+              monto: pago.monto,
+              gateway: pago.gateway,
+              ordenId: pago.gateway_order_id ?? undefined,
+            }).catch(() => {})
+          }
+        }
+      } catch {
+        // El email es no bloqueante — el pago ya fue confirmado
+      }
     }
   }
 }

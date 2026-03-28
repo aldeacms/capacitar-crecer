@@ -17,7 +17,7 @@
 
 ## FASE 0 — Quick wins (emojis → iconos) ✅ COMPLETADA
 
-11 archivos actualizados. Build limpio, 0 errores TypeScript.
+Eliminados todos los emojis del sistema. Archivos afectados: `CheckoutForm.tsx` (GATEWAY_ICONS), `cursos/[slug]/page.tsx`, `DeleteCourseModal.tsx`, `UserModal.tsx`, `Navbar.tsx`. Reemplazados por iconos Lucide consistentes con el resto del sitio. Build limpio, 0 errores TypeScript.
 
 ---
 
@@ -54,7 +54,7 @@
 | 1.4.1 | Test: registro → curso gratuito → aula → quiz → certificado | [ ] pendiente |
 | 1.4.2 | Test: admin crea/edita/cambia rol/elimina usuario | [ ] pendiente |
 | 1.4.3 | Test: cupón 100% → inscripción directa | [ ] pendiente |
-| 1.4.4 | `npm run build` limpio | [ ] pendiente (verificar) |
+| 1.4.4 | `npm run build` limpio | [x] 2026-03-28 — verificado local y en VPS Docker |
 
 ---
 
@@ -131,6 +131,8 @@
 | 3.2.3 | UI MercadoPago (toggle, credenciales, webhook secret, modo) | [x] 2026-03-28 |
 | 3.2.4 | Aviso si ninguna pasarela habilitada | [ ] pendiente |
 | 3.2.5 | Histórico de transacciones en admin | [ ] pendiente |
+
+> **Fix 2026-03-28:** `page.tsx` refactorizado a Server Component → `PagosForm.tsx` como Client Component. Resolvía error boundary al llamar `requireAdmin()` + `redirect()` desde `useEffect` sin manejo de errores.
 
 ### 3.3 Integración Transbank (Webpay Plus)
 
@@ -236,7 +238,7 @@
 
 | Área | Estado | Notas |
 |------|--------|-------|
-| Build TypeScript | ✅ Sin errores | Verificar tras cambios recientes |
+| Build TypeScript | ✅ Sin errores | Verificado 2026-03-28, local y VPS |
 | Auth básica (login, registro) | ✅ Funcional | |
 | Auth avanzada (reset password) | ✅ Funcional | `/olvide-mi-contrasena` + `/restablecer-contrasena` |
 | Admin panel CRUD | ✅ Funcional | Cursos, lecciones, quizzes, alumnos, cupones, categorías |
@@ -289,10 +291,10 @@ Validación pública             ✅  — /validar-certificado/[id]
 
 ## Próximas acciones recomendadas (por prioridad)
 
-1. **Verificar build** — `npm run build` y asegurar 0 errores tras todos los cambios de esta sesión
-2. **Test flujo completo** — registro → cupón 100% → aula → certificado (sin necesidad de credenciales de pago)
-3. **Credenciales de pago** — obtener sandbox keys de Transbank / Flow / MercadoPago y probar
-4. **Emails transaccionales** — confirmación de inscripción y de pago (Resend ya instalado)
-5. **Biblioteca de medios** — `/admin/medios` para gestión de imágenes
-6. **Cifrado de credenciales** — no dejar API keys en texto plano en BD antes de producción
-7. **Rate limiting** — antes de abrir registro público masivo
+1. **Test flujo completo** — registro → cupón 100% → aula → certificado (sin necesidad de credenciales de pago)
+2. **Credenciales de pago** — obtener sandbox keys de Transbank / Flow / MercadoPago y probar end-to-end
+3. **Emails transaccionales** — confirmación de inscripción y de pago (Resend ya instalado, falta implementar en pagos)
+4. **Biblioteca de medios** — `/admin/medios` para gestión de imágenes (subir, listar, eliminar)
+5. **Cifrado de credenciales** — no dejar API keys en texto plano en BD antes de uso en producción real
+6. **Rate limiting** — en `/api/auth/signup`, `/api/pagos/*` antes de abrir registro público masivo
+7. **Logootipos de pasarelas** — reemplazar icono genérico CreditCard por SVGs oficiales en checkout

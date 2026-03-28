@@ -155,17 +155,15 @@ export default function Navbar({ nombreOtec }: NavbarProps) {
                         {user.email}
                       </div>
 
-                      {/* Dashboard para alumnos */}
-                      {perfil?.rol === 'alumno' && (
-                        <Link
-                          href="/dashboard"
-                          className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-emerald-400 transition-colors"
-                          onClick={() => setDropdownOpen(false)}
-                        >
-                          <BookOpen size={16} />
-                          <span>Mis Cursos</span>
-                        </Link>
-                      )}
+                      {/* Dashboard - visible para todos los usuarios logueados */}
+                      <Link
+                        href="/dashboard"
+                        className="flex items-center gap-2 px-4 py-2 text-slate-300 hover:bg-slate-700 hover:text-emerald-400 transition-colors"
+                        onClick={() => setDropdownOpen(false)}
+                      >
+                        <BookOpen size={16} />
+                        <span>Mis Cursos</span>
+                      </Link>
 
                       {/* Admin panel with submenu */}
                       {perfil?.rol === 'admin' && (
@@ -322,16 +320,14 @@ export default function Navbar({ nombreOtec }: NavbarProps) {
                     <span>Panel Admin</span>
                   </Link>
                 )}
-                {perfil?.rol === 'alumno' && (
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 text-slate-300 hover:text-emerald-400"
-                  >
-                    <BookOpen size={16} />
-                    <span>Mis Cursos</span>
-                  </Link>
-                )}
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 text-slate-300 hover:text-emerald-400"
+                >
+                  <BookOpen size={16} />
+                  <span>Mis Cursos</span>
+                </Link>
                 {perfil?.rol === 'admin' && (
                   <div>
                     <button

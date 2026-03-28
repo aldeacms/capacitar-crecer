@@ -6,6 +6,8 @@ import { requireAdmin } from '@/lib/auth'
 import { UsuarioSchema, ActualizarPerfilSchema, PasswordSchema } from '@/lib/validations'
 import { z } from 'zod'
 
+const EmailSchema = z.string().email('Formato de email inválido').max(254)
+
 /**
  * Obtener lista de todos los usuarios (admins + alumnos)
  * Retorna: id, email, nombre_completo, rut, rol, created_at, cursos_count
@@ -309,6 +311,45 @@ export async function eliminarUsuario(userId: string) {
     return { success: true }
   } catch (error: unknown) {
     console.error('Error en eliminarUsuario:', error)
+    return { error: (error as Error).message || 'Error desconocido' }
+  }
+}
+
+/**
+ * Actualizar el email de un usuario en auth.users
+ * Operación separada de actualizarPerfil porque toca auth directamente
+ */
+export async function actualizarEmail(userId: string, newEmail: string) {
+  await requireAdmin()
+
+  const userIdParsed = z.string().uuid('ID de usuario inválido').safeParse(userId)
+  const emailParsed = EmailSchema.safeParse(newEmail)
+
+  if (!userIdParsed.success) {
+    return { error: 'ID de usuario inválido' }
+  }
+  if (!emailParsed.success) {
+    return { error: emailParsed.error.issues[0]?.message || 'Email inválido' }
+  }
+
+  const supabaseAdmin = getSupabaseAdmin()
+
+  try {
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(userIdParsed.data, {
+      email: emailParsed.data,
+    })
+
+    if (error) {
+      if (error.message.includes('already been registered')) {
+        return { error: 'Este email ya está en uso por otro usuario' }
+      }
+      throw new Error(`Error actualizando email: ${error.message}`)
+    }
+
+    revalidatePath('/admin/alumnos')
+    return { success: true }
+  } catch (error: unknown) {
+    console.error('Error en actualizarEmail:', error)
     return { error: (error as Error).message || 'Error desconocido' }
   }
 }

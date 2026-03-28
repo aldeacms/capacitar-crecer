@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = signUpData.user.id
-    console.log(`✅ Usuario registrado: ${userId}`)
+    console.log(`Usuario registrado: ${userId}`)
 
     // Actualizar perfil con RUT validado
     // (el trigger ya creó el perfil con rut='pendiente')
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`✅ Perfil actualizado: ${userId}`)
+    console.log(`Perfil actualizado: ${userId}`)
 
     return NextResponse.json({
       success: true,

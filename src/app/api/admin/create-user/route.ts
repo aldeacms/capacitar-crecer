@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`✅ Usuario creado en auth: ${userId}`)
+    console.log(`Usuario creado en auth: ${userId}`)
 
     // Crear perfil con rol correctamente asignado
     const { error: perfilError } = await supabaseAdmin
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
           method: 'DELETE',
           headers: authHeaders
         })
-        console.log(`⚠️  Rollback: usuario auth ${userId} eliminado`)
+        console.log(`Rollback: usuario auth ${userId} eliminado`)
       } catch (rollbackError) {
         console.error('Rollback falló:', rollbackError)
       }
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log(`✅ Perfil creado: ${userId}`)
+    console.log(`Perfil creado: ${userId}`)
 
     // Si es admin, registrar en admin_users
     if (rol === 'admin') {
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
           { status: 500 }
         )
       }
-      console.log(`✅ Rol admin asignado: ${userId}`)
+      console.log(`Rol admin asignado: ${userId}`)
     }
 
     return NextResponse.json({

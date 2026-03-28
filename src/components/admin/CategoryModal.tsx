@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { X, AlertTriangle } from 'lucide-react'
 import { createCategory, updateCategory } from '@/actions/categorias'
 
 interface CategoryModalProps {
@@ -73,14 +74,15 @@ export default function CategoryModal({ category, onClose }: CategoryModalProps)
             {category ? 'Editar Categoría' : 'Nueva Categoría'}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
-            ✕
+            <X size={18} />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {error && (
-            <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100 font-bold">
-              ⚠️ {error}
+            <div className="flex items-start gap-2 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100 font-bold">
+              <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" />
+              {error}
             </div>
           )}
 

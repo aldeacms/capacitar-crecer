@@ -113,6 +113,68 @@ export async function comprarCertificado(
 }
 
 /**
+ * Registra una inscripción pendiente de pago (sin cupón)
+ * Se usa cuando el alumno confirma sin cupón — el pago se coordina después
+ * (Será reemplazado por la pasarela de pago real en Fase 3)
+ */
+export async function inscribirPendientePago(
+  cursoId: string
+): Promise<{ success: true; pendientePago: true; precio: number } | { error: string }> {
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return { error: 'No autenticado' }
+
+    const admin = getSupabaseAdmin()
+
+    const { data: perfil } = await admin
+      .from('perfiles')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    if (!perfil) return { error: 'Perfil no encontrado' }
+
+    const { data: curso, error: cursoError } = await admin
+      .from('cursos')
+      .select('id, tipo_acceso, precio_curso')
+      .eq('id', cursoId)
+      .single()
+
+    if (cursoError || !curso) return { error: 'Curso no encontrado' }
+    if (curso.tipo_acceso !== 'pago') return { error: 'Este curso no requiere pago' }
+
+    const { data: yaInscrito } = await admin
+      .from('matriculas')
+      .select('id')
+      .eq('perfil_id', perfil.id)
+      .eq('curso_id', cursoId)
+      .maybeSingle()
+
+    if (yaInscrito) return { error: 'Ya estás inscrito en este curso' }
+
+    const { error: insertError } = await admin
+      .from('matriculas')
+      .insert({
+        perfil_id: perfil.id,
+        curso_id: cursoId,
+        estado_pago_curso: false,
+        progreso_porcentaje: 0,
+      })
+
+    if (insertError) return { error: `Error al registrar inscripción: ${insertError.message}` }
+
+    revalidatePath('/dashboard')
+    return { success: true, pendientePago: true, precio: curso.precio_curso || 0 }
+  } catch (error: unknown) {
+    return { error: (error as Error).message || String(error) }
+  }
+}
+
+/**
  * Inscribe un usuario en un curso de pago, aplicando un cupón de descuento si aplica
  * Si el cupón es 100%, inscribe directamente sin requerir pago
  * Si el cupón es menor, retorna estado pendiente de pago (para integración futura con Transbank)

@@ -4,7 +4,7 @@
 import { useState } from 'react'
 import { cambiarPassword } from '@/actions/usuarios'
 import { toast } from 'sonner'
-import { X, Lock } from 'lucide-react'
+import { X, Lock, CheckCircle2, XCircle } from 'lucide-react'
 
 interface ChangePasswordModalProps {
   usuario: any
@@ -121,12 +121,14 @@ export function ChangePasswordModal({ usuario, onClose }: ChangePasswordModalPro
 
           {/* Validación visual */}
           {password && confirmPassword && (
-            <div className={`text-sm p-3 rounded-lg ${
+            <div className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
               password === confirmPassword
                 ? 'bg-green-50 text-green-700'
                 : 'bg-red-50 text-red-700'
             }`}>
-              {password === confirmPassword ? '✓ Las contraseñas coinciden' : '✗ Las contraseñas no coinciden'}
+              {password === confirmPassword
+                ? <><CheckCircle2 size={15} className="flex-shrink-0" /> Las contraseñas coinciden</>
+                : <><XCircle size={15} className="flex-shrink-0" /> Las contraseñas no coinciden</>}
             </div>
           )}
 

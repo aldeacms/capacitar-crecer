@@ -117,39 +117,30 @@ export async function getMatriculasChart() {
 }
 
 /**
- * Obtener top cursos por matrículas
+ * Obtener top 5 cursos por número de matrículas
+ * Consulta desde cursos con conteo de matrículas anidado para evitar
+ * el problema de límite de filas al agrupar desde la tabla matriculas
  */
 export async function getTopCursos() {
   await requireAdmin()
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
-    const { data } = await supabaseAdmin
-      .from('matriculas')
-      .select('curso_id, cursos(id, titulo)')
-      .limit(100)
+    const { data: cursos, error } = await supabaseAdmin
+      .from('cursos')
+      .select('id, titulo, matriculas(count)')
 
-    // Agrupar por curso
-    const grouped: Record<string, { titulo: string; count: number }> = {}
-    data?.forEach((m: any) => {
-      const cursoId = m.curso_id
-      if (!grouped[cursoId]) {
-        grouped[cursoId] = {
-          titulo: m.cursos?.titulo || 'Curso desconocido',
-          count: 0,
-        }
-      }
-      grouped[cursoId].count += 1
-    })
+    if (error) throw new Error(error.message)
 
-    // Ordenar por count descendente y retornar top 5
-    return Object.entries(grouped)
-      .map(([id, data]) => ({
-        id,
-        titulo: data.titulo,
-        matriculas: data.count,
+    type CursoConConteo = { id: string; titulo: string; matriculas: number }
+
+    return (cursos || [])
+      .map((curso: any): CursoConConteo => ({
+        id: curso.id,
+        titulo: curso.titulo,
+        matriculas: (curso.matriculas?.[0]?.count as number) ?? 0,
       }))
-      .sort((a, b) => b.matriculas - a.matriculas)
+      .sort((a: CursoConConteo, b: CursoConConteo) => b.matriculas - a.matriculas)
       .slice(0, 5)
   } catch (error: unknown) {
     console.error('Error obteniendo top cursos:', error)

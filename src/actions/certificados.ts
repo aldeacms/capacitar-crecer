@@ -158,7 +158,7 @@ export async function generarCertificado(cursoId: string): Promise<GenerateCerti
       )
 
     if (upsertError) {
-      console.error('❌ Error registrando certificado en BD:', upsertError)
+      console.error('Error registrando certificado en BD:', upsertError)
       return {
         success: false,
         certificateId: '',
@@ -168,7 +168,7 @@ export async function generarCertificado(cursoId: string): Promise<GenerateCerti
       }
     }
 
-    console.log('✅ Certificado generado exitosamente')
+    console.log('Certificado generado exitosamente')
     return {
       success: true,
       certificateId: existingCert?.id ?? certificateId,
@@ -176,7 +176,7 @@ export async function generarCertificado(cursoId: string): Promise<GenerateCerti
       fileName,
     }
   } catch (error: unknown) {
-    console.error('❌ Error en generarCertificado:', error)
+    console.error('Error en generarCertificado:', error)
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
     return {
       success: false,
@@ -234,7 +234,7 @@ export async function validarCertificado(certificateId: string) {
       invalidadoMensaje: isInvalidado ? 'Este certificado ha sido invalidado' : null,
     }
   } catch (error: unknown) {
-    console.error('❌ Error en validarCertificado:', error)
+    console.error('Error en validarCertificado:', error)
     return { error: 'Error al validar certificado' }
   }
 }
@@ -263,7 +263,7 @@ export async function invalidarCertificado(certificateId: string) {
 
     return { success: true }
   } catch (error: unknown) {
-    console.error('❌ Error invalidando certificado:', error)
+    console.error('Error invalidando certificado:', error)
     return { success: false, error: 'Error al invalidar certificado' }
   }
 }

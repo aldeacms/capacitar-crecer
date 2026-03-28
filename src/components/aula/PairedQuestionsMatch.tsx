@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronRight, X } from 'lucide-react'
+import { ChevronRight, X, Check } from 'lucide-react'
 
 interface Opcion {
   id: string
@@ -107,7 +107,10 @@ export default function PairedQuestionsMatch({
                 </div>
               ))
             ) : (
-              <p className="text-xs text-gray-500 italic py-2">Todos empareados ✓</p>
+              <p className="text-xs text-gray-500 italic py-2 flex items-center gap-1">
+                <Check size={12} className="text-green-500" />
+                Todos emparejados
+              </p>
             )}
           </div>
         </div>

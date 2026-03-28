@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { CheckCircle2, XCircle, ArrowRight } from 'lucide-react'
+import { CheckCircle2, XCircle, ArrowRight, Trophy, Loader2 } from 'lucide-react'
 import PairedQuestionsMatch from './PairedQuestionsMatch'
 import { marcarLeccionCompletada } from '@/actions/progreso'
 
@@ -243,12 +243,13 @@ export default function QuizRunner({ preguntas, cursoSlug, leccionId }: QuizRunn
             >
               {completandoLeccion ? (
                 <>
-                  <span className="animate-spin inline-block">⏳</span>
+                  <Loader2 size={18} className="animate-spin" />
                   Completando...
                 </>
               ) : (
                 <>
-                  <span>🏆 Ver Certificado</span>
+                  <Trophy size={18} />
+                  Ver Certificado
                   <ArrowRight size={18} />
                 </>
               )}

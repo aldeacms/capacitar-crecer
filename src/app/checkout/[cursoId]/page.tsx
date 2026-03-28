@@ -2,8 +2,9 @@ import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import CheckoutForm from './CheckoutForm'
 import Link from 'next/link'
-import { ArrowLeft, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, AlertCircle } from 'lucide-react'
 import { ImagePlaceholder } from '@/components/ui/ImagePlaceholder'
+import { getPaymentConfigs } from '@/actions/pagos-config'
 
 export default async function CheckoutPage({
   params,
@@ -76,6 +77,12 @@ export default async function CheckoutPage({
       redirect(`/dashboard/cursos/${curso.slug}`)
     }
   }
+
+  // Obtener gateways habilitados
+  const allConfigs = await getPaymentConfigs()
+  const gatewaysHabilitados = allConfigs
+    .filter((c) => c.habilitado)
+    .map((c) => ({ gateway: c.gateway, nombre: c.nombre, modo: c.modo }))
 
   // ✅ FLUJO NORMAL: Mostrar checkout
   return (
@@ -150,6 +157,7 @@ export default async function CheckoutPage({
                   precio={precioAMostrar}
                   tipo={esCompradeCertificado ? 'certificado' : 'curso'}
                   cursoSlug={curso.slug}
+                  gatewaysDisponibles={gatewaysHabilitados}
                 />
               </div>
             </div>

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Trophy } from 'lucide-react'
 import LeccionSidebar from '@/components/aula/LeccionSidebar'
 import VideoPlayer from '@/components/aula/VideoPlayer'
 import TextViewer from '@/components/aula/TextViewer'
@@ -175,7 +175,10 @@ export default async function CursoAulaPage({
             <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl shadow-md border border-amber-200 p-8">
               <div className="text-center space-y-6">
                 <div>
-                  <h1 className="text-4xl font-black text-amber-900 mb-3">🏆 ¡Felicitaciones!</h1>
+                  <h1 className="text-4xl font-black text-amber-900 mb-3 flex items-center justify-center gap-3">
+                    <Trophy size={36} className="text-amber-600" />
+                    ¡Felicitaciones!
+                  </h1>
                   <p className="text-lg text-amber-800 font-semibold">Has completado exitosamente este curso</p>
                 </div>
 

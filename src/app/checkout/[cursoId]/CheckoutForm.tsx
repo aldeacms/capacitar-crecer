@@ -2,17 +2,32 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, AlertCircle, Loader2 } from 'lucide-react'
-import { validarCupon, inscribirConCupon, comprarCertificado } from '@/actions/checkout'
+import { Check, AlertCircle, Loader2, FileText, CheckCircle2, CreditCard } from 'lucide-react'
+import { validarCupon, inscribirConCupon, comprarCertificado, inscribirPendientePago } from '@/actions/checkout'
+import { iniciarPago } from '@/actions/pago-iniciar'
+import type { Gateway as GatewayType } from '@/lib/payment-constants'
+
+const GATEWAY_ICONS: Record<string, string> = {
+  transbank: '🏦',
+  flow: '💸',
+  mercadopago: '🛒',
+}
+
+interface GatewayInfo {
+  gateway: GatewayType
+  nombre: string
+  modo: string
+}
 
 interface CheckoutFormProps {
   cursoId: string
   precio: number
   tipo?: 'curso' | 'certificado'
   cursoSlug?: string
+  gatewaysDisponibles?: GatewayInfo[]
 }
 
-export default function CheckoutForm({ cursoId, precio, tipo = 'curso', cursoSlug = '' }: CheckoutFormProps) {
+export default function CheckoutForm({ cursoId, precio, tipo = 'curso', cursoSlug = '', gatewaysDisponibles = [] }: CheckoutFormProps) {
   const esCertificado = tipo === 'certificado'
   const router = useRouter()
   const [codigoCupon, setCodigoCupon] = useState('')
@@ -24,6 +39,10 @@ export default function CheckoutForm({ cursoId, precio, tipo = 'curso', cursoSlu
   const [loadingInscripcion, setLoadingInscripcion] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [cuponError, setCuponError] = useState<string | null>(null)
+  const [inscripcionPendiente, setInscripcionPendiente] = useState(false)
+  const [gatewaySeleccionado, setGatewaySeleccionado] = useState<GatewayType | null>(
+    gatewaysDisponibles.length === 1 ? gatewaysDisponibles[0].gateway : null
+  )
 
   const descuentoAplicado = cuponAplicado
     ? Math.round(precio * (cuponAplicado.descuento_porcentaje / 100))
@@ -49,39 +68,98 @@ export default function CheckoutForm({ cursoId, precio, tipo = 'curso', cursoSlu
   }
 
   const handleConfirmarInscripcion = async () => {
-    // Para cursos, cupón es obligatorio
-    if (!esCertificado && !cuponAplicado) {
-      setError('Debes aplicar un cupón para continuar')
-      return
-    }
-
     setLoadingInscripcion(true)
     setError(null)
 
-    let resultado
-
     if (esCertificado) {
-      // Compra de certificado
-      resultado = await comprarCertificado(cursoId, cuponAplicado?.codigo)
-    } else {
-      // Inscripción a curso
-      resultado = await inscribirConCupon(cursoId, cuponAplicado?.codigo || '')
+      // Compra de certificado (sin cambios)
+      const resultado = await comprarCertificado(cursoId, cuponAplicado?.codigo)
+      if ('error' in resultado) {
+        setError(resultado.error)
+        setLoadingInscripcion(false)
+        return
+      }
+      router.push(`/dashboard/cursos/${cursoSlug}?leccion=certificado`)
+      return
     }
 
+    if (cuponAplicado) {
+      // Inscripción con cupón aplicado
+      const resultado = await inscribirConCupon(cursoId, cuponAplicado.codigo)
+      if ('error' in resultado) {
+        if (resultado.requierePago) {
+          // Descuento parcial: matrícula creada pero pago pendiente — no es un error
+          setInscripcionPendiente(true)
+          setLoadingInscripcion(false)
+          return
+        }
+        setError(resultado.error)
+        setLoadingInscripcion(false)
+        return
+      }
+      router.push('/dashboard')
+      return
+    }
+
+    // Sin cupón en curso de pago
+    if (gatewaySeleccionado) {
+      // Hay gateway habilitado → pago online
+      const resultado = await iniciarPago(cursoId, gatewaySeleccionado)
+      if ('error' in resultado) {
+        setError(resultado.error)
+        setLoadingInscripcion(false)
+        return
+      }
+      // Redirigir al gateway externo
+      window.location.href = resultado.redirectUrl
+      return
+    }
+
+    // Sin gateways → flujo manual de coordinación
+    const resultado = await inscribirPendientePago(cursoId)
     if ('error' in resultado) {
       setError(resultado.error)
       setLoadingInscripcion(false)
       return
     }
-
-    // Éxito
-    router.push(esCertificado ? `/dashboard/cursos/${cursoSlug}?leccion=certificado` : `/dashboard`)
+    setInscripcionPendiente(true)
+    setLoadingInscripcion(false)
   }
 
   const handleEliminarCupon = () => {
     setCuponAplicado(null)
     setCodigoCupon('')
     setCuponError(null)
+  }
+
+  // Pantalla de inscripción pendiente de pago
+  if (inscripcionPendiente) {
+    return (
+      <div className="space-y-4 text-center py-4">
+        <div className="flex justify-center">
+          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+            <CheckCircle2 size={32} className="text-green-600" />
+          </div>
+        </div>
+        <div>
+          <h3 className="text-xl font-bold text-gray-900">Inscripción registrada</h3>
+          <p className="text-gray-600 mt-2 text-sm">
+            Tu solicitud fue recibida. Un administrador se contactará contigo para coordinar el pago
+            {precio > 0 && <> de <strong>${precio.toLocaleString('es-CL')}</strong></>}.
+          </p>
+        </div>
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-700 text-left">
+          Mientras tanto, el curso aparecerá en tu dashboard con estado <strong>pendiente de pago</strong>.
+          Una vez confirmado el pago, tendrás acceso completo.
+        </div>
+        <button
+          onClick={() => router.push('/dashboard')}
+          className="w-full py-3 bg-[#28B4AD] hover:bg-[#1f9593] text-white rounded-xl font-bold transition-all"
+        >
+          Ir a mi dashboard
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -115,7 +193,7 @@ export default function CheckoutForm({ cursoId, precio, tipo = 'curso', cursoSlu
       {!cuponAplicado ? (
         <form onSubmit={handleAplicarCupon} className="space-y-3">
           <label className="block text-sm font-semibold text-gray-900">
-            Código de descuento {esCertificado ? '(opcional)' : '(obligatorio)'}
+            Código de descuento (opcional)
           </label>
           <div className="flex gap-2">
             <input
@@ -166,6 +244,41 @@ export default function CheckoutForm({ cursoId, precio, tipo = 'curso', cursoSlu
         </div>
       )}
 
+      {/* Selección de medio de pago (cursos de pago con gateways disponibles) */}
+      {!esCertificado && precioFinal > 0 && gatewaysDisponibles.length > 0 && (
+        <div className="space-y-3">
+          <label className="block text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <CreditCard size={16} className="text-gray-400" />
+            Medio de pago
+          </label>
+          <div className="space-y-2">
+            {gatewaysDisponibles.map((gw) => (
+              <button
+                key={gw.gateway}
+                type="button"
+                onClick={() => setGatewaySeleccionado(gw.gateway)}
+                className={`w-full flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ${
+                  gatewaySeleccionado === gw.gateway
+                    ? 'border-[#28B4AD] bg-[#28B4AD]/5'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <span className="text-xl">{GATEWAY_ICONS[gw.gateway]}</span>
+                <div className="flex-1">
+                  <span className="text-sm font-semibold text-gray-900">{gw.nombre}</span>
+                  {gw.modo === 'sandbox' && (
+                    <span className="ml-2 text-[10px] bg-blue-100 text-blue-600 px-1.5 py-0.5 rounded font-semibold">Prueba</span>
+                  )}
+                </div>
+                {gatewaySeleccionado === gw.gateway && (
+                  <Check size={16} className="text-[#28B4AD] shrink-0" />
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Error general */}
       {error && (
         <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -174,32 +287,39 @@ export default function CheckoutForm({ cursoId, precio, tipo = 'curso', cursoSlu
         </div>
       )}
 
-      {/* Botón de confirmación */}
-      {(cuponAplicado || esCertificado) && (
-        <button
-          onClick={handleConfirmarInscripcion}
-          disabled={loadingInscripcion}
-          className="w-full py-3 bg-gradient-to-r from-[#28B4AD] to-[#1f9593] hover:from-[#1f9593] hover:to-[#178580] disabled:from-gray-300 disabled:to-gray-300 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
-        >
-          {loadingInscripcion ? (
-            <>
-              <Loader2 size={18} className="animate-spin" />
-              Procesando...
-            </>
-          ) : (
-            <>
-              <Check size={18} />
-              {esCertificado ? 'Confirmar Compra' : 'Confirmar Inscripción'}
-            </>
-          )}
-        </button>
-      )}
+      {/* Botón de confirmación — siempre visible */}
+      <button
+        onClick={handleConfirmarInscripcion}
+        disabled={loadingInscripcion}
+        className="w-full py-3 bg-gradient-to-r from-[#28B4AD] to-[#1f9593] hover:from-[#1f9593] hover:to-[#178580] disabled:from-gray-300 disabled:to-gray-300 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 disabled:cursor-not-allowed"
+      >
+        {loadingInscripcion ? (
+          <>
+            <Loader2 size={18} className="animate-spin" />
+            Procesando...
+          </>
+        ) : (
+          <>
+            <Check size={18} />
+            {esCertificado
+              ? 'Confirmar Compra'
+              : cuponAplicado && precioFinal === 0
+                ? 'Confirmar Inscripción Gratuita'
+                : gatewaySeleccionado
+                  ? `Pagar $${precioFinal.toLocaleString('es-CL')} con ${gatewaysDisponibles.find(g => g.gateway === gatewaySeleccionado)?.nombre ?? gatewaySeleccionado}`
+                  : cuponAplicado
+                    ? `Confirmar y Coordinar Pago ($${precioFinal.toLocaleString('es-CL')})`
+                    : 'Solicitar Inscripción'}
+          </>
+        )}
+      </button>
 
       {/* Aviso de seguridad */}
       {(cuponAplicado && precioFinal === 0) && (
         <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-xs text-blue-700">
-            ✓ Tu {esCertificado ? 'compra' : 'inscripción'} será confirmada inmediatamente sin requerir pago.
+          <p className="text-xs text-blue-700 flex items-center gap-1.5">
+            <Check size={12} className="flex-shrink-0" />
+            Tu {esCertificado ? 'compra' : 'inscripción'} será confirmada inmediatamente sin requerir pago.
           </p>
         </div>
       )}
@@ -207,8 +327,9 @@ export default function CheckoutForm({ cursoId, precio, tipo = 'curso', cursoSlu
       {/* Aviso para certificado sin cupón */}
       {esCertificado && !cuponAplicado && (
         <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <p className="text-xs text-amber-700">
-            📝 Confirma tu compra del certificado por ${precio.toLocaleString('es-CL')}.
+          <p className="text-xs text-amber-700 flex items-center gap-1.5">
+            <FileText size={12} className="flex-shrink-0" />
+            Confirma tu compra del certificado por ${precio.toLocaleString('es-CL')}.
           </p>
         </div>
       )}

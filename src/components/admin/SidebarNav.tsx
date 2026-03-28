@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
-import { LayoutDashboard, BookOpen, Tag, Ticket, Users, Settings, LucideIcon } from 'lucide-react'
+import { LayoutDashboard, BookOpen, Tag, Ticket, Users, Settings, FileText, CreditCard, LucideIcon } from 'lucide-react'
 
 interface NavItem {
   label: string
@@ -17,6 +17,8 @@ const navItems: NavItem[] = [
   { label: 'Categorías', href: '/admin/categorias', icon: Tag },
   { label: 'Cupones', href: '/admin/cupones', icon: Ticket },
   { label: 'Alumnos', href: '/admin/alumnos', icon: Users },
+  { label: 'Páginas', href: '/admin/paginas', icon: FileText },
+  { label: 'Pagos', href: '/admin/pagos', icon: CreditCard },
   { label: 'Configuración', href: '/admin/config', icon: Settings },
 ]
 

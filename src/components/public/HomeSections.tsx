@@ -2,10 +2,24 @@
 
 import { Mail, Phone, Send } from 'lucide-react'
 
-export function ClientLogos() {
-  const clients = [
-    'EL VALLEJO', 'COPEC', 'QUILIN', 'SACYR', 'TRANS ANTOFAGASTA', 'ALM', 'BUENAS HIJAS', 'POLICIA'
-  ]
+interface ClienteItem {
+  nombre: string
+  logo_url?: string
+}
+
+interface ClientLogosProps {
+  titulo?: string
+  items?: ClienteItem[]
+}
+
+const DEFAULT_CLIENTS: ClienteItem[] = [
+  { nombre: 'EL VALLEJO' }, { nombre: 'COPEC' }, { nombre: 'QUILIN' }, { nombre: 'SACYR' },
+  { nombre: 'TRANS ANTOFAGASTA' }, { nombre: 'ALM' }, { nombre: 'BUENAS HIJAS' }, { nombre: 'POLICIA' },
+]
+
+export function ClientLogos({ titulo, items }: ClientLogosProps) {
+  const tituloFinal = titulo ?? 'Empresas que confían en nosotros'
+  const clientesFinal = items?.length ? items : DEFAULT_CLIENTS
 
   return (
     <section className="py-20 bg-white border-b border-slate-100">
@@ -15,17 +29,21 @@ export function ClientLogos() {
             Socios Estratégicos
           </span>
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Empresas que confían en nosotros
+            {tituloFinal}
           </h2>
         </header>
 
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
-          {clients.map(client => (
+          {clientesFinal.map((client) => (
             <div
-              key={client}
+              key={client.nombre}
               className="flex items-center justify-center font-bold text-slate-400 text-[10px] tracking-widest border border-slate-100 aspect-video rounded-2xl transition-all duration-500 uppercase px-4 text-center bg-slate-50/50 hover:bg-white hover:text-[#2DB3A7] hover:border-[#2DB3A7]/20 hover:shadow-sm grayscale hover:grayscale-0"
             >
-              {client}
+              {client.logo_url ? (
+                <img src={client.logo_url} alt={client.nombre} className="max-h-8 max-w-full object-contain" />
+              ) : (
+                client.nombre
+              )}
             </div>
           ))}
         </div>
@@ -34,7 +52,16 @@ export function ClientLogos() {
   )
 }
 
-export function ContactForm() {
+interface ContactFormProps {
+  email?: string
+  telefono?: string
+}
+
+export function ContactForm({ email, telefono }: ContactFormProps) {
+  const emailFinal = email ?? 'contacto@capacitarycrecer.cl'
+  const telefonoFinal = telefono ?? '+56 9 2964 2878'
+  const telefonoHref = 'tel:' + telefonoFinal.replace(/\s/g, '')
+
   return (
     <section className="relative py-24 bg-[#0a0f1d] overflow-hidden">
       {/* Decoración de fondo */}
@@ -55,11 +82,11 @@ export function ContactForm() {
           </p>
 
           <div className="flex flex-col md:flex-row justify-center gap-8 mt-10">
-            <a href="tel:+56929642878" className="flex items-center justify-center gap-3 text-slate-300 hover:text-[#2DB3A7] transition-colors font-bold text-sm">
-              <Phone size={18} className="text-[#2DB3A7]" /> (+569) 2964 2878
+            <a href={telefonoHref} className="flex items-center justify-center gap-3 text-slate-300 hover:text-[#2DB3A7] transition-colors font-bold text-sm">
+              <Phone size={18} className="text-[#2DB3A7]" /> {telefonoFinal}
             </a>
-            <a href="mailto:contacto@capacitarycrecer.cl" className="flex items-center justify-center gap-3 text-slate-300 hover:text-[#2DB3A7] transition-colors font-bold text-sm">
-              <Mail size={18} className="text-[#2DB3A7]" /> contacto@capacitarycrecer.cl
+            <a href={`mailto:${emailFinal}`} className="flex items-center justify-center gap-3 text-slate-300 hover:text-[#2DB3A7] transition-colors font-bold text-sm">
+              <Mail size={18} className="text-[#2DB3A7]" /> {emailFinal}
             </a>
           </div>
         </div>

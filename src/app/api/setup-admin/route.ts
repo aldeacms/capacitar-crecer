@@ -11,10 +11,10 @@ export async function POST(request: Request) {
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
-    console.log('🔧 Iniciando setup de admin_users...')
+    console.log('Iniciando setup de admin_users...')
 
     // 1. Crear tabla admin_users
-    console.log('📋 Paso 1: Creando tabla admin_users...')
+    console.log('Paso 1: Creando tabla admin_users...')
     const { error: createTableError } = await supabaseAdmin.rpc('create_admin_table', {
       query: `
         CREATE TABLE IF NOT EXISTS public.admin_users (
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
     // Si no existe RPC, intentaremos de otra forma
     // 2. Insertar admin user
-    console.log('👤 Paso 2: Insertando usuario admin...')
+    console.log('Paso 2: Insertando usuario admin...')
     const { error: insertError } = await supabaseAdmin
       .from('admin_users')
       .insert([

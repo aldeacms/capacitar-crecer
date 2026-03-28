@@ -55,6 +55,11 @@ export default function LoginPage() {
               <button type="submit" disabled={loading} className="w-full flex justify-center items-center gap-2 py-4 rounded-xl font-black text-white bg-[#2DB3A7] hover:bg-[#26a095] transition-all disabled:opacity-50">
                 {loading ? 'Cargando...' : 'Entrar a mis cursos'} <ArrowRight size={18} />
               </button>
+              <div className="text-center">
+                <Link href="/olvide-mi-contrasena" className="text-sm text-slate-500 hover:text-slate-700 transition-colors">
+                  ¿Olvidaste tu contraseña?
+                </Link>
+              </div>
             </form>
           </div>
         </div>

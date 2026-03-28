@@ -2,7 +2,7 @@
 'use client'
 
 import { useState } from 'react'
-import { crearUsuario, actualizarPerfil, cambiarRolUsuario } from '@/actions/usuarios'
+import { crearUsuario, actualizarPerfil, cambiarRolUsuario, actualizarEmail } from '@/actions/usuarios'
 import { enviarBienvenida } from '@/actions/email'
 import { toast } from 'sonner'
 import { X, User, Mail, Lock, FileText, Briefcase } from 'lucide-react'
@@ -31,7 +31,17 @@ export function UserModal({ editingUser, onClose }: UserModalProps) {
 
     try {
       if (isEditing) {
-        // Modo edición: actualizar perfil
+        // Actualizar email si cambió
+        if (formData.email !== editingUser.email) {
+          const emailResult = await actualizarEmail(editingUser.id, formData.email)
+          if ('error' in emailResult) {
+            toast.error(emailResult.error)
+            setLoading(false)
+            return
+          }
+        }
+
+        // Actualizar nombre y RUT
         const result = await actualizarPerfil(editingUser.id, {
           nombre_completo: formData.nombre_completo,
           rut: formData.rut
@@ -134,12 +144,16 @@ export function UserModal({ editingUser, onClose }: UserModalProps) {
             <input
               type="email"
               required
-              disabled={isEditing}
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="form-input disabled:bg-gray-50 disabled:text-gray-500"
+              className="form-input"
               placeholder="usuario@ejemplo.com"
             />
+            {isEditing && formData.email !== editingUser.email && (
+              <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
+                <span>⚠</span> El email del usuario cambiará. Se enviará notificación a la nueva dirección.
+              </p>
+            )}
           </div>
 
           {/* Nombre Completo */}

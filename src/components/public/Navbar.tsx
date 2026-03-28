@@ -6,7 +6,13 @@ import { usePathname, useRouter } from 'next/navigation'
 import { User, Menu, X, LogOut, Settings, BookOpen, ChevronRight, Shield } from 'lucide-react'
 import { createClient } from '@/lib/supabase-client'
 
-export default function Navbar() {
+interface NavbarProps {
+  nombreOtec?: string | null
+}
+
+export default function Navbar({ nombreOtec }: NavbarProps) {
+  const [logoParte1, ...resto] = (nombreOtec ?? 'Capacitar y Crecer').split(' ')
+  const logoParte2 = resto.join(' ')
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<any>(null)
@@ -87,11 +93,13 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <div className="w-10 h-10 bg-emerald-500 rounded-lg flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-emerald-500/20">
-            C
+            {logoParte1[0]}
           </div>
           <div className="flex flex-col">
-            <span className="text-white font-bold leading-none tracking-tight">CAPACITAR</span>
-            <span className="text-emerald-500 text-xs font-bold leading-none">& CRECER</span>
+            <span className="text-white font-bold leading-none tracking-tight uppercase">{logoParte1}</span>
+            {logoParte2 && (
+              <span className="text-emerald-500 text-xs font-bold leading-none uppercase">{logoParte2}</span>
+            )}
           </div>
         </Link>
 

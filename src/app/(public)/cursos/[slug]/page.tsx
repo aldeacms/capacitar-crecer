@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import Accordion from '@/components/public/Accordion'
-import { ArrowRight, CheckCircle2, PlayCircle, FileText, HelpCircle, Mail, Clock, ShieldCheck } from 'lucide-react'
+import { ArrowRight, CheckCircle2, PlayCircle, FileText, HelpCircle, Mail, Clock, ShieldCheck, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { ContactForm } from '@/components/public/HomeSections'
 import Eyebrow from '@/components/public/ui/Eyebrow'
@@ -148,7 +148,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
               <div className="flex flex-wrap gap-4 pt-4">
                 {sinLecciones ? (
                   <div className="inline-flex justify-center items-center gap-2 py-4 px-8 rounded-xl font-black text-gray-500 bg-gray-300 cursor-not-allowed opacity-60" title="Este curso está siendo preparado">
-                    ⚠️ Curso en construcción
+                    <AlertTriangle size={18} /> Curso en construcción
                   </div>
                 ) : isCotizar ? (
                   <a href="#contacto-corporativo" className="inline-flex justify-center items-center gap-2 py-4 px-8 rounded-xl font-black text-white bg-[#2DB3A7] hover:bg-[#26a095] transition-all">
@@ -221,7 +221,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ s
       {sinLecciones && (
         <section className="py-24 bg-amber-50 border-y border-amber-200">
           <div className="container mx-auto px-6 text-center space-y-4">
-            <h2 className="text-2xl font-black text-amber-900">⚠️ Curso en Construcción</h2>
+            <h2 className="text-2xl font-black text-amber-900 flex items-center justify-center gap-2"><AlertTriangle size={24} /> Curso en Construcción</h2>
             <p className="text-amber-700 max-w-lg mx-auto">
               Este curso está siendo preparado y se hará disponible próximamente. Por favor, intenta nuevamente en algunos días.
             </p>

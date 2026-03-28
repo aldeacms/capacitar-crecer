@@ -7,11 +7,6 @@ import { validarCupon, inscribirConCupon, comprarCertificado, inscribirPendiente
 import { iniciarPago } from '@/actions/pago-iniciar'
 import type { Gateway as GatewayType } from '@/lib/payment-constants'
 
-const GATEWAY_ICONS: Record<string, string> = {
-  transbank: '🏦',
-  flow: '💸',
-  mercadopago: '🛒',
-}
 
 interface GatewayInfo {
   gateway: GatewayType
@@ -263,7 +258,7 @@ export default function CheckoutForm({ cursoId, precio, tipo = 'curso', cursoSlu
                     : 'border-gray-200 hover:border-gray-300'
                 }`}
               >
-                <span className="text-xl">{GATEWAY_ICONS[gw.gateway]}</span>
+                <CreditCard size={20} className="text-slate-400 shrink-0" />
                 <div className="flex-1">
                   <span className="text-sm font-semibold text-gray-900">{gw.nombre}</span>
                   {gw.modo === 'sandbox' && (

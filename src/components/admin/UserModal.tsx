@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { crearUsuario, actualizarPerfil, cambiarRolUsuario, actualizarEmail } from '@/actions/usuarios'
 import { enviarBienvenida } from '@/actions/email'
 import { toast } from 'sonner'
-import { X, User, Mail, Lock, FileText, Briefcase } from 'lucide-react'
+import { X, User, Mail, Lock, FileText, Briefcase, AlertTriangle } from 'lucide-react'
 
 interface UserModalProps {
   editingUser?: any
@@ -151,7 +151,7 @@ export function UserModal({ editingUser, onClose }: UserModalProps) {
             />
             {isEditing && formData.email !== editingUser.email && (
               <p className="text-xs text-amber-600 mt-1.5 flex items-center gap-1">
-                <span>⚠</span> El email del usuario cambiará. Se enviará notificación a la nueva dirección.
+                <AlertTriangle size={13} className="shrink-0" /> El email del usuario cambiará. Se enviará notificación a la nueva dirección.
               </p>
             )}
           </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Trash2, X, Layers, BookOpen, Users } from 'lucide-react'
+import { Trash2, X, Layers, BookOpen, Users, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { getDeleteSummary, deleteCourse, type DeleteSummary } from '@/actions/cursos'
 
@@ -123,7 +123,7 @@ export default function DeleteCourseModal({ cursoId, onClose }: DeleteCourseModa
             <div className="space-y-4">
               {summaryError ? (
                 <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100 font-bold">
-                  ⚠️ {summaryError}
+                  <AlertTriangle size={14} className="inline mr-1" />{summaryError}
                 </div>
               ) : summary && (
                 <>
@@ -150,7 +150,7 @@ export default function DeleteCourseModal({ cursoId, onClose }: DeleteCourseModa
                     <div className="bg-red-50 border border-red-200 rounded-xl p-4 space-y-3">
                       <div>
                         <p className="text-red-800 font-bold text-sm">
-                          ⚠️ Advertencia: {summary.totalAlumnos} alumno(s) inscrito(s)
+                          <AlertTriangle size={14} className="inline mr-1" />Advertencia: {summary.totalAlumnos} alumno(s) inscrito(s)
                         </p>
                         <p className="text-red-600 text-xs mt-1">
                           Se eliminarán todas sus matriculas y progreso. Esta acción NO se puede deshacer.
@@ -175,7 +175,7 @@ export default function DeleteCourseModal({ cursoId, onClose }: DeleteCourseModa
 
                   {/* Mensaje final */}
                   <p className="text-sm text-gray-600 p-3 bg-yellow-50 border border-yellow-100 rounded-lg">
-                    <span className="font-bold text-yellow-800">⚠️ Importante:</span> Esta acción es irreversible. Se eliminarán permanentemente todos los módulos, lecciones y datos asociados.
+                    <span className="font-bold text-yellow-800 inline-flex items-center gap-1"><AlertTriangle size={14} /> Importante:</span> Esta acción es irreversible. Se eliminarán permanentemente todos los módulos, lecciones y datos asociados.
                   </p>
                 </>
               )}
@@ -187,7 +187,7 @@ export default function DeleteCourseModal({ cursoId, onClose }: DeleteCourseModa
             <div className="space-y-4">
               {deleteError && (
                 <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-100 font-bold">
-                  ⚠️ {deleteError}
+                  <AlertTriangle size={14} className="inline mr-1" />{deleteError}
                 </div>
               )}
 

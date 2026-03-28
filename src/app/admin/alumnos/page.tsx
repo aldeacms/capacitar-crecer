@@ -8,7 +8,9 @@ import { UserDetailPanel } from '@/components/admin/UserDetailPanel'
 import { ChangePasswordModal } from '@/components/admin/ChangePasswordModal'
 import { SendEmailModal } from '@/components/admin/SendEmailModal'
 import { toast } from 'sonner'
-import { Search, Plus, Eye, Edit2, Key, Mail, Trash2, Users, Crown, GraduationCap } from 'lucide-react'
+import { Search, Plus, Eye, Edit2, Key, Mail, Trash2, Users, Crown, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react'
+
+const PAGE_SIZE = 20
 
 export default function AlumnosPage() {
   const [usuarios, setUsuarios] = useState<any[]>([])
@@ -16,6 +18,7 @@ export default function AlumnosPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'alumno'>('all')
+  const [page, setPage] = useState(1)
 
   // Modales
   const [userModalOpen, setUserModalOpen] = useState(false)
@@ -63,7 +66,11 @@ export default function AlumnosPage() {
     }
 
     setFilteredUsuarios(filtered)
+    setPage(1) // reset to first page when filters change
   }, [usuarios, searchTerm, roleFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filteredUsuarios.length / PAGE_SIZE))
+  const paginatedUsuarios = filteredUsuarios.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   const handleCreateUser = () => {
     setEditingUser(null)
@@ -185,8 +192,8 @@ export default function AlumnosPage() {
                     </td>
                   </tr>
                 ))
-              ) : filteredUsuarios.length > 0 ? (
-                filteredUsuarios.map((usuario) => (
+              ) : paginatedUsuarios.length > 0 ? (
+                paginatedUsuarios.map((usuario) => (
                   <tr key={usuario.id} className="hover:bg-gray-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -287,9 +294,33 @@ export default function AlumnosPage() {
           </table>
         </div>
 
-        {/* Información del Footer */}
-        <div className="mt-6 text-center text-sm text-gray-500">
-          Mostrando {filteredUsuarios.length} de {usuarios.length} usuarios
+        {/* Footer con paginación */}
+        <div className="mt-6 flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            Mostrando {Math.min((page - 1) * PAGE_SIZE + 1, filteredUsuarios.length)}–{Math.min(page * PAGE_SIZE, filteredUsuarios.length)} de {filteredUsuarios.length} usuarios
+            {filteredUsuarios.length !== usuarios.length && ` (${usuarios.length} en total)`}
+          </p>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <span className="text-sm font-medium text-gray-700 px-2">
+                {page} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="p-2 rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

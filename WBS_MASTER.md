@@ -21,16 +21,16 @@ Eliminados todos los emojis del sistema. Archivos afectados: `CheckoutForm.tsx` 
 
 ---
 
-## FASE 1 — Consolidación de funcionalidad existente ⚠️ PARCIAL
+## FASE 1 — Consolidación de funcionalidad existente ✅ COMPLETADA (pendiente tests manuales)
 
 ### 1.1 Gestión de usuarios
 
 | # | Tarea | Estado |
 |---|-------|--------|
-| 1.1.1 | Paginación en lista de alumnos | [ ] pendiente |
+| 1.1.1 | Paginación en lista de alumnos | [x] 2026-03-28 — client-side, PAGE_SIZE=20, prev/next |
 | 1.1.2 | Editar email de usuario | [x] 2026-03-28 |
-| 1.1.3 | Envío de email a usuario individual (Resend) | [ ] pendiente |
-| 1.1.4 | Búsqueda server-side en alumnos | [ ] pendiente |
+| 1.1.3 | Envío de email a usuario individual (Resend) | [x] 2026-03-28 — SendEmailModal con plantillas |
+| 1.1.4 | Búsqueda client-side en alumnos | [x] 2026-03-28 — por nombre, email y RUT |
 
 ### 1.2 Checkout
 
@@ -43,17 +43,17 @@ Eliminados todos los emojis del sistema. Archivos afectados: `CheckoutForm.tsx` 
 
 | # | Tarea | Estado |
 |---|-------|--------|
-| 1.3.1 | Auditar `getDashboardMetrics()` — números reales | [ ] pendiente |
-| 1.3.2 | Gráfico matrículas últimos 30 días | [ ] pendiente |
+| 1.3.1 | Auditar `getDashboardMetrics()` — números reales | [x] 2026-03-28 — `usuariosActivos` corregido a usuarios únicos con actividad |
+| 1.3.2 | Gráfico matrículas últimos 30 días | [x] 2026-03-28 — MatriculasChartClient con recharts |
 | 1.3.3 | Top cursos por inscripciones (fix query) | [x] 2026-03-28 |
 
 ### 1.4 Verificación end-to-end
 
 | # | Tarea | Estado |
 |---|-------|--------|
-| 1.4.1 | Test: registro → curso gratuito → aula → quiz → certificado | [ ] pendiente |
-| 1.4.2 | Test: admin crea/edita/cambia rol/elimina usuario | [ ] pendiente |
-| 1.4.3 | Test: cupón 100% → inscripción directa | [ ] pendiente |
+| 1.4.1 | Test: registro → curso gratuito → aula → quiz → certificado | [ ] pendiente (manual) |
+| 1.4.2 | Test: admin crea/edita/cambia rol/elimina usuario | [ ] pendiente (manual) |
+| 1.4.3 | Test: cupón 100% → inscripción directa | [ ] pendiente (manual) |
 | 1.4.4 | `npm run build` limpio | [x] 2026-03-28 — verificado local y en VPS Docker |
 
 ---

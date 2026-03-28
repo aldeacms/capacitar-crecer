@@ -26,12 +26,13 @@ export async function getDashboardMetrics(): Promise<DashboardMetrics | { error:
       .from('perfiles')
       .select('*', { count: 'exact', head: true })
 
-    // Usuarios activos (con matrícula en últimos 30 días)
+    // Usuarios activos: usuarios únicos con al menos una matrícula en últimos 30 días
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-    const { count: usuariosActivos } = await supabaseAdmin
+    const { data: matriculasRecientes } = await supabaseAdmin
       .from('matriculas')
-      .select('perfil_id', { count: 'exact', head: true })
+      .select('perfil_id')
       .gte('created_at', thirtyDaysAgo)
+    const usuariosActivos = new Set(matriculasRecientes?.map((m: any) => m.perfil_id) || []).size
 
     // Total de cursos
     const { count: totalCursos } = await supabaseAdmin

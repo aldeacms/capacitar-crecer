@@ -8,8 +8,9 @@ export interface ElementPosition {
   fontSize?: number
   color?: string
   maxWidth?: number
-  align?: 'left' | 'center' | 'right'
+  align?: 'left' | 'center' | 'right' | 'justify'
   visible?: boolean
+  lineHeight?: number
 }
 
 export interface QRPosition {
@@ -17,11 +18,12 @@ export interface QRPosition {
   y: number
   size: number
   visible?: boolean
+  color?: string  // hex color for QR dots, default '#000000'
 }
 
 export interface TextoLibre {
   id: string
-  text: string
+  text: string  // supports {{variables}} and **bold** segments
   pos: ElementPosition
 }
 

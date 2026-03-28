@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   ArrowLeft, Upload, Loader2, Eye, Save, Plus, Trash2,
-  AlignLeft, AlignCenter, AlignRight, Move, Type, Grid3x3, QrCode,
+  AlignLeft, AlignCenter, AlignRight, AlignJustify,
+  Move, Type, Grid3x3, QrCode, Bold,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { upsertTemplate, getBackgroundPreviewUrl } from '@/actions/certificados-templates'
@@ -12,14 +13,24 @@ import { createClient } from '@/lib/supabase-client'
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-const CANVAS_W   = 680   // px de display
-const GRID_SIZE  = 50    // puntos PDF por celda de grilla
-const SNAP_DIST  = 12    // puntos PDF — umbral de snap
+const CANVAS_W  = 680
+const GRID_SIZE = 50   // pts PDF
+const SNAP_DIST = 12   // pts PDF
 
 const PDF_DIMS = {
   horizontal: { w: 842, h: 595 },
   vertical:   { w: 595, h: 842 },
 }
+
+// Variables disponibles para texto libre
+const VARIABLES = [
+  { label: 'Nombre alumno',    value: '{{nombre_alumno}}' },
+  { label: 'RUT alumno',       value: '{{rut_alumno}}' },
+  { label: 'Nombre curso',     value: '{{nombre_curso}}' },
+  { label: 'Horas',            value: '{{horas}}' },
+  { label: 'Fecha emisión',    value: '{{fecha_emision}}' },
+  { label: 'Fecha vigencia',   value: '{{fecha_vigencia}}' },
+]
 
 // ─── Tipos internos ───────────────────────────────────────────────────────────
 
@@ -35,13 +46,15 @@ interface EditorElement {
   x: number
   y: number
   fontSize?: number
-  align?: 'left' | 'center' | 'right'
+  align?: 'left' | 'center' | 'right' | 'justify'
   color?: string
   visible: boolean
   isQR?: boolean
+  qrColor?: string
   size?: number
   isLibre?: boolean
   libreText?: string
+  lineHeight?: number
 }
 
 interface EditorState {
@@ -71,8 +84,8 @@ const FIXED_ELEMENTS: Omit<EditorElement, 'x' | 'y' | 'visible'>[] = [
   { key: 'rut_alumno',    label: 'RUT',                    previewText: 'RUT: 12.345.678-9',            fontSize: 14, align: 'center' },
   { key: 'titulo_curso',  label: 'Nombre del curso',       previewText: 'NOMBRE DEL CURSO',             fontSize: 20, align: 'center' },
   { key: 'horas',         label: 'Horas',                  previewText: 'Duración: 24 horas',           fontSize: 12, align: 'center' },
-  { key: 'fecha_emision', label: 'Fecha de emisión',       previewText: 'Fecha de emisión: 28 de marzo de 2026', fontSize: 11, align: 'center' },
-  { key: 'fecha_vigencia',label: 'Fecha de vigencia',      previewText: 'Válido hasta: 28 de marzo de 2027',    fontSize: 10, align: 'center' },
+  { key: 'fecha_emision', label: 'Fecha de emisión',       previewText: 'Fecha de emisión: 28 mar 2026', fontSize: 11, align: 'center' },
+  { key: 'fecha_vigencia',label: 'Fecha de vigencia',      previewText: 'Válido hasta: 28 mar 2027',    fontSize: 10, align: 'center' },
   { key: 'cert_id',       label: 'ID del certificado',     previewText: 'ID: a1b2c3d4e5f6...',          fontSize: 8,  align: 'center' },
   { key: 'qr_code',       label: 'Código QR',              previewText: 'QR', isQR: true },
 ]
@@ -89,49 +102,65 @@ const POS_KEY_MAP: Record<string, keyof CertificateTemplate> = {
   qr_code:       'pos_qr_code',
 }
 
-// ─── Helpers de conversión y snap ─────────────────────────────────────────────
+// ─── Snap helper ─────────────────────────────────────────────────────────────
 
-function snapVal(val: number, center: number, gridSize: number, threshold: number): number {
-  // Snap al centro
+function snapVal(val: number, center: number, threshold: number): number {
   if (Math.abs(val - center) < threshold) return center
-  // Snap a la grilla
-  const nearest = Math.round(val / gridSize) * gridSize
+  const nearest = Math.round(val / GRID_SIZE) * GRID_SIZE
   if (Math.abs(val - nearest) < threshold) return nearest
   return val
 }
 
+// ─── Conversión template → elementos ─────────────────────────────────────────
+
 function templateToElements(t: CertificateTemplate): EditorElement[] {
+  const dims = PDF_DIMS[t.orientacion ?? 'horizontal']
+
+  const clampX = (v: number) => Math.max(5, Math.min(dims.w - 5, v))
+  const clampY = (v: number) => Math.max(5, Math.min(dims.h - 5, v))
+
   const fixed = FIXED_ELEMENTS.map((def) => {
     const posKey = POS_KEY_MAP[def.key] as keyof CertificateTemplate
     const pos = t[posKey] as any
+
+    // Default centrado si la posición guardada está fuera del canvas actual
+    const defaultX = dims.w / 2
+    const defaultY = dims.h / 2
+    const rawX = pos?.x ?? defaultX
+    const rawY = pos?.y ?? defaultY
+
     return {
       ...def,
-      x: pos?.x ?? 421,
-      y: pos?.y ?? 300,
+      x: clampX(rawX),
+      y: clampY(rawY),
       fontSize: pos?.fontSize ?? def.fontSize,
       align: pos?.align ?? def.align ?? 'center',
       color: pos?.color,
       visible: pos?.visible !== false,
       size: pos?.size ?? (def.isQR ? 90 : undefined),
+      qrColor: pos?.color ?? '#000000',
     } as EditorElement
   })
 
   const libre: EditorElement[] = (t.texto_libre ?? []).map((b) => ({
     key: `libre_${b.id}` as ElementKey,
     label: `Texto: "${b.text.substring(0, 20)}${b.text.length > 20 ? '…' : ''}"`,
-    previewText: b.text,
-    x: b.pos.x,
-    y: b.pos.y,
+    previewText: b.text.replace(/\{\{.*?\}\}/g, '…').replace(/\*\*(.*?)\*\*/g, '$1').substring(0, 40),
+    x: clampX(b.pos.x),
+    y: clampY(b.pos.y),
     fontSize: b.pos.fontSize ?? 12,
     align: b.pos.align ?? 'left',
     color: b.pos.color,
     visible: b.pos.visible !== false,
     isLibre: true,
     libreText: b.text,
+    lineHeight: b.pos.lineHeight,
   }))
 
   return [...fixed, ...libre]
 }
+
+// ─── Conversión elementos → payload para guardar ──────────────────────────────
 
 function elementsToPayload(elements: EditorElement[]) {
   const posFields: any = {}
@@ -142,11 +171,15 @@ function elementsToPayload(elements: EditorElement[]) {
     if (!posKey) continue
 
     if (el.isQR) {
-      posFields[posKey] = { x: Math.round(el.x), y: Math.round(el.y), size: el.size ?? 90, visible: el.visible }
+      posFields[posKey] = {
+        x: Math.round(el.x), y: Math.round(el.y),
+        size: el.size ?? 90,
+        visible: el.visible,
+        color: el.qrColor ?? '#000000',
+      }
     } else {
       posFields[posKey] = {
-        x: Math.round(el.x),
-        y: Math.round(el.y),
+        x: Math.round(el.x), y: Math.round(el.y),
         fontSize: el.fontSize,
         align: el.align,
         ...(el.color ? { color: el.color } : {}),
@@ -161,11 +194,11 @@ function elementsToPayload(elements: EditorElement[]) {
       id: el.key.replace('libre_', ''),
       text: el.libreText ?? '',
       pos: {
-        x: Math.round(el.x),
-        y: Math.round(el.y),
+        x: Math.round(el.x), y: Math.round(el.y),
         fontSize: el.fontSize ?? 12,
         align: el.align ?? 'left',
         ...(el.color ? { color: el.color } : {}),
+        ...(el.lineHeight ? { lineHeight: el.lineHeight } : {}),
         visible: el.visible,
       },
     }))
@@ -173,38 +206,38 @@ function elementsToPayload(elements: EditorElement[]) {
   return { ...posFields, texto_libre }
 }
 
-const DEFAULT_POSITIONS_H = {
-  pos_titulo_cert:   { x: 421, y: 380, fontSize: 14, align: 'center' },
-  pos_nombre_alumno: { x: 421, y: 300, fontSize: 28, align: 'center', maxWidth: 600 },
-  pos_rut_alumno:    { x: 421, y: 260, fontSize: 14, align: 'center' },
-  pos_titulo_curso:  { x: 421, y: 210, fontSize: 20, align: 'center', maxWidth: 500 },
-  pos_horas:         { x: 421, y: 175, fontSize: 12, align: 'center' },
-  pos_fecha_emision: { x: 421, y: 150, fontSize: 11, align: 'center' },
-  pos_fecha_vigencia:{ x: 421, y: 130, fontSize: 10, align: 'center' },
-  pos_qr_code:       { x: 720, y: 60,  size: 90 },
-  pos_cert_id:       { x: 421, y: 40,  fontSize: 8, align: 'center' },
+const DEFAULT_H: Partial<CertificateTemplate> = {
+  orientacion: 'horizontal',
+  pos_titulo_cert:   { x: 421, y: 420, fontSize: 14, align: 'center' },
+  pos_nombre_alumno: { x: 421, y: 340, fontSize: 28, align: 'center', maxWidth: 600 },
+  pos_rut_alumno:    { x: 421, y: 300, fontSize: 14, align: 'center' },
+  pos_titulo_curso:  { x: 421, y: 250, fontSize: 20, align: 'center', maxWidth: 500 },
+  pos_horas:         { x: 421, y: 210, fontSize: 12, align: 'center' },
+  pos_fecha_emision: { x: 421, y: 180, fontSize: 11, align: 'center' },
+  pos_fecha_vigencia:{ x: 421, y: 155, fontSize: 10, align: 'center' },
+  pos_qr_code:       { x: 500, y: 60,  size: 90 },
+  pos_cert_id:       { x: 200, y: 40,  fontSize: 8,  align: 'center' },
   texto_libre: [],
-  orientacion: 'horizontal' as const,
 }
 
-// ─── Componente ───────────────────────────────────────────────────────────────
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function TemplateEditor({ template, cursos, existingTemplates, onBack, onSaved }: Props) {
   const [state, setState] = useState<EditorState>({
-    nombre:                   template?.nombre ?? '',
-    titulo_texto:             template?.titulo_texto ?? 'CERTIFICADO DE PARTICIPACIÓN',
-    curso_id:                 template?.curso_id ?? null,
-    orientacion:              template?.orientacion ?? 'horizontal',
-    color_primary:            template?.color_primary ?? '#1a1a2e',
-    color_accent:             template?.color_accent ?? '#28B4AD',
-    background_storage_path:  template?.background_storage_path ?? null,
-    activo:                   template?.activo ?? true,
+    nombre:                  template?.nombre ?? '',
+    titulo_texto:            template?.titulo_texto ?? 'CERTIFICADO DE PARTICIPACIÓN',
+    curso_id:                template?.curso_id ?? null,
+    orientacion:             template?.orientacion ?? 'horizontal',
+    color_primary:           template?.color_primary ?? '#1a1a2e',
+    color_accent:            template?.color_accent ?? '#28B4AD',
+    background_storage_path: template?.background_storage_path ?? null,
+    activo:                  template?.activo ?? true,
   })
 
   const [elements, setElements] = useState<EditorElement[]>(() =>
     template
       ? templateToElements(template)
-      : templateToElements({ ...DEFAULT_POSITIONS_H } as any)
+      : templateToElements({ ...DEFAULT_H } as CertificateTemplate)
   )
 
   const [selected, setSelected] = useState<ElementKey | null>(null)
@@ -213,26 +246,23 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [previewing, setPreviewing] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const canvasRef = useRef<HTMLDivElement>(null)
   const draggingRef = useRef<{
-    key: ElementKey
-    startMX: number; startMY: number
-    startX: number; startY: number
+    key: ElementKey; startMX: number; startMY: number; startX: number; startY: number
   } | null>(null)
 
-  // Dimensiones
   const pdfDims = PDF_DIMS[state.orientacion]
   const scale   = CANVAS_W / pdfDims.w
   const canvasH = Math.round(pdfDims.h * scale)
 
-  // PDF coords → canvas px (Y invertida)
   const toCanvas = useCallback((px: number, py: number) => ({
     x: px * scale,
     y: (pdfDims.h - py) * scale,
   }), [scale, pdfDims.h])
 
-  // URL de la imagen de fondo
+  // URL firmada del fondo
   useEffect(() => {
     setBgUrl(null)
     if (!state.background_storage_path) return
@@ -241,7 +271,18 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
     })
   }, [state.background_storage_path])
 
-  // ── Drag ──────────────────────────────────────────────────────────────────
+  // Al cambiar orientación, reclampear posiciones
+  const handleOrientacionChange = (nueva: 'horizontal' | 'vertical') => {
+    const dims = PDF_DIMS[nueva]
+    setState((s) => ({ ...s, orientacion: nueva }))
+    setElements((prev) => prev.map((el) => ({
+      ...el,
+      x: Math.max(5, Math.min(dims.w - 5, el.x)),
+      y: Math.max(5, Math.min(dims.h - 5, el.y)),
+    })))
+  }
+
+  // ── Drag ─────────────────────────────────────────────────────────────────
 
   const onChipPointerDown = (e: React.PointerEvent, key: ElementKey) => {
     e.preventDefault()
@@ -256,31 +297,20 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
   const onCanvasPointerMove = (e: React.PointerEvent) => {
     const drag = draggingRef.current
     if (!drag) return
-
     const dx = (e.clientX - drag.startMX) / scale
     const dy = (e.clientY - drag.startMY) / scale
-
     const rawX = drag.startX + dx
-    const rawY = drag.startY - dy // Y invertida
-
-    // Snap a centro y grilla
+    const rawY = drag.startY - dy
     const cx = pdfDims.w / 2
     const cy = pdfDims.h / 2
-    const snappedX = snapVal(rawX, cx, GRID_SIZE, SNAP_DIST)
-    const snappedY = snapVal(rawY, cy, GRID_SIZE, SNAP_DIST)
-
-    // Clamp dentro del canvas
-    const finalX = Math.max(0, Math.min(pdfDims.w, snappedX))
-    const finalY = Math.max(0, Math.min(pdfDims.h, snappedY))
-
-    setElements((prev) =>
-      prev.map((el) => el.key === drag.key ? { ...el, x: finalX, y: finalY } : el)
-    )
+    const finalX = Math.max(0, Math.min(pdfDims.w, snapVal(rawX, cx, SNAP_DIST)))
+    const finalY = Math.max(0, Math.min(pdfDims.h, snapVal(rawY, cy, SNAP_DIST)))
+    setElements((prev) => prev.map((el) => el.key === drag.key ? { ...el, x: finalX, y: finalY } : el))
   }
 
   const onCanvasPointerUp = () => { draggingRef.current = null }
 
-  // ── Elemento seleccionado ─────────────────────────────────────────────────
+  // ── Propiedades ───────────────────────────────────────────────────────────
 
   const selectedEl = elements.find((el) => el.key === selected) ?? null
 
@@ -299,7 +329,7 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
       x: pdfDims.w / 2,
       y: pdfDims.h / 2,
       fontSize: 12,
-      align: 'center',
+      align: 'left',
       visible: true,
       isLibre: true,
       libreText: 'Texto libre',
@@ -312,6 +342,42 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
     if (!selectedEl?.isLibre) return
     setElements((prev) => prev.filter((el) => el.key !== selected))
     setSelected(null)
+  }
+
+  // Insertar variable en el textarea del texto libre
+  const insertVariable = (variable: string) => {
+    const ta = textareaRef.current
+    if (!ta || !selectedEl?.isLibre) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const current = selectedEl.libreText ?? ''
+    const newText = current.slice(0, start) + variable + current.slice(end)
+    const previewText = newText.replace(/\{\{.*?\}\}/g, '…').replace(/\*\*(.*?)\*\*/g, '$1').substring(0, 40)
+    updateSelected({ libreText: newText, previewText })
+    // Restaurar cursor
+    setTimeout(() => {
+      ta.selectionStart = ta.selectionEnd = start + variable.length
+      ta.focus()
+    }, 0)
+  }
+
+  // Wrap selección con **negrita**
+  const toggleBold = () => {
+    const ta = textareaRef.current
+    if (!ta || !selectedEl?.isLibre) return
+    const start = ta.selectionStart
+    const end = ta.selectionEnd
+    const current = selectedEl.libreText ?? ''
+    const selected_text = current.slice(start, end)
+    let newText: string
+    if (selected_text.startsWith('**') && selected_text.endsWith('**')) {
+      newText = current.slice(0, start) + selected_text.slice(2, -2) + current.slice(end)
+    } else {
+      newText = current.slice(0, start) + `**${selected_text}**` + current.slice(end)
+    }
+    const previewText = newText.replace(/\{\{.*?\}\}/g, '…').replace(/\*\*(.*?)\*\*/g, '$1').substring(0, 40)
+    updateSelected({ libreText: newText, previewText })
+    setTimeout(() => ta.focus(), 0)
   }
 
   // ── Upload fondo ──────────────────────────────────────────────────────────
@@ -351,7 +417,7 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
     }
   }
 
-  // ── Preview PDF ───────────────────────────────────────────────────────────
+  // ── Preview ───────────────────────────────────────────────────────────────
 
   const handlePreview = async () => {
     setPreviewing(true)
@@ -363,8 +429,7 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
         body: JSON.stringify({ ...state, texto_libre, ...posFields, id: template?.id }),
       })
       if (!res.ok) throw new Error('Error generando preview')
-      const blob = await res.blob()
-      window.open(URL.createObjectURL(blob), '_blank')
+      window.open(URL.createObjectURL(await res.blob()), '_blank')
     } catch (err: any) {
       toast.error(err.message)
     } finally {
@@ -372,22 +437,14 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
     }
   }
 
-  // ── Grilla en canvas (CSS background) ────────────────────────────────────
-  const gridPx = GRID_SIZE * scale
-  const centerX = (pdfDims.w / 2) * scale
-  const centerY = (pdfDims.h / 2) * scale
+  // ── Grilla ────────────────────────────────────────────────────────────────
 
-  // Detectar snap activo (para indicador visual)
-  const activeEl = selectedEl
-  const snapActiveX = activeEl && (
-    Math.abs(activeEl.x - pdfDims.w / 2) < SNAP_DIST ||
-    Math.abs(activeEl.x % GRID_SIZE) < SNAP_DIST ||
-    Math.abs(activeEl.x % GRID_SIZE - GRID_SIZE) < SNAP_DIST
-  )
-  const snapActiveY = activeEl && (
-    Math.abs(activeEl.y - pdfDims.h / 2) < SNAP_DIST ||
-    Math.abs(activeEl.y % GRID_SIZE) < SNAP_DIST ||
-    Math.abs(activeEl.y % GRID_SIZE - GRID_SIZE) < SNAP_DIST
+  const gridPx   = GRID_SIZE * scale
+  const centerX  = (pdfDims.w / 2) * scale
+  const centerY  = (pdfDims.h / 2) * scale
+  const snapOn   = selectedEl && (
+    Math.abs(selectedEl.x - pdfDims.w / 2) < SNAP_DIST ||
+    Math.abs(selectedEl.y - pdfDims.h / 2) < SNAP_DIST
   )
 
   return (
@@ -395,10 +452,7 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
 
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-3 px-6 py-3 border-b border-slate-200 bg-white shrink-0 flex-wrap">
-        <button
-          onClick={onBack}
-          className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 transition-colors text-sm font-medium"
-        >
+        <button onClick={onBack} className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 transition-colors text-sm font-medium">
           <ArrowLeft size={16} /> Volver
         </button>
         <div className="h-5 w-px bg-slate-200" />
@@ -420,12 +474,11 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
           {cursos.map((c) => <option key={c.id} value={c.id}>{c.titulo}</option>)}
         </select>
 
-        {/* Orientación */}
         <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg">
           {(['horizontal', 'vertical'] as const).map((o) => (
             <button
               key={o}
-              onClick={() => setState((s) => ({ ...s, orientacion: o }))}
+              onClick={() => handleOrientacionChange(o)}
               className={`px-3 py-1 text-xs font-semibold rounded-md transition-all capitalize ${state.orientacion === o ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
             >
               {o}
@@ -433,7 +486,6 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
           ))}
         </div>
 
-        {/* Toggle grilla */}
         <button
           onClick={() => setShowGrid((v) => !v)}
           title="Mostrar/ocultar grilla"
@@ -470,141 +522,73 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
           <div
             ref={canvasRef}
             style={{
-              width: CANVAS_W,
-              height: canvasH,
+              width: CANVAS_W, height: canvasH,
               position: 'relative',
               cursor: draggingRef.current ? 'grabbing' : 'default',
-              // Grilla CSS
               backgroundImage: showGrid
-                ? `linear-gradient(rgba(99,102,241,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.12) 1px, transparent 1px)`
+                ? `linear-gradient(rgba(99,102,241,0.1) 1px, transparent 1px),
+                   linear-gradient(90deg, rgba(99,102,241,0.1) 1px, transparent 1px)`
                 : undefined,
               backgroundSize: showGrid ? `${gridPx}px ${gridPx}px` : undefined,
-              backgroundPosition: showGrid ? '0 0' : undefined,
             }}
             className="shadow-2xl rounded overflow-hidden select-none"
             onPointerMove={onCanvasPointerMove}
             onPointerUp={onCanvasPointerUp}
           >
-            {/* Imagen de fondo */}
-            {bgUrl ? (
-              <img
-                src={bgUrl}
-                alt="fondo"
-                className="absolute inset-0 w-full h-full object-cover pointer-events-none"
-                draggable={false}
-              />
-            ) : (
-              <div className="absolute inset-0 bg-white" />
-            )}
+            {/* Fondo */}
+            {bgUrl
+              ? <img src={bgUrl} alt="fondo" className="absolute inset-0 w-full h-full object-cover pointer-events-none" draggable={false} />
+              : <div className="absolute inset-0 bg-white" />
+            }
 
             {/* Guías de centro */}
-            {showGrid && (
-              <>
-                {/* Vertical */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: centerX,
-                    top: 0,
-                    width: 1,
-                    height: '100%',
-                    background: snapActiveX ? 'rgba(40,180,173,0.8)' : 'rgba(99,102,241,0.35)',
-                    pointerEvents: 'none',
-                    transition: 'background 0.1s',
-                  }}
-                />
-                {/* Horizontal */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: centerY,
-                    left: 0,
-                    height: 1,
-                    width: '100%',
-                    background: snapActiveY ? 'rgba(40,180,173,0.8)' : 'rgba(99,102,241,0.35)',
-                    pointerEvents: 'none',
-                    transition: 'background 0.1s',
-                  }}
-                />
-              </>
-            )}
+            {showGrid && <>
+              <div style={{ position: 'absolute', left: centerX, top: 0, width: 1, height: '100%', background: snapOn ? 'rgba(40,180,173,0.9)' : 'rgba(99,102,241,0.3)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', top: centerY, left: 0, height: 1, width: '100%', background: snapOn ? 'rgba(40,180,173,0.9)' : 'rgba(99,102,241,0.3)', pointerEvents: 'none' }} />
+            </>}
 
-            {/* Chips de elementos */}
+            {/* Chips */}
             {elements.map((el) => {
               const pos = toCanvas(el.x, el.y)
-              const isSelected = el.key === selected
-              const isHidden = !el.visible
-
+              const isSel = el.key === selected
               return (
                 <div
                   key={el.key}
                   onPointerDown={(e) => onChipPointerDown(e, el.key)}
                   style={{
                     position: 'absolute',
-                    left: pos.x,
-                    top: pos.y,
+                    left: pos.x, top: pos.y,
                     transform: 'translate(-50%, -50%)',
-                    cursor: 'grab',
-                    zIndex: isSelected ? 20 : 10,
-                    opacity: isHidden ? 0.3 : 1,
+                    cursor: 'grab', zIndex: isSel ? 20 : 10,
+                    opacity: el.visible ? 1 : 0.3,
                     touchAction: 'none',
                   }}
                   title={el.label}
                 >
                   {el.isQR ? (
-                    // ── QR chip ──────────────────────────────────────────────
-                    <div
-                      style={{
-                        width: (el.size ?? 90) * scale,
-                        height: (el.size ?? 90) * scale,
-                        border: isSelected
-                          ? '2px solid #28B4AD'
-                          : '2px solid rgba(99,102,241,0.7)',
-                        borderRadius: 6,
-                        background: isSelected
-                          ? 'rgba(40,180,173,0.15)'
-                          : 'rgba(240,240,255,0.85)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 2,
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-                      }}
-                    >
-                      <QrCode
-                        size={Math.max(14, (el.size ?? 90) * scale * 0.45)}
-                        color={isSelected ? '#28B4AD' : '#6366f1'}
-                      />
-                      <span style={{ fontSize: 8, fontWeight: 700, color: isSelected ? '#28B4AD' : '#6366f1', letterSpacing: 0.5 }}>
-                        QR
-                      </span>
+                    <div style={{
+                      width: (el.size ?? 90) * scale, height: (el.size ?? 90) * scale,
+                      border: isSel ? '2px solid #28B4AD' : '2px solid rgba(99,102,241,0.8)',
+                      borderRadius: 6,
+                      background: isSel ? 'rgba(40,180,173,0.15)' : 'rgba(235,235,255,0.9)',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+                    }}>
+                      <QrCode size={Math.max(14, (el.size ?? 90) * scale * 0.45)} color={isSel ? '#28B4AD' : '#6366f1'} />
+                      <span style={{ fontSize: 8, fontWeight: 700, color: isSel ? '#28B4AD' : '#6366f1' }}>QR</span>
                     </div>
                   ) : (
-                    // ── Text chip ─────────────────────────────────────────────
-                    <div
-                      style={{
-                        padding: '2px 7px',
-                        borderRadius: 4,
-                        border: isSelected
-                          ? '2px solid #28B4AD'
-                          : '1.5px solid rgba(99,102,241,0.5)',
-                        background: isSelected
-                          ? 'rgba(40,180,173,0.12)'
-                          : el.isLibre
-                            ? 'rgba(253,230,138,0.75)'
-                            : 'rgba(240,240,255,0.8)',
-                        fontSize: Math.max(7, Math.min(13, (el.fontSize ?? 12) * scale)),
-                        color: isSelected ? '#0f766e' : '#3730a3',
-                        fontWeight: el.key === 'nombre_alumno' ? 700 : 500,
-                        whiteSpace: 'nowrap',
-                        maxWidth: 260,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                        textAlign: el.align ?? 'center',
-                      }}
-                    >
+                    <div style={{
+                      padding: '2px 7px', borderRadius: 4,
+                      border: isSel ? '2px solid #28B4AD' : '1.5px solid rgba(99,102,241,0.6)',
+                      background: isSel ? 'rgba(40,180,173,0.12)' : el.isLibre ? 'rgba(254,240,138,0.85)' : 'rgba(238,238,255,0.85)',
+                      fontSize: Math.max(7, Math.min(13, (el.fontSize ?? 12) * scale)),
+                      color: isSel ? '#0f766e' : '#3730a3',
+                      fontWeight: el.key === 'nombre_alumno' ? 700 : 500,
+                      whiteSpace: 'nowrap', maxWidth: 260,
+                      overflow: 'hidden', textOverflow: 'ellipsis',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+                    }}>
                       {el.previewText}
                     </div>
                   )}
@@ -625,83 +609,132 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
 
             {selectedEl && (
               <div className="space-y-3">
-                {/* Texto libre: contenido */}
+
+                {/* ── Texto libre: editor enriquecido ── */}
                 {selectedEl.isLibre && (
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1">Texto</label>
+                    {/* Toolbar de formato */}
+                    <div className="flex items-center gap-1 mb-1.5 flex-wrap">
+                      <button
+                        onClick={toggleBold}
+                        className="flex items-center gap-1 px-2 py-1 text-xs font-bold bg-slate-100 hover:bg-slate-200 rounded transition-colors"
+                        title="Negrita (selecciona texto primero)"
+                      >
+                        <Bold size={11} /> B
+                      </button>
+                      <div className="h-4 w-px bg-slate-200 mx-0.5" />
+                      {VARIABLES.map((v) => (
+                        <button
+                          key={v.value}
+                          onClick={() => insertVariable(v.value)}
+                          className="px-1.5 py-0.5 text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium rounded transition-colors border border-indigo-200"
+                          title={`Insertar variable: ${v.value}`}
+                        >
+                          {v.label}
+                        </button>
+                      ))}
+                    </div>
+
                     <textarea
+                      ref={textareaRef}
                       value={selectedEl.libreText ?? ''}
-                      onChange={(e) => updateSelected({
-                        libreText: e.target.value,
-                        previewText: e.target.value,
-                        label: `Texto: "${e.target.value.substring(0, 20)}"`,
-                      })}
-                      rows={2}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD] resize-none"
+                      onChange={(e) => {
+                        const newText = e.target.value
+                        const previewText = newText.replace(/\{\{.*?\}\}/g, '…').replace(/\*\*(.*?)\*\*/g, '$1').substring(0, 40)
+                        updateSelected({ libreText: newText, previewText, label: `Texto: "${newText.substring(0, 20)}"` })
+                      }}
+                      rows={5}
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD] resize-none font-mono"
+                      placeholder="Texto libre. Usa **negrita** y {{variables}}"
                     />
+                    <p className="text-xs text-slate-400 mt-1">
+                      <span className="font-mono">**texto**</span> = negrita · <span className="font-mono">{'{{variable}}'}</span> = dato dinámico
+                    </p>
                   </div>
                 )}
 
-                {/* Posición numérica */}
+                {/* Posición */}
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-xs text-slate-500 mb-1">X</label>
-                    <input
-                      type="number"
-                      value={Math.round(selectedEl.x)}
+                    <input type="number" value={Math.round(selectedEl.x)}
                       onChange={(e) => updateSelected({ x: Number(e.target.value) })}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]"
-                    />
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]" />
                   </div>
                   <div>
                     <label className="block text-xs text-slate-500 mb-1">Y</label>
-                    <input
-                      type="number"
-                      value={Math.round(selectedEl.y)}
+                    <input type="number" value={Math.round(selectedEl.y)}
                       onChange={(e) => updateSelected({ y: Number(e.target.value) })}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]"
-                    />
+                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]" />
                   </div>
                 </div>
 
-                {/* QR: tamaño */}
+                {/* QR: tamaño + color */}
                 {selectedEl.isQR && (
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Tamaño QR (pts PDF)</label>
-                    <input
-                      type="number"
-                      value={selectedEl.size ?? 90}
-                      onChange={(e) => updateSelected({ size: Number(e.target.value) })}
-                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]"
-                    />
-                  </div>
-                )}
-
-                {/* Texto: fontSize, align, color */}
-                {!selectedEl.isQR && (
                   <>
                     <div>
-                      <label className="block text-xs text-slate-500 mb-1">Tamaño de fuente</label>
-                      <input
-                        type="number"
-                        value={selectedEl.fontSize ?? 12}
-                        onChange={(e) => updateSelected({ fontSize: Number(e.target.value) })}
-                        className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]"
-                      />
+                      <label className="block text-xs text-slate-500 mb-1">Tamaño QR (pts)</label>
+                      <input type="number" value={selectedEl.size ?? 90}
+                        onChange={(e) => updateSelected({ size: Number(e.target.value) })}
+                        className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-slate-500 mb-1">Color del QR</label>
+                      <div className="flex items-center gap-2">
+                        <input type="color" value={selectedEl.qrColor ?? '#000000'}
+                          onChange={(e) => updateSelected({ qrColor: e.target.value })}
+                          className="w-8 h-8 rounded border border-slate-200 cursor-pointer p-0.5" />
+                        <input type="text" value={selectedEl.qrColor ?? '#000000'}
+                          onChange={(e) => updateSelected({ qrColor: e.target.value })}
+                          className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]" />
+                      </div>
+                      <div className="flex gap-2 mt-1.5">
+                        {['#000000', '#1a1a2e', '#28B4AD'].map((c) => (
+                          <button key={c} onClick={() => updateSelected({ qrColor: c })}
+                            className="w-6 h-6 rounded border-2 border-white shadow"
+                            style={{ background: c }}
+                            title={c}
+                          />
+                        ))}
+                        <button onClick={() => updateSelected({ qrColor: state.color_primary })}
+                          className="px-2 py-0.5 text-xs bg-slate-100 hover:bg-slate-200 rounded transition-colors text-slate-600">
+                          Primario
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Texto: fontSize, align, color, lineHeight */}
+                {!selectedEl.isQR && (
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs text-slate-500 mb-1">Fuente (pts)</label>
+                        <input type="number" value={selectedEl.fontSize ?? 12}
+                          onChange={(e) => updateSelected({ fontSize: Number(e.target.value) })}
+                          className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]" />
+                      </div>
+                      {selectedEl.isLibre && (
+                        <div>
+                          <label className="block text-xs text-slate-500 mb-1">Interlineado</label>
+                          <input type="number" step="0.1" value={selectedEl.lineHeight ?? 1.4}
+                            onChange={(e) => updateSelected({ lineHeight: Number(e.target.value) })}
+                            className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]" />
+                        </div>
+                      )}
                     </div>
 
                     <div>
                       <label className="block text-xs text-slate-500 mb-1.5">Alineación</label>
                       <div className="flex gap-1">
-                        {(['left', 'center', 'right'] as const).map((a) => (
-                          <button
-                            key={a}
-                            onClick={() => updateSelected({ align: a })}
-                            className={`flex-1 flex items-center justify-center py-1.5 rounded-lg border transition-all ${selectedEl.align === a ? 'bg-[#28B4AD] border-[#28B4AD] text-white' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
-                          >
-                            {a === 'left'   && <AlignLeft   size={13} />}
-                            {a === 'center' && <AlignCenter size={13} />}
-                            {a === 'right'  && <AlignRight  size={13} />}
+                        {(['left', 'center', 'right', ...(selectedEl.isLibre ? ['justify'] : [])] as const).map((a) => (
+                          <button key={a} onClick={() => updateSelected({ align: a as any })}
+                            className={`flex-1 flex items-center justify-center py-1.5 rounded-lg border transition-all ${selectedEl.align === a ? 'bg-[#28B4AD] border-[#28B4AD] text-white' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                            {a === 'left'    && <AlignLeft    size={13} />}
+                            {a === 'center'  && <AlignCenter  size={13} />}
+                            {a === 'right'   && <AlignRight   size={13} />}
+                            {a === 'justify' && <AlignJustify size={13} />}
                           </button>
                         ))}
                       </div>
@@ -710,19 +743,13 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
                     <div>
                       <label className="block text-xs text-slate-500 mb-1">Color del texto</label>
                       <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={selectedEl.color ?? '#1a1a2e'}
+                        <input type="color" value={selectedEl.color ?? '#1a1a2e'}
                           onChange={(e) => updateSelected({ color: e.target.value })}
-                          className="w-8 h-8 rounded border border-slate-200 cursor-pointer p-0.5"
-                        />
-                        <input
-                          type="text"
-                          value={selectedEl.color ?? ''}
+                          className="w-8 h-8 rounded border border-slate-200 cursor-pointer p-0.5" />
+                        <input type="text" value={selectedEl.color ?? ''}
                           onChange={(e) => updateSelected({ color: e.target.value })}
                           placeholder="Color global"
-                          className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]"
-                        />
+                          className="flex-1 px-2 py-1.5 border border-slate-200 rounded-lg text-xs font-mono text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]" />
                       </div>
                     </div>
                   </>
@@ -731,20 +758,15 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
                 {/* Visible */}
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-xs text-slate-600 font-medium">Visible en PDF</span>
-                  <div
-                    onClick={() => updateSelected({ visible: !selectedEl.visible })}
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full cursor-pointer transition-colors ${selectedEl.visible ? 'bg-[#28B4AD]' : 'bg-slate-300'}`}
-                  >
+                  <div onClick={() => updateSelected({ visible: !selectedEl.visible })}
+                    className={`relative inline-flex h-5 w-9 items-center rounded-full cursor-pointer transition-colors ${selectedEl.visible ? 'bg-[#28B4AD]' : 'bg-slate-300'}`}>
                     <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${selectedEl.visible ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
                   </div>
                 </div>
 
-                {/* Eliminar texto libre */}
                 {selectedEl.isLibre && (
-                  <button
-                    onClick={removeSelectedLibre}
-                    className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
-                  >
+                  <button onClick={removeSelectedLibre}
+                    className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-lg border border-red-200 transition-colors">
                     <Trash2 size={12} /> Eliminar bloque
                   </button>
                 )}
@@ -758,12 +780,9 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
 
             <div>
               <label className="block text-xs text-slate-500 mb-1">Título del certificado</label>
-              <input
-                type="text"
-                value={state.titulo_texto}
+              <input type="text" value={state.titulo_texto}
                 onChange={(e) => setState((s) => ({ ...s, titulo_texto: e.target.value }))}
-                className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]"
-              />
+                className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]" />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -771,11 +790,9 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
                 <div key={field}>
                   <label className="block text-xs text-slate-500 mb-1">{label}</label>
                   <div className="flex items-center gap-1.5">
-                    <input type="color" value={state[field]}
-                      onChange={(e) => setState((s) => ({ ...s, [field]: e.target.value }))}
+                    <input type="color" value={state[field]} onChange={(e) => setState((s) => ({ ...s, [field]: e.target.value }))}
                       className="w-7 h-7 rounded border border-slate-200 cursor-pointer p-0.5" />
-                    <input type="text" value={state[field]}
-                      onChange={(e) => setState((s) => ({ ...s, [field]: e.target.value }))}
+                    <input type="text" value={state[field]} onChange={(e) => setState((s) => ({ ...s, [field]: e.target.value }))}
                       className="flex-1 px-1.5 py-1 border border-slate-200 rounded text-xs font-mono text-slate-800 outline-none focus:ring-2 focus:ring-[#28B4AD]" />
                   </div>
                 </div>
@@ -796,10 +813,8 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
 
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-600 font-medium">Plantilla activa</span>
-              <div
-                onClick={() => setState((s) => ({ ...s, activo: !s.activo }))}
-                className={`relative inline-flex h-5 w-9 items-center rounded-full cursor-pointer transition-colors ${state.activo ? 'bg-[#28B4AD]' : 'bg-slate-300'}`}
-              >
+              <div onClick={() => setState((s) => ({ ...s, activo: !s.activo }))}
+                className={`relative inline-flex h-5 w-9 items-center rounded-full cursor-pointer transition-colors ${state.activo ? 'bg-[#28B4AD]' : 'bg-slate-300'}`}>
                 <span className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white shadow transition-transform ${state.activo ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
               </div>
             </div>
@@ -809,33 +824,25 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-black uppercase text-slate-400">Elementos</p>
-              <button
-                onClick={addTextoLibre}
-                className="flex items-center gap-1 text-xs font-semibold text-[#28B4AD] hover:text-[#1f9593] transition-colors"
-              >
+              <button onClick={addTextoLibre}
+                className="flex items-center gap-1 text-xs font-semibold text-[#28B4AD] hover:text-[#1f9593] transition-colors">
                 <Plus size={12} /> Texto libre
               </button>
             </div>
             <div className="space-y-0.5">
               {elements.map((el) => (
-                <button
-                  key={el.key}
-                  onClick={() => setSelected(el.key)}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs transition-all ${el.key === selected ? 'bg-[#28B4AD]/10 text-[#28B4AD] font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}
-                >
-                  {el.isQR
-                    ? <QrCode size={11} className="shrink-0 opacity-60" />
-                    : el.isLibre
-                      ? <Type size={11} className="shrink-0 opacity-60" />
-                      : <Move size={11} className="shrink-0 opacity-60" />
-                  }
+                <button key={el.key} onClick={() => setSelected(el.key)}
+                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs transition-all ${el.key === selected ? 'bg-[#28B4AD]/10 text-[#28B4AD] font-semibold' : 'text-slate-600 hover:bg-slate-50'}`}>
+                  {el.isQR ? <QrCode size={11} className="shrink-0 opacity-60" />
+                    : el.isLibre ? <Type size={11} className="shrink-0 opacity-60" />
+                    : <Move size={11} className="shrink-0 opacity-60" />}
                   <span className="truncate flex-1">{el.label}</span>
                   {!el.visible && <span className="text-slate-300 text-xs">oculto</span>}
                 </button>
               ))}
             </div>
             <p className="text-xs text-slate-400 mt-3 leading-relaxed">
-              Arrastra los elementos sobre el canvas. La grilla y las guías de centro ayudan a alinear.
+              Arrastra los elementos sobre el canvas. Las guías de centro se iluminan al hacer snap.
             </p>
           </div>
         </div>

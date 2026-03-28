@@ -9,23 +9,20 @@ export interface ElementPosition {
   color?: string
   maxWidth?: number
   align?: 'left' | 'center' | 'right'
+  visible?: boolean
 }
 
 export interface QRPosition {
   x: number
   y: number
   size: number
+  visible?: boolean
 }
 
-export interface Firmante {
-  nombre: string
-  cargo: string
-  firma_storage_path?: string
-  pos: {
-    x: number
-    y: number
-    width: number
-  }
+export interface TextoLibre {
+  id: string
+  text: string
+  pos: ElementPosition
 }
 
 export interface CertificateTemplate {
@@ -33,13 +30,12 @@ export interface CertificateTemplate {
   curso_id: string | null
   nombre: string
   titulo_texto: string
+  orientacion: 'horizontal' | 'vertical'
   background_storage_path: string | null
-  font_primary_url?: string
-  font_secondary_url?: string
   color_primary: string
   color_accent: string
 
-  // Posiciones de elementos
+  // Posiciones de elementos fijos
   pos_titulo_cert: ElementPosition
   pos_nombre_alumno: ElementPosition
   pos_rut_alumno: ElementPosition
@@ -50,8 +46,8 @@ export interface CertificateTemplate {
   pos_qr_code: QRPosition
   pos_cert_id: ElementPosition
 
-  // Firmantes
-  firmantes: Firmante[]
+  // Bloques de texto libre
+  texto_libre: TextoLibre[]
 
   activo: boolean
   created_at: string

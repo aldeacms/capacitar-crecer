@@ -5,6 +5,8 @@
  * - Fuentes TTF embebidas desde /public/fonts/
  * - QR code embebido
  * - Posicionamiento flexible mediante template JSONB
+ * - Orientación horizontal o vertical
+ * - Bloques de texto libre
  */
 
 import { PDFDocument, rgb } from 'pdf-lib'
@@ -17,186 +19,138 @@ import { CertificateData } from './types'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-/**
- * Generar PDF de certificado con pdf-lib
- */
 export async function generateCertificatePDF(data: CertificateData): Promise<Buffer> {
   const supabaseAdmin = getSupabaseAdmin()
 
-  // Crear documento PDF (A4 horizontal: 842×595 puntos)
+  // Dimensiones según orientación
+  const isHorizontal = (data.template.orientacion ?? 'horizontal') === 'horizontal'
+  const pageWidth = isHorizontal ? 842 : 595
+  const pageHeight = isHorizontal ? 595 : 842
+
   const pdfDoc = await PDFDocument.create()
   pdfDoc.registerFontkit(fontkit)
+  const page = pdfDoc.addPage([pageWidth, pageHeight])
 
-  const page = pdfDoc.addPage([842, 595])
-
-  // ===== 1. CARGAR IMAGEN DE FONDO =====
+  // ===== 1. IMAGEN DE FONDO =====
   if (data.template.background_storage_path) {
     try {
-      const { data: imageData, error: downloadError } = await supabaseAdmin.storage
+      const { data: imageData, error } = await supabaseAdmin.storage
         .from('certificados')
         .download(data.template.background_storage_path)
 
-      if (!downloadError && imageData) {
+      if (!error && imageData) {
         const imageBuffer = await imageData.arrayBuffer()
-        const backgroundImage = await pdfDoc.embedJpg(imageBuffer)
-        page.drawImage(backgroundImage, {
-          x: 0,
-          y: 0,
-          width: 842,
-          height: 595,
-        })
+        const ext = data.template.background_storage_path.split('.').pop()?.toLowerCase()
+        const backgroundImage = ext === 'png'
+          ? await pdfDoc.embedPng(imageBuffer)
+          : await pdfDoc.embedJpg(imageBuffer)
+        page.drawImage(backgroundImage, { x: 0, y: 0, width: pageWidth, height: pageHeight })
       }
     } catch (error) {
       console.warn('Error cargando imagen de fondo:', error)
-      // Continuar sin imagen de fondo
     }
   }
 
-  // ===== 2. REGISTRAR Y CARGAR FUENTES TTF =====
+  // ===== 2. FUENTES TTF =====
   let primaryFont: any = null
   let secondaryFont: any = null
 
   try {
-    // Cargar fuente primaria (Bold)
     const fontBoldPath = path.join(process.cwd(), 'public', 'fonts', 'Montserrat-Bold.ttf')
     if (fs.existsSync(fontBoldPath)) {
-      const fontBytes = fs.readFileSync(fontBoldPath)
-      primaryFont = await pdfDoc.embedFont(fontBytes)
+      primaryFont = await pdfDoc.embedFont(fs.readFileSync(fontBoldPath))
     }
-
-    // Cargar fuente secundaria (Regular)
     const fontRegularPath = path.join(process.cwd(), 'public', 'fonts', 'Montserrat-Regular.ttf')
     if (fs.existsSync(fontRegularPath)) {
-      const fontBytes = fs.readFileSync(fontRegularPath)
-      secondaryFont = await pdfDoc.embedFont(fontBytes)
+      secondaryFont = await pdfDoc.embedFont(fs.readFileSync(fontRegularPath))
     }
   } catch (error) {
-    console.warn('Error cargando fuentes TTF, usando fuentes estándar:', error)
-    // Las fuentes se cargarán como fallback más abajo
+    console.warn('Error cargando fuentes TTF:', error)
   }
 
-  // ===== 3. GENERAR QR CODE =====
-  const qrUrl = `${BASE_URL}/validar-certificado/${data.certificateId}`
-  const qrDataUrl = await QRCode.toDataURL(qrUrl, {
-    width: 200,
-    margin: 2,
-    color: { dark: '#000000', light: '#FFFFFF' },
-  })
-
-  // Extraer base64 del data URL y embeber como PNG
-  const qrBase64 = qrDataUrl.replace(/^data:image\/png;base64,/, '')
-  const qrBuffer = Buffer.from(qrBase64, 'base64')
-  const qrImage = await pdfDoc.embedPng(qrBuffer)
-
-  // Posición del QR según template
+  // ===== 3. QR CODE =====
   const qrPos = data.template.pos_qr_code
-  page.drawImage(qrImage, {
-    x: qrPos.x - qrPos.size / 2,
-    y: qrPos.y,
-    width: qrPos.size,
-    height: qrPos.size,
-  })
-
-  // ===== 4. DIBUJAR TEXTOS =====
-  const primaryColor = parseColor(data.template.color_primary)
-  const accentColor = parseColor(data.template.color_accent)
-
-  // Título del certificado
-  drawText(page, data.template.titulo_texto || 'CERTIFICADO DE PARTICIPACIÓN', data.template.pos_titulo_cert, primaryFont, primaryColor, 14)
-
-  // Nombre del alumno (grande, bold)
-  drawText(page, data.nombreAlumno.toUpperCase(), data.template.pos_nombre_alumno, primaryFont, primaryColor, 28)
-
-  // RUT del alumno
-  drawText(page, `RUT: ${data.rutAlumno}`, data.template.pos_rut_alumno, secondaryFont, parseColor('#666666'), 14)
-
-  // Título del curso (color accent)
-  const courseText = data.nombreCurso.toUpperCase()
-  drawText(page, courseText, data.template.pos_titulo_curso, primaryFont, accentColor, 20)
-
-  // Horas (si aplica)
-  if (data.horas) {
-    drawText(page, `Duración: ${data.horas} horas`, data.template.pos_horas, secondaryFont, primaryColor, 12)
-  }
-
-  // Fecha de emisión
-  const fechaEmisionText = formatDate(data.fechaEmision)
-  drawText(page, `Fecha de emisión: ${fechaEmisionText}`, data.template.pos_fecha_emision, secondaryFont, primaryColor, 11)
-
-  // Fecha de vigencia
-  const fechaVigenciaText = formatDate(data.fechaVigencia)
-  drawText(page, `Válido hasta: ${fechaVigenciaText}`, data.template.pos_fecha_vigencia, secondaryFont, primaryColor, 10)
-
-  // ID del certificado (pequeño)
-  const certIdText = `ID: ${data.certificateId.substring(0, 12)}...`
-  drawText(page, certIdText, data.template.pos_cert_id, secondaryFont, parseColor('#999999'), 8)
-
-  // ===== 5. DIBUJAR FIRMANTES =====
-  for (const firmante of data.template.firmantes) {
-    // Nombre del firmante
-    const namePos = firmante.pos
-    drawText(page, firmante.nombre, { x: namePos.x, y: namePos.y + 20 }, primaryFont, primaryColor, 12)
-
-    // Cargo
-    drawText(page, firmante.cargo, { x: namePos.x, y: namePos.y }, secondaryFont, parseColor('#666666'), 10)
-
-    // Línea de firma
-    page.drawLine({
-      start: { x: namePos.x - namePos.width / 2, y: namePos.y - 10 },
-      end: { x: namePos.x + namePos.width / 2, y: namePos.y - 10 },
-      thickness: 1,
-      color: parseColor('#000000'),
+  if (qrPos.visible !== false) {
+    const qrUrl = `${BASE_URL}/validar-certificado/${data.certificateId}`
+    const qrDataUrl = await QRCode.toDataURL(qrUrl, {
+      width: 200,
+      margin: 2,
+      color: { dark: '#000000', light: '#FFFFFF' },
+    })
+    const qrBuffer = Buffer.from(qrDataUrl.replace(/^data:image\/png;base64,/, ''), 'base64')
+    const qrImage = await pdfDoc.embedPng(qrBuffer)
+    page.drawImage(qrImage, {
+      x: qrPos.x - qrPos.size / 2,
+      y: qrPos.y,
+      width: qrPos.size,
+      height: qrPos.size,
     })
   }
 
-  // ===== 6. CONVERTIR A BUFFER =====
+  // ===== 4. TEXTOS FIJOS =====
+  const primaryColor = parseColor(data.template.color_primary)
+  const accentColor = parseColor(data.template.color_accent)
+
+  const pos = data.template
+
+  drawTextEl(page, data.template.titulo_texto || 'CERTIFICADO DE PARTICIPACIÓN', pos.pos_titulo_cert, primaryFont, primaryColor, 14)
+  drawTextEl(page, data.nombreAlumno.toUpperCase(), pos.pos_nombre_alumno, primaryFont, primaryColor, 28)
+  drawTextEl(page, `RUT: ${data.rutAlumno}`, pos.pos_rut_alumno, secondaryFont, parseColor('#666666'), 14)
+  drawTextEl(page, data.nombreCurso.toUpperCase(), pos.pos_titulo_curso, primaryFont, accentColor, 20)
+
+  if (data.horas && pos.pos_horas.visible !== false) {
+    drawTextEl(page, `Duración: ${data.horas} horas`, pos.pos_horas, secondaryFont, primaryColor, 12)
+  }
+
+  drawTextEl(page, `Fecha de emisión: ${formatDate(data.fechaEmision)}`, pos.pos_fecha_emision, secondaryFont, primaryColor, 11)
+  drawTextEl(page, `Válido hasta: ${formatDate(data.fechaVigencia)}`, pos.pos_fecha_vigencia, secondaryFont, primaryColor, 10)
+  drawTextEl(page, `ID: ${data.certificateId.substring(0, 12)}...`, pos.pos_cert_id, secondaryFont, parseColor('#999999'), 8)
+
+  // ===== 5. TEXTO LIBRE =====
+  for (const bloque of (data.template.texto_libre ?? [])) {
+    if (bloque.pos.visible === false) continue
+    const color = bloque.pos.color ? parseColor(bloque.pos.color) : primaryColor
+    drawTextEl(page, bloque.text, bloque.pos, secondaryFont, color, bloque.pos.fontSize ?? 12)
+  }
+
   const pdfBuffer = await pdfDoc.save()
   return Buffer.from(pdfBuffer)
 }
 
-/**
- * Dibujar texto con posición y estilo
- */
-function drawText(page: any, text: string, position: any, font: any, color: any, defaultFontSize: number) {
+function drawTextEl(page: any, text: string, position: any, font: any, color: any, defaultFontSize: number) {
+  if (position.visible === false) return
+  if (!text) return
+
   const fontSize = position.fontSize || defaultFontSize
   const x = position.x || 0
   const y = position.y || 0
   const align = position.align || 'left'
   const maxWidth = position.maxWidth || 600
-
-  // Usar fuente embebida si está disponible, si no usar fuente estándar
   const drawFont = font || 'Helvetica'
 
-  // Calcular ancho del texto para alineación
+  // Alineación horizontal
   let textX = x
   if (align === 'center') {
-    // Para texto centrado, estimamos que cada carácter ocupa ~0.6 * fontSize píxeles
-    const estimatedWidth = text.length * fontSize * 0.6
-    textX = x - estimatedWidth / 2
+    textX = x - (text.length * fontSize * 0.6) / 2
   } else if (align === 'right') {
-    const estimatedWidth = text.length * fontSize * 0.6
-    textX = x - estimatedWidth
+    textX = x - text.length * fontSize * 0.6
   }
 
-  // Dibujar texto con word wrap si es necesario
+  // Word wrap simple
   if (maxWidth && text.length > 40) {
-    // Wrap de texto simple
     const words = text.split(' ')
     let currentLine = ''
     let lineY = y
 
     for (const word of words) {
       const testLine = currentLine ? `${currentLine} ${word}` : word
-      const estimatedLineWidth = testLine.length * fontSize * 0.6
-
-      if (estimatedLineWidth > maxWidth && currentLine) {
-        // Dibujar línea actual
+      if (testLine.length * fontSize * 0.6 > maxWidth && currentLine) {
         page.drawText(currentLine, {
           x: align === 'center' ? x - (currentLine.length * fontSize * 0.6) / 2 : x,
           y: lineY,
           size: fontSize,
           font: drawFont,
-          color: color,
+          color,
         })
         currentLine = word
         lineY -= fontSize + 5
@@ -204,32 +158,20 @@ function drawText(page: any, text: string, position: any, font: any, color: any,
         currentLine = testLine
       }
     }
-
-    // Dibujar última línea
     if (currentLine) {
       page.drawText(currentLine, {
         x: align === 'center' ? x - (currentLine.length * fontSize * 0.6) / 2 : x,
         y: lineY,
         size: fontSize,
         font: drawFont,
-        color: color,
+        color,
       })
     }
   } else {
-    // Texto simple sin wrap
-    page.drawText(text, {
-      x: textX,
-      y: y,
-      size: fontSize,
-      font: drawFont,
-      color: color,
-    })
+    page.drawText(text, { x: textX, y, size: fontSize, font: drawFont, color })
   }
 }
 
-/**
- * Parsear color hex a RGB para pdf-lib
- */
 function parseColor(hexColor: string): any {
   const hex = hexColor.replace('#', '')
   const r = parseInt(hex.substring(0, 2), 16) / 255
@@ -238,10 +180,7 @@ function parseColor(hexColor: string): any {
   return rgb(r, g, b)
 }
 
-/**
- * Formatear fecha en español
- */
 function formatDate(date: Date): string {
-  const dias = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
-  return `${date.getDate()} de ${dias[date.getMonth()]} de ${date.getFullYear()}`
+  const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+  return `${date.getDate()} de ${meses[date.getMonth()]} de ${date.getFullYear()}`
 }

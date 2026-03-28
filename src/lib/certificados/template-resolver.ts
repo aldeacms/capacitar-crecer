@@ -65,7 +65,8 @@ function getDefaultTemplate(): CertificateTemplate {
     pos_qr_code: { x: 720, y: 40, size: 90 },
     pos_cert_id: { x: 421, y: 40, fontSize: 8, align: 'center' },
 
-    firmantes: [],
+    texto_libre: [],
+    orientacion: 'horizontal',
     activo: true,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

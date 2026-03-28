@@ -364,11 +364,35 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
     const s = ta.selectionStart; const e = ta.selectionEnd
     const cur = selectedEl.libreText ?? ''
     const sel = cur.slice(s, e)
-    const next = sel.startsWith('**') && sel.endsWith('**')
-      ? cur.slice(0, s) + sel.slice(2, -2) + cur.slice(e)
-      : cur.slice(0, s) + `**${sel || 'texto'}**` + cur.slice(e)
+
+    let next: string
+    let newSelStart: number
+    let newSelEnd: number
+
+    if (!sel) {
+      // Sin selección: insertar **texto** y seleccionar "texto"
+      const placeholder = 'texto'
+      next = cur.slice(0, s) + `**${placeholder}**` + cur.slice(s)
+      newSelStart = s + 2
+      newSelEnd = s + 2 + placeholder.length
+    } else if (sel.startsWith('**') && sel.endsWith('**') && sel.length > 4) {
+      // Toggle off: quitar marcadores
+      const inner = sel.slice(2, -2)
+      next = cur.slice(0, s) + inner + cur.slice(e)
+      newSelStart = s
+      newSelEnd = s + inner.length
+    } else {
+      // Toggle on: envolver selección
+      next = cur.slice(0, s) + `**${sel}**` + cur.slice(e)
+      newSelStart = s
+      newSelEnd = s + sel.length + 4
+    }
+
     updateSelected({ libreText: next, previewText: next })
-    setTimeout(() => ta.focus(), 0)
+    setTimeout(() => {
+      ta.focus()
+      ta.setSelectionRange(newSelStart, newSelEnd)
+    }, 0)
   }
 
   // ── Upload ────────────────────────────────────────────────────────────────
@@ -426,7 +450,7 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
   const hiddenFixed = elements.filter((el) => !el.visible && fixedKeys.includes(el.key))
 
   return (
-    <div className="flex flex-col h-full bg-slate-50">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-slate-50">
 
       {/* ── Toolbar ── */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-slate-200 bg-white shrink-0 flex-wrap">
@@ -651,7 +675,7 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
                         overflow: 'hidden',
                         boxShadow: isSel ? '0 0 0 1px rgba(40,180,173,0.3)' : '0 1px 3px rgba(0,0,0,0.12)',
                       }}>
-                        <div style={{ fontSize: Math.max(7, Math.min(11, (el.fontSize ?? 12) * scale)), color: el.color ?? '#1a1a2e', lineHeight: 1.4 }}>
+                        <div style={{ fontSize: Math.max(7, Math.min(11, (el.fontSize ?? 12) * scale)), color: el.color ?? '#1a1a2e', lineHeight: 1.4, textAlign: (el.align ?? 'left') as any, width: '100%' }}>
                           <RichChipText text={el.previewText.substring(0, 120)} fontSize={el.fontSize ?? 12} />
                         </div>
                       </div>
@@ -723,9 +747,9 @@ export default function TemplateEditor({ template, cursos, existingTemplates, on
                   <div>
                     <div className="flex items-center gap-1 mb-1.5 flex-wrap">
                       <button onClick={toggleBold}
-                        className="flex items-center gap-1 px-2 py-1 text-xs font-black bg-slate-100 hover:bg-slate-200 rounded transition-colors border border-slate-200"
+                        className="flex items-center justify-center w-8 h-7 font-black bg-slate-100 hover:bg-slate-200 rounded transition-colors border border-slate-200 text-slate-700"
                         title="Negrita: selecciona texto y pulsa B">
-                        <Bold size={11} /> B
+                        <Bold size={13} />
                       </button>
                       <div className="h-4 w-px bg-slate-200" />
                       {VARIABLES.map((v) => (

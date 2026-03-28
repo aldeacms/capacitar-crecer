@@ -50,6 +50,7 @@ function getDefaultTemplate(): CertificateTemplate {
     id: 'default-hardcoded',
     curso_id: null,
     nombre: 'default',
+    titulo_texto: 'CERTIFICADO DE PARTICIPACIÓN',
     background_storage_path: 'templates/formato-base.jpg',
     color_primary: '#1a1a2e',
     color_accent: '#28B4AD',

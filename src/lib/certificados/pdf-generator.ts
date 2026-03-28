@@ -102,7 +102,7 @@ export async function generateCertificatePDF(data: CertificateData): Promise<Buf
   const accentColor = parseColor(data.template.color_accent)
 
   // Título del certificado
-  drawText(page, 'CERTIFICADO DE PARTICIPACIÓN', data.template.pos_titulo_cert, primaryFont, primaryColor, 14)
+  drawText(page, data.template.titulo_texto || 'CERTIFICADO DE PARTICIPACIÓN', data.template.pos_titulo_cert, primaryFont, primaryColor, 14)
 
   // Nombre del alumno (grande, bold)
   drawText(page, data.nombreAlumno.toUpperCase(), data.template.pos_nombre_alumno, primaryFont, primaryColor, 28)

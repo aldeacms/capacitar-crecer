@@ -32,6 +32,7 @@ export interface CertificateTemplate {
   id: string
   curso_id: string | null
   nombre: string
+  titulo_texto: string
   background_storage_path: string | null
   font_primary_url?: string
   font_secondary_url?: string

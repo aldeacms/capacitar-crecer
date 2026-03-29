@@ -45,7 +45,7 @@ export const CursoSchema = z.object({
   estado: z.string().optional(),
   modalidad: z.string().optional(),
   horas: z.number().int().min(1, 'Horas debe ser mayor a 0'),
-  tipo_acceso: z.enum(['gratis', 'pago', 'gratis_cert_pago', 'cotizar']),
+  tipo_acceso: z.enum(['gratis', 'pago', 'pago-inmediato', 'gratis_cert_pago', 'cotizar']),
   precio_curso: z.number().min(0, 'Precio no puede ser negativo'),
   precio_certificado: z.number().min(0, 'Precio certificado no puede ser negativo'),
   porcentaje_aprobacion: z.number().int().min(0).max(100),

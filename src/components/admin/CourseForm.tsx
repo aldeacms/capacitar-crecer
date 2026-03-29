@@ -42,7 +42,7 @@ export default function CourseForm({
   const [slug, setSlug] = useState(initialData?.slug || '')
   const [categoriaId, setCategoriaId] = useState(initialData?.categoria_id || "")
   const [modalidad, setModalidad] = useState(initialData?.modalidad || "online-asincrono")
-  const [horas, setHoras] = useState(initialData?.horas || 0)
+  const [horas, setHoras] = useState(initialData?.horas ?? 1)
   const [estadoCurso, setEstadoCurso] = useState(initialData?.estado || "borrador")
 
   // PESTAÑA 2: COMERCIAL & CERTIFICACIÓN
@@ -96,7 +96,7 @@ export default function CourseForm({
       setSlug(initialData.slug || '')
       setCategoriaId(initialData.categoria_id || "")
       setModalidad(initialData.modalidad || "online-asincrono")
-      setHoras(initialData.horas || 0)
+      setHoras(initialData.horas ?? 1)
       setEstadoCurso(initialData.estado || "borrador")
       setTipoAcceso(initialData.tipo_acceso || 'pago')
       setPrecioCurso(initialData.precio_curso || 0)

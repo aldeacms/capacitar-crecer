@@ -68,7 +68,9 @@ export async function createCourse(formData: FormData) {
   })
 
   if (!dataParsed.success) {
-    return { error: dataParsed.error.issues[0]?.message || 'Datos de curso inválidos' }
+    const zodError = dataParsed.error.issues[0]?.message || 'Datos de curso inválidos'
+    console.error('createCourse ZOD VALIDATION FAILED:', zodError, JSON.stringify(dataParsed.error.issues))
+    return { error: zodError }
   }
 
   try {
@@ -146,7 +148,9 @@ export async function updateCourse(formData: FormData) {
   })
 
   if (!dataParsed.success) {
-    return { error: dataParsed.error.issues[0]?.message || 'Datos de curso inválidos' }
+    const zodError = dataParsed.error.issues[0]?.message || 'Datos de curso inválidos'
+    console.error('updateCourse ZOD VALIDATION FAILED:', zodError, JSON.stringify(dataParsed.error.issues))
+    return { error: zodError }
   }
 
   try {

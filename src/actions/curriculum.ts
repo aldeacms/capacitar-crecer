@@ -121,7 +121,9 @@ export async function createLesson(formData: FormData) {
   }).safeParse({ modulo_id, curso_id, titulo })
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message || 'Datos de lección inválidos' }
+    const zodError = parsed.error.issues[0]?.message || 'Datos de lección inválidos'
+    console.error('createLesson ZOD VALIDATION FAILED:', zodError, { modulo_id, curso_id, titulo })
+    return { error: zodError }
   }
 
   const supabaseAdmin = getSupabaseAdmin()

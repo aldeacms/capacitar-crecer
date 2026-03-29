@@ -202,7 +202,7 @@ export async function getCertificadosEmitidos() {
       fecha_vigencia,
       invalidado_at,
       version,
-      perfiles(nombre_completo, id),
+      perfiles!certificate_downloads_perfil_id_fkey(nombre_completo, id),
       cursos(titulo, id)
     `)
     .order('created_at', { ascending: false })

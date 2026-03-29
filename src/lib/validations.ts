@@ -45,7 +45,7 @@ export const CursoSchema = z.object({
   estado: z.string().optional(),
   modalidad: z.string().optional(),
   horas: z.number().int().min(1, 'Horas debe ser mayor a 0'),
-  tipo_acceso: z.enum(['gratis', 'pago', 'pago-inmediato', 'gratis_cert_pago', 'cotizar']),
+  tipo_acceso: z.enum(['gratis', 'pago', 'gratis_cert_pago', 'cotizar']),
   precio_curso: z.number().min(0, 'Precio no puede ser negativo'),
   precio_certificado: z.number().min(0, 'Precio certificado no puede ser negativo'),
   porcentaje_aprobacion: z.number().int().min(0).max(100),
@@ -66,9 +66,9 @@ export const ModuloSchema = z.object({
 
 export const LeccionSchema = z.object({
   titulo: z.string().min(1, 'Título es requerido').max(200),
-  contenido: z.string().optional(),
-  tipo_contenido: z.enum(['video', 'texto', 'archivo']).catch('video'),
-  url_video: z.string().url('URL de video inválida').optional(),
+  contenido_html: z.string().optional(),
+  tipo: z.enum(['video', 'texto', 'quiz']).catch('video'),
+  video_url: z.string().optional(),
   orden: z.number().int().min(0),
 })
 

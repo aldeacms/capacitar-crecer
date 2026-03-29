@@ -1,5 +1,5 @@
 # WBS MASTER — Capacitar y Crecer
-**Versión:** 3.0
+**Versión:** 4.0
 **Fecha actualización:** 2026-03-28
 **Metodología:** Funcionalidad consolidada → CMS → Pagos → Hardening
 
@@ -108,6 +108,67 @@ Eliminados todos los emojis del sistema. Archivos afectados: `CheckoutForm.tsx` 
 | 2.5.1 | Ruta `/admin/medios` con upload a Supabase Storage | [ ] pendiente |
 | 2.5.2 | Vista grid/lista de imágenes | [ ] pendiente |
 | 2.5.3 | Selector de imagen reutilizable (modal) | [ ] pendiente |
+
+---
+
+## FASE 2.6 — Sistema de Certificados — Editor Visual ✅ COMPLETADA
+
+### 2.6.1 Base de datos
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| 2.6.1.1 | Tabla `certificate_templates` (orientación, posiciones, texto libre, colores, fondo) | [x] 2026-03-28 |
+| 2.6.1.2 | Tabla `certificate_downloads` (PDF estático en Storage, inmutable post-emisión) | [x] 2026-03-28 |
+| 2.6.1.3 | RLS policies | [x] 2026-03-28 |
+
+### 2.6.2 Motor PDF (`pdf-lib`)
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| 2.6.2.1 | Generación PDF con imagen de fondo JPG/PNG desde Supabase Storage | [x] 2026-03-28 |
+| 2.6.2.2 | Fuentes TTF embebidas (Montserrat Bold + Regular desde `/public/fonts/`) | [x] 2026-03-28 |
+| 2.6.2.3 | QR code con color configurable y URL de validación pública | [x] 2026-03-28 |
+| 2.6.2.4 | Orientación horizontal (842×595) y vertical (595×842) | [x] 2026-03-28 |
+| 2.6.2.5 | Variables dinámicas en texto: `{{nombre_alumno}}`, `{{rut_alumno}}`, `{{nombre_curso}}`, `{{horas}}`, `{{fecha_emision}}`, `{{fecha_vigencia}}` | [x] 2026-03-28 |
+| 2.6.2.6 | Negrita inline con sintaxis `**texto**` en bloques de texto libre | [x] 2026-03-28 |
+| 2.6.2.7 | Alineación left / center / right / justify con word-spacing en justify | [x] 2026-03-28 |
+
+### 2.6.3 Editor visual drag & drop
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| 2.6.3.1 | Canvas proporcional al PDF (escala automática) | [x] 2026-03-28 |
+| 2.6.3.2 | Drag de cualquier elemento sobre el canvas | [x] 2026-03-28 |
+| 2.6.3.3 | Snap a grilla (50 pts) y snap a líneas centrales | [x] 2026-03-28 |
+| 2.6.3.4 | Grilla como overlay encima de imagen de fondo | [x] 2026-03-28 |
+| 2.6.3.5 | QR: resize arrastrando esquina inferior-derecha | [x] 2026-03-28 |
+| 2.6.3.6 | Texto libre: resize de ancho (handle derecho) y alto (handle inferior) | [x] 2026-03-28 |
+| 2.6.3.7 | Chip texto libre muestra negrita y alineación real (`RichChipText`) | [x] 2026-03-28 |
+| 2.6.3.8 | QR chip muestra color configurado | [x] 2026-03-28 |
+| 2.6.3.9 | Editor a pantalla completa (fixed overlay, cubre sidebar admin) | [x] 2026-03-28 |
+| 2.6.3.10 | Layout dos sidebars: izquierdo (lista elementos) + derecho (propiedades) | [x] 2026-03-28 |
+| 2.6.3.11 | Elementos fijos: ocultar / restaurar | [x] 2026-03-28 |
+| 2.6.3.12 | Texto libre: agregar / eliminar / editar con variables y negrita | [x] 2026-03-28 |
+
+### 2.6.4 Gestión de plantillas
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| 2.6.4.1 | CRUD de plantillas (`upsertTemplate`, `deleteTemplate`) | [x] 2026-03-28 |
+| 2.6.4.2 | Plantilla global (sin curso) + plantillas específicas por curso | [x] 2026-03-28 |
+| 2.6.4.3 | Fallback: si el curso no tiene plantilla, usa la global | [x] 2026-03-28 |
+| 2.6.4.4 | Duplicar plantilla (nueva desde cero o copia de existente) | [x] 2026-03-28 |
+| 2.6.4.5 | Modal de inicio: "desde cero" o "copiar plantilla existente" | [x] 2026-03-28 |
+| 2.6.4.6 | Upload de imagen de fondo a Supabase Storage | [x] 2026-03-28 |
+| 2.6.4.7 | Preview PDF en tiempo real (endpoint POST `/api/admin/certificados/preview`) | [x] 2026-03-28 |
+
+### 2.6.5 Inmutabilidad de certificados emitidos
+
+| # | Tarea | Estado |
+|---|-------|--------|
+| 2.6.5.1 | PDFs almacenados como archivos estáticos en Supabase Storage | [x] 2026-03-28 |
+| 2.6.5.2 | Descarga sirve el archivo guardado (no regenera) | [x] 2026-03-28 |
+| 2.6.5.3 | Validación pública `/validar-certificado/[id]` | [x] 2026-03-28 |
 
 ---
 
@@ -243,7 +304,9 @@ Eliminados todos los emojis del sistema. Archivos afectados: `CheckoutForm.tsx` 
 | Auth avanzada (reset password) | ✅ Funcional | `/olvide-mi-contrasena` + `/restablecer-contrasena` |
 | Admin panel CRUD | ✅ Funcional | Cursos, lecciones, quizzes, alumnos, cupones, categorías |
 | Aula virtual + quizzes | ✅ Funcional | |
-| Certificados + QR | ✅ Funcional | |
+| Certificados — generación PDF | ✅ Funcional | pdf-lib, fuentes TTF, QR, variables, negrita inline |
+| Certificados — editor visual | ✅ Funcional | Drag & drop, dos sidebars, pantalla completa, snap, resize |
+| Certificados — gestión plantillas | ✅ Funcional | CRUD, global/por curso, duplicar, preview en tiempo real |
 | Checkout / cupones | ✅ Funcional | Cupón no obligatorio; flujo pendiente de pago |
 | CMS — configuración OTEC | ✅ Funcional | `/admin/config` — identidad, contacto, RRSS, SEO, landing |
 | CMS — páginas dinámicas | ✅ Funcional | `/admin/paginas` + ruta pública `/(public)/[slug]` |
@@ -297,4 +360,6 @@ Validación pública             ✅  — /validar-certificado/[id]
 4. **Biblioteca de medios** — `/admin/medios` para gestión de imágenes (subir, listar, eliminar)
 5. **Cifrado de credenciales** — no dejar API keys en texto plano en BD antes de uso en producción real
 6. **Rate limiting** — en `/api/auth/signup`, `/api/pagos/*` antes de abrir registro público masivo
-7. **Logootipos de pasarelas** — reemplazar icono genérico CreditCard por SVGs oficiales en checkout
+7. **Logotipos de pasarelas** — reemplazar icono genérico CreditCard por SVGs oficiales en checkout
+8. **Configuración de registro** — habilitar/deshabilitar registro público desde `/admin/config` (2.2.4)
+9. **Histórico de transacciones** — vista en `/admin/pagos` con filtros por gateway y estado (3.2.5)

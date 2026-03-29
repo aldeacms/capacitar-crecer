@@ -10,7 +10,7 @@
 1. **Funcionalidad antes de estética** — nada roto antes de agregar features nuevas
 2. **CMS primero, pagos después** — el sistema de contenidos es requisito para multi-OTEC
 3. **Pagos chilenos nativos** — Transbank, Flow y Mercado Pago (no Stripe)
-4. **Multi-tenant desde el diseño** — cada OTEC tendrá su instancia con su contenido
+4. **Una instancia por OTEC** — cada OTEC tiene su propio repo, Supabase project y servidor. Sin multi-tenancy.
 5. **Sin atajos** — cada tarea se verifica antes de marcar como completa
 
 ---
@@ -282,17 +282,18 @@ Eliminados todos los emojis del sistema. Archivos afectados: `CheckoutForm.tsx` 
 
 ---
 
-## FASE 6 — Multi-OTEC y deploy ⬜ PENDIENTE
+## FASE 6 — Replicabilidad por OTEC y deploy ⬜ PENDIENTE
+
+**Estrategia definida (2026-03-29):** Una instancia separada por OTEC (fork/copia del repo + Supabase project propio + VPS/servidor propio). No multi-tenant. Cada OTEC es independiente.
 
 | # | Tarea | Estado |
 |---|-------|--------|
-| 6.1 | Definir estrategia multi-tenant (instancias separadas vs schema por tenant) | [ ] |
-| 6.2 | Variables de entorno por OTEC | [ ] |
-| 6.3 | Script de bootstrap para nueva OTEC | [ ] |
-| 6.4 | Pipeline CI/CD por tenant | [ ] |
-| 6.5 | Migración dominio cyc.luam.cl → capacitarycrecer.cl | [ ] |
-| 6.6 | Tests E2E con Playwright para flujos críticos | [ ] |
-| 6.7 | Lighthouse 90+ en todas las páginas públicas | [ ] |
+| 6.1 | ~~Definir estrategia multi-tenant~~ → instancias separadas por OTEC | [x] 2026-03-29 — decidido |
+| 6.2 | Documentar variables de entorno necesarias por instancia (`.env.example`) | [ ] |
+| 6.3 | Script o checklist de bootstrap para nueva instancia OTEC | [ ] |
+| 6.4 | Migración dominio cyc.luam.cl → capacitarycrecer.cl | [ ] |
+| 6.5 | Tests E2E con Playwright para flujos críticos | [ ] |
+| 6.6 | Lighthouse 90+ en todas las páginas públicas | [ ] |
 
 ---
 

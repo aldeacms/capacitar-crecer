@@ -1,6 +1,6 @@
 # WBS MASTER — Capacitar y Crecer
-**Versión:** 4.0
-**Fecha actualización:** 2026-03-28
+**Versión:** 5.0
+**Fecha actualización:** 2026-03-29 (auditado contra código real)
 **Metodología:** Funcionalidad consolidada → CMS → Pagos → Hardening
 
 ---
@@ -68,7 +68,7 @@ Eliminados todos los emojis del sistema. Archivos afectados: `CheckoutForm.tsx` 
 | 2.1.2 | Tabla `paginas` | [x] 2026-03-28 |
 | 2.1.3 | Tabla `secciones_landing` | [x] 2026-03-28 |
 | 2.1.4 | Tabla `media_library` | [x] 2026-03-28 |
-| 2.1.5 | Tabla `menu_items` | [ ] pendiente |
+| 2.1.5 | Tabla `menu_items` | [~] descartada — navegación se maneja en código, no en BD |
 | 2.1.6 | RLS policies para todas las tablas CMS | [x] 2026-03-28 |
 
 ### 2.2 Admin — Configuración General (`/admin/config`)
@@ -79,7 +79,7 @@ Eliminados todos los emojis del sistema. Archivos afectados: `CheckoutForm.tsx` 
 | 2.2.2 | Información de contacto y RRSS | [x] 2026-03-28 |
 | 2.2.3 | Configuración SEO global (meta title, description, OG) | [x] 2026-03-28 |
 | 2.2.4 | Configuración de registro (habilitado/deshabilitado) | [ ] pendiente |
-| 2.2.5 | Configuración de certificados (logo, firma, datos legales) | [ ] pendiente |
+| 2.2.5 | Configuración de certificados → reemplazada por FASE 2.6 (editor visual completo) | [x] 2026-03-29 |
 
 ### 2.3 Admin — Páginas CMS (`/admin/paginas`)
 
@@ -105,9 +105,10 @@ Eliminados todos los emojis del sistema. Archivos afectados: `CheckoutForm.tsx` 
 
 | # | Tarea | Estado |
 |---|-------|--------|
-| 2.5.1 | Ruta `/admin/medios` con upload a Supabase Storage | [ ] pendiente |
-| 2.5.2 | Vista grid/lista de imágenes | [ ] pendiente |
-| 2.5.3 | Selector de imagen reutilizable (modal) | [ ] pendiente |
+| 2.5.1 | Tabla `media_library` en BD con RLS | [x] 2026-03-28 |
+| 2.5.2 | Ruta `/admin/medios` con upload a Supabase Storage | [ ] pendiente |
+| 2.5.3 | Vista grid/lista de imágenes | [ ] pendiente |
+| 2.5.4 | Selector de imagen reutilizable (modal) | [ ] pendiente |
 
 ---
 
@@ -295,31 +296,46 @@ Eliminados todos los emojis del sistema. Archivos afectados: `CheckoutForm.tsx` 
 
 ---
 
-## Estado actual — resumen ejecutivo (2026-03-28)
+## Estado actual — resumen ejecutivo (2026-03-29, auditado)
 
 | Área | Estado | Notas |
 |------|--------|-------|
-| Build TypeScript | ✅ Sin errores | Verificado 2026-03-28, local y VPS |
-| Auth básica (login, registro) | ✅ Funcional | |
-| Auth avanzada (reset password) | ✅ Funcional | `/olvide-mi-contrasena` + `/restablecer-contrasena` |
-| Admin panel CRUD | ✅ Funcional | Cursos, lecciones, quizzes, alumnos, cupones, categorías |
-| Aula virtual + quizzes | ✅ Funcional | |
-| Certificados — generación PDF | ✅ Funcional | pdf-lib, fuentes TTF, QR, variables, negrita inline |
-| Certificados — editor visual | ✅ Funcional | Drag & drop, dos sidebars, pantalla completa, snap, resize |
-| Certificados — gestión plantillas | ✅ Funcional | CRUD, global/por curso, duplicar, preview en tiempo real |
-| Checkout / cupones | ✅ Funcional | Cupón no obligatorio; flujo pendiente de pago |
-| CMS — configuración OTEC | ✅ Funcional | `/admin/config` — identidad, contacto, RRSS, SEO, landing |
-| CMS — páginas dinámicas | ✅ Funcional | `/admin/paginas` + ruta pública `/(public)/[slug]` |
-| Frontend conectado a BD | ✅ Funcional | Hero, Stats, ClientLogos, Navbar, Footer desde `app_config` |
-| Pasarela Transbank | ✅ Implementada | Pendiente test con credenciales reales |
-| Pasarela Flow | ✅ Implementada | Pendiente test con credenciales reales |
-| Pasarela MercadoPago | ✅ Implementada | Pendiente test con credenciales reales |
-| Biblioteca de medios | ❌ Pendiente | No hay `/admin/medios` aún |
-| Emails transaccionales | ❌ Pendiente | Resend instalado, no implementado en pagos |
-| Reportes de ingresos | ❌ Pendiente | FASE 4 |
-| Cifrado credenciales pago | ⚠️ Pendiente | Actualmente en texto plano en Supabase RLS |
+| Build TypeScript | ✅ Sin errores | Verificado local y VPS Docker |
+| Deploy VPS | ✅ Activo | `cyc.luam.cl` — Hetzner `204.168.156.157:3002`, Docker |
+| Auth básica (login, registro) | ✅ Funcional | Supabase Auth |
+| Auth avanzada (reset password) | ✅ Funcional | `/olvide-mi-contrasena` → email → `/restablecer-contrasena` |
+| Admin panel — CRUD cursos | ✅ Funcional | Cursos, módulos, lecciones, quizzes, archivos adjuntos |
+| Admin panel — usuarios | ✅ Funcional | Paginación, búsqueda, editar, enviar email (Resend) |
+| Admin panel — cupones | ✅ Funcional | Crear/editar/toggle activo |
+| Admin panel — categorías | ✅ Funcional | CRUD con imágenes |
+| Aula virtual | ✅ Funcional | Video, texto, quiz, progreso por lección |
+| Quizzes (múltiple, V/F, abierta) | ✅ Funcional | Con imágenes adjuntas |
+| Certificados — generación PDF | ✅ Funcional | pdf-lib + fontkit TTF, QR con validación, variables, negrita |
+| Certificados — editor visual | ✅ Funcional | Drag & drop, pantalla completa, dos sidebars, snap, resize QR/texto |
+| Certificados — gestión plantillas | ✅ Funcional | CRUD, global/por curso, duplicar, preview tiempo real |
+| Checkout — cursos gratuitos | ✅ Funcional | Inscripción directa |
+| Checkout — cupones 100% | ✅ Funcional | Inscripción directa sin pago |
+| Checkout — pasarelas de pago | ✅ Implementado | Transbank, Flow, MercadoPago — pendiente test con credenciales reales |
+| CMS — configuración OTEC | ✅ Funcional | Identidad, colores, contacto, RRSS, SEO desde `/admin/config` |
+| CMS — landing conectada a BD | ✅ Funcional | Hero, Stats, Clientes, Navbar, Footer dinámicos |
+| CMS — páginas dinámicas | ✅ Funcional | `/admin/paginas` + ruta pública `/[slug]` |
+| Validación pública certificados | ✅ Funcional | `/validar-certificado/[id]` |
+| Biblioteca de medios (UI) | ❌ Pendiente | Tabla BD existe (`media_library`), falta `/admin/medios` |
+| Emails transaccionales en pagos | ❌ Pendiente | Resend instalado, falta email de confirmación de compra |
+| Histórico transacciones admin | ❌ Pendiente | Tabla `pagos` existe, falta UI en `/admin/pagos` |
+| Configuración de registro (on/off) | ❌ Pendiente | `app_config` soporta, falta UI toggle |
+| Reportes de ingresos / matrículas | ❌ Pendiente | FASE 4 |
+| Cifrado credenciales de pago | ⚠️ Pendiente | API keys en texto plano en BD — riesgo antes de producción |
 | Rate limiting | ❌ Pendiente | FASE 5 |
-| Tests automatizados | ❌ Pendiente | FASE 6 |
+| Tests E2E automatizados | ❌ Pendiente | FASE 6 |
+
+### Deuda técnica identificada (audit 2026-03-29)
+
+| Item | Detalle | Prioridad |
+|------|---------|-----------|
+| Tablas sin migración | `categorias`, `cupones`, `pagos`, `payment_configs`, `admin_users`, `lecciones_completadas`, `matriculas_cupones`, `imagenes_cursos`, `imagenes_preguntas` existen en producción pero sin archivo de migración en el repo | Media |
+| `archivos_lecciones` duplicada | El código usa tanto `lecciones_archivos` como `archivos_lecciones` indistintamente — la tabla real es `lecciones_archivos` | Baja |
+| `menu_items` | Referenciada en WBS (2.1.5) pero nunca implementada ni usada | Baja (eliminar del backlog) |
 
 ---
 

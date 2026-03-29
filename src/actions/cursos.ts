@@ -7,24 +7,24 @@ import { requireAdmin } from '@/lib/auth'
 import { CursoSchema } from '@/lib/validations'
 import { z } from 'zod'
 
+// Al crear: auto-append numérico si el slug base ya existe
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function ensureUniqueSlug(supabase: any, table: string, baseSlug: string, currentId?: string) {
-  let uniqueSlug = baseSlug
+async function uniqueSlugForCreate(supabase: any, baseSlug: string): Promise<string> {
+  let slug = baseSlug
   let counter = 1
-  let exists = true
-
-  while (exists) {
-    let query = supabase.from(table).select('id').eq('slug', uniqueSlug)
-    if (currentId) query = query.neq('id', currentId)
-    const { data } = await query.maybeSingle()
-    if (!data) {
-      exists = false
-    } else {
-      counter++
-      uniqueSlug = `${baseSlug}-${counter}`
-    }
+  while (true) {
+    const { data } = await supabase.from('cursos').select('id').eq('slug', slug).maybeSingle()
+    if (!data) return slug
+    counter++
+    slug = `${baseSlug}-${counter}`
   }
-  return uniqueSlug
+}
+
+// Al editar: sólo verifica si el slug ya está en uso por otro curso
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function slugTakenByOther(supabase: any, slug: string, currentId: string): Promise<boolean> {
+  const { data } = await supabase.from('cursos').select('id').eq('slug', slug).neq('id', currentId).maybeSingle()
+  return !!data
 }
 
 export async function createCourse(formData: FormData) {
@@ -72,7 +72,7 @@ export async function createCourse(formData: FormData) {
   }
 
   try {
-    insertData.slug = await ensureUniqueSlug(supabaseAdmin, 'cursos', insertData.slug)
+    insertData.slug = await uniqueSlugForCreate(supabaseAdmin, insertData.slug)
 
     if (imageFile && imageFile.size > 0) {
       const fileExt = imageFile.name.split('.').pop()
@@ -150,7 +150,9 @@ export async function updateCourse(formData: FormData) {
   }
 
   try {
-    updateData.slug = await ensureUniqueSlug(supabaseAdmin, 'cursos', updateData.slug, id)
+    if (await slugTakenByOther(supabaseAdmin, updateData.slug, id)) {
+      return { error: `El slug "${updateData.slug}" ya está en uso por otro curso. Elige uno diferente.` }
+    }
 
     if (imageFile && imageFile.size > 0) {
       const fileExt = imageFile.name.split('.').pop()

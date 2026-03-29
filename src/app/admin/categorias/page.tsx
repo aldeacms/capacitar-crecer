@@ -2,8 +2,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { getCategories, deleteCategory } from '@/actions/categorias'
 import CategoryModal from '@/components/admin/CategoryModal'
+import Tooltip from '@/components/ui/Tooltip'
 
 export default function CategoriasPage() {
   const [categorias, setCategorias] = useState<any[]>([])
@@ -95,19 +97,25 @@ export default function CategoriasPage() {
                   <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                     {cat.descripcion || <span className="italic opacity-50">Sin descripción</span>}
                   </td>
-                  <td className="px-6 py-4 text-right space-x-3">
-                    <button 
-                      onClick={() => handleEdit(cat)} 
-                      className="text-[#28B4AD] hover:text-[#219892] text-sm font-bold transition-colors"
-                    >
-                      Editar
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(cat.id, cat.nombre)} 
-                      className="text-gray-300 hover:text-red-500 text-sm font-medium transition-colors"
-                    >
-                      Eliminar
-                    </button>
+                  <td className="px-6 py-4 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Tooltip label="Editar">
+                        <button
+                          onClick={() => handleEdit(cat)}
+                          className="p-1.5 text-gray-400 hover:text-[#28B4AD] hover:bg-[#28B4AD]/10 rounded-lg transition-all"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip label="Eliminar">
+                        <button
+                          onClick={() => handleDelete(cat.id, cat.nombre)}
+                          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </Tooltip>
+                    </div>
                   </td>
                 </tr>
               ))

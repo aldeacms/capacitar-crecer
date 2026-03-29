@@ -7,33 +7,24 @@ import { requireAdmin } from '@/lib/auth'
 import { CategorySchema } from '@/lib/validations'
 import { z } from 'zod'
 
+// Al crear: auto-append numérico si el slug base ya existe
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function ensureUniqueSlug(supabase: any, table: string, baseSlug: string, currentId?: string) {
-  let uniqueSlug = baseSlug
+async function uniqueSlugForCreate(supabase: any, table: string, baseSlug: string): Promise<string> {
+  let slug = baseSlug
   let counter = 1
-  let exists = true
-
-  while (exists) {
-    let query = supabase
-      .from(table)
-      .select('id')
-      .eq('slug', uniqueSlug)
-    
-    if (currentId) {
-      query = query.neq('id', currentId)
-    }
-
-    const { data } = await query.maybeSingle()
-
-    if (!data) {
-      exists = false
-    } else {
-      counter++
-      uniqueSlug = `${baseSlug}-${counter}`
-    }
+  while (true) {
+    const { data } = await supabase.from(table).select('id').eq('slug', slug).maybeSingle()
+    if (!data) return slug
+    counter++
+    slug = `${baseSlug}-${counter}`
   }
+}
 
-  return uniqueSlug
+// Al editar: sólo verifica si el slug ya está en uso por otro registro
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function slugTakenByOther(supabase: any, table: string, slug: string, currentId: string): Promise<boolean> {
+  const { data } = await supabase.from(table).select('id').eq('slug', slug).neq('id', currentId).maybeSingle()
+  return !!data
 }
 
 export async function getCategories() {
@@ -69,7 +60,7 @@ export async function createCategory(formData: FormData) {
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
-    const finalSlug = await ensureUniqueSlug(supabaseAdmin, 'categorias', slug)
+    const finalSlug = await uniqueSlugForCreate(supabaseAdmin, 'categorias', slug)
 
     if (imageFile && imageFile.size > 0) {
       const fileExt = imageFile.name.split('.').pop()
@@ -81,11 +72,11 @@ export async function createCategory(formData: FormData) {
         .upload(filePath, imageFile)
 
       if (uploadError) throw uploadError
-      
+
       const { data: { publicUrl } } = supabaseAdmin.storage
         .from('imagenes_cursos')
         .getPublicUrl(filePath)
-      
+
       imagen_url = publicUrl
     }
 
@@ -127,7 +118,10 @@ export async function updateCategory(id: string, formData: FormData) {
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
-    const finalSlug = await ensureUniqueSlug(supabaseAdmin, 'categorias', slug, id)
+    if (await slugTakenByOther(supabaseAdmin, 'categorias', slug, id)) {
+      return { error: `El slug "${slug}" ya está en uso por otra categoría. Elige uno diferente.` }
+    }
+    const finalSlug = slug
 
     if (imageFile && imageFile.size > 0) {
       const fileExt = imageFile.name.split('.').pop()

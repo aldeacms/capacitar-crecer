@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { FileText, Plus, Pencil, Trash2, Globe, EyeOff, Loader2 } from 'lucide-react'
+import Tooltip from '@/components/ui/Tooltip'
 import { getPaginas, togglePublicarPagina, deletePagina, type Pagina } from '@/actions/paginas'
 
 export default function PaginasPage() {
@@ -121,21 +122,23 @@ export default function PaginasPage() {
                     {new Date(p.updated_at).toLocaleDateString('es-CL')}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-3">
-                      <Link
-                        href={`/admin/paginas/${p.id}`}
-                        className="flex items-center gap-1.5 text-[#28B4AD] hover:text-[#219892] text-sm font-semibold transition-colors"
-                      >
-                        <Pencil size={14} />
-                        Editar
-                      </Link>
-                      <button
-                        onClick={() => handleDelete(p)}
-                        className="flex items-center gap-1.5 text-gray-300 hover:text-red-500 text-sm font-medium transition-colors"
-                      >
-                        <Trash2 size={14} />
-                        Eliminar
-                      </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <Tooltip label="Editar">
+                        <Link
+                          href={`/admin/paginas/${p.id}`}
+                          className="p-1.5 text-gray-400 hover:text-[#28B4AD] hover:bg-[#28B4AD]/10 rounded-lg transition-all inline-flex items-center justify-center"
+                        >
+                          <Pencil size={15} />
+                        </Link>
+                      </Tooltip>
+                      <Tooltip label="Eliminar">
+                        <button
+                          onClick={() => handleDelete(p)}
+                          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </Tooltip>
                     </div>
                   </td>
                 </tr>

@@ -100,15 +100,16 @@ export default function CategoryModal({ category, onClose }: CategoryModalProps)
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">Slug (Automático)</label>
+              <label className="text-[12px] font-bold text-gray-500 uppercase tracking-wider">Slug (URL)</label>
               <input
                 required
                 name="slug"
                 value={slug}
-                readOnly={!!category}
-                onChange={(e) => setSlug(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 outline-none font-mono text-xs"
+                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '').replace(/--+/g, '-'))}
+                placeholder="ej: ofimatica"
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-white text-gray-800 outline-none font-mono text-xs focus:ring-2 focus:ring-[#28B4AD] focus:border-transparent"
               />
+              <p className="text-[11px] text-gray-400">Se autogenera desde el nombre. Puedes editarlo. Solo letras, números y guiones.</p>
             </div>
 
             <div className="space-y-1.5">

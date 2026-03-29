@@ -9,6 +9,7 @@ import { ChangePasswordModal } from '@/components/admin/ChangePasswordModal'
 import { SendEmailModal } from '@/components/admin/SendEmailModal'
 import { toast } from 'sonner'
 import { Search, Plus, Eye, Edit2, Key, Mail, Trash2, Users, Crown, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react'
+import Tooltip from '@/components/ui/Tooltip'
 
 const PAGE_SIZE = 20
 
@@ -237,46 +238,47 @@ export default function AlumnosPage() {
                     </td>
 
                     <td className="px-6 py-4">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => setDetailPanelUser(usuario)}
-                          className="p-1.5 text-gray-400 hover:text-[#28B4AD] hover:bg-[#28B4AD]/10 rounded-lg transition-all"
-                          title="Ver detalles"
-                        >
-                          <Eye size={16} />
-                        </button>
-
-                        <button
-                          onClick={() => handleEditUser(usuario)}
-                          className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
-                          title="Editar usuario"
-                        >
-                          <Edit2 size={16} />
-                        </button>
-
-                        <button
-                          onClick={() => handleChangePassword(usuario)}
-                          className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"
-                          title="Cambiar contraseña"
-                        >
-                          <Key size={16} />
-                        </button>
-
-                        <button
-                          onClick={() => handleSendEmail(usuario)}
-                          className="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-all"
-                          title="Enviar correo"
-                        >
-                          <Mail size={16} />
-                        </button>
-
-                        <button
-                          onClick={() => handleDeleteUser(usuario)}
-                          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                          title="Eliminar usuario"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                      <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Tooltip label="Ver detalles">
+                          <button
+                            onClick={() => setDetailPanelUser(usuario)}
+                            className="p-1.5 text-gray-400 hover:text-[#28B4AD] hover:bg-[#28B4AD]/10 rounded-lg transition-all"
+                          >
+                            <Eye size={16} />
+                          </button>
+                        </Tooltip>
+                        <Tooltip label="Editar usuario">
+                          <button
+                            onClick={() => handleEditUser(usuario)}
+                            className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                        </Tooltip>
+                        <Tooltip label="Cambiar contraseña">
+                          <button
+                            onClick={() => handleChangePassword(usuario)}
+                            className="p-1.5 text-gray-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"
+                          >
+                            <Key size={16} />
+                          </button>
+                        </Tooltip>
+                        <Tooltip label="Enviar correo">
+                          <button
+                            onClick={() => handleSendEmail(usuario)}
+                            className="p-1.5 text-gray-400 hover:text-green-500 hover:bg-green-50 rounded-lg transition-all"
+                          >
+                            <Mail size={16} />
+                          </button>
+                        </Tooltip>
+                        <Tooltip label="Eliminar usuario">
+                          <button
+                            onClick={() => handleDeleteUser(usuario)}
+                            className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </Tooltip>
                       </div>
                     </td>
                   </tr>

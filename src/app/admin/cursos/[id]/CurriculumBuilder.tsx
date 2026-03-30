@@ -156,6 +156,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
     setIsSubmittingLesson(true)
 
     const formData = new FormData(e.currentTarget)
+    formData.delete('archivos') // Los archivos se suben por separado vía /api/upload-lesson-files
     formData.append('curso_id', cursoId)
     formData.append('contenido_html', lessonContent)
 

@@ -161,22 +161,19 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
 
     try {
       // Paso 1: Guardar lección sin archivos
-      let result
       let leccionId: string
 
       if (lessonModal?.leccion?.id) {
         formData.append('id', lessonModal.leccion.id)
-        result = await updateLesson(formData)
+        const result = await updateLesson(formData)
+        if (result?.error) { setLessonError(result.error); return }
         leccionId = lessonModal.leccion.id
       } else {
         formData.append('modulo_id', lessonModal!.moduloId)
-        result = await createLesson(formData)
+        const result = await createLesson(formData)
+        if (result?.error) { setLessonError(result.error); return }
+        if (!result.leccionId) { setLessonError('No se pudo obtener el ID de la lección'); return }
         leccionId = result.leccionId
-      }
-
-      if (result?.error) {
-        setLessonError(result.error)
-        return
       }
 
       // Paso 2: Subir archivos si existen

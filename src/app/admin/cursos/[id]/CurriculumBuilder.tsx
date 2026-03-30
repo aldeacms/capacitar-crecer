@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
+import { useState, useTransition, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
   createModule, updateModule, deleteModule,
@@ -91,11 +91,19 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
   const [fileSizeError, setFileSizeError] = useState<string | null>(null)
   const [selectedFilesSize, setSelectedFilesSize] = useState<number>(0)
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
+  const lessonErrorRef = useRef<HTMLDivElement>(null)
 
   // Hidratación segura para DND
   useEffect(() => {
     setHasMounted(true)
   }, [])
+
+  // Auto-scroll al error del modal cuando aparece
+  useEffect(() => {
+    if (lessonError && lessonErrorRef.current) {
+      lessonErrorRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, [lessonError])
 
   // Sensores DND
   const sensors = useSensors(
@@ -238,7 +246,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
   // Validar tamaño de archivos
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (!files) {
+    if (!files || files.length === 0) {
       setFileSizeError(null)
       setSelectedFilesSize(0)
       setSelectedFiles(null)
@@ -246,18 +254,23 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
     }
 
     let totalSize = 0
+    let oversizedFile: string | null = null
+
     for (let i = 0; i < files.length; i++) {
       totalSize += files[i].size
+      if (files[i].size > MAX_UPLOAD_SIZE) {
+        oversizedFile = files[i].name
+      }
     }
 
     setSelectedFilesSize(totalSize)
     setSelectedFiles(files)
 
-    if (totalSize > MAX_UPLOAD_SIZE) {
-      const sizeMB = (totalSize / (1024 * 1024)).toFixed(2)
-      setFileSizeError(
-        `El tamaño total de los archivos (${sizeMB} MB) supera el límite permitido de ${MAX_UPLOAD_SIZE_MB} MB. Por favor, selecciona archivos más pequeños o menos archivos.`
-      )
+    if (oversizedFile) {
+      setFileSizeError(`El archivo "${oversizedFile}" supera el límite de ${MAX_UPLOAD_SIZE_MB} MB.`)
+    } else if (totalSize > MAX_UPLOAD_SIZE) {
+      const sizeMB = (totalSize / (1024 * 1024)).toFixed(1)
+      setFileSizeError(`El total de archivos (${sizeMB} MB) supera el límite de ${MAX_UPLOAD_SIZE_MB} MB.`)
     } else {
       setFileSizeError(null)
     }
@@ -545,7 +558,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
 
             {/* Error Alert */}
             {lessonError && (
-              <div className="mx-8 md:mx-10 mt-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm border border-red-100 font-semibold flex justify-between items-start gap-3">
+              <div ref={lessonErrorRef} className="mx-8 md:mx-10 mt-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm border border-red-100 font-semibold flex justify-between items-start gap-3">
                 <div className="flex items-start gap-3">
                   <AlertTriangle size={18} className="flex-shrink-0 mt-0.5" />
                   <span>{lessonError}</span>
@@ -664,18 +677,19 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                     className="w-full text-sm text-slate-600 file:mr-2 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-[#28B4AD] file:text-white hover:file:bg-[#219892] transition-all cursor-pointer"
                   />
                   {fileSizeError ? (
-                    <p className="mt-2 text-xs text-red-600 font-semibold">
-                      {fileSizeError}
+                    <p className="mt-2 text-xs text-red-600 font-semibold flex items-center gap-1.5">
+                      <AlertTriangle size={13} className="flex-shrink-0" />
+                      {fileSizeError} Elimina el archivo y selecciona uno más pequeño.
                     </p>
                   ) : (
                     <>
                       <p className="mt-2 text-xs text-slate-500">
-                        PDF, Word, Excel, imágenes, etc. Máximo {MAX_UPLOAD_SIZE_MB} MB en total
+                        PDF, Word, Excel, imágenes, etc. — Máximo <strong>{MAX_UPLOAD_SIZE_MB} MB por archivo</strong> y <strong>{MAX_UPLOAD_SIZE_MB} MB en total</strong>
                       </p>
                       {selectedFilesSize > 0 && (
-                        <p className="mt-1 text-xs text-slate-600 flex items-center gap-2">
+                        <p className={`mt-1 text-xs font-semibold flex items-center gap-2 ${selectedFilesSize > MAX_UPLOAD_SIZE * 0.8 ? 'text-amber-600' : 'text-slate-600'}`}>
                           <Package size={14} />
-                          <span>Tamaño actual: {(selectedFilesSize / (1024 * 1024)).toFixed(2)} MB / {MAX_UPLOAD_SIZE_MB} MB</span>
+                          <span>{(selectedFilesSize / (1024 * 1024)).toFixed(1)} MB usados de {MAX_UPLOAD_SIZE_MB} MB</span>
                         </p>
                       )}
                     </>

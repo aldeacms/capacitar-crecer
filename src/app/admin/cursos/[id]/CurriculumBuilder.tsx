@@ -83,9 +83,11 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
 
   const [error, setError] = useState<string | null>(null)
   const [lessonError, setLessonError] = useState<string | null>(null)
+  const [uploadingFiles, setUploadingFiles] = useState(false)
   const [lessonContent, setLessonContent] = useState('')
   const [fileSizeError, setFileSizeError] = useState<string | null>(null)
   const [selectedFilesSize, setSelectedFilesSize] = useState<number>(0)
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null)
 
   // Hidratación segura para DND
   useEffect(() => {
@@ -153,37 +155,61 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
     formData.append('curso_id', cursoId)
     formData.append('contenido_html', lessonContent)
 
-    // Validación final antes de enviar
-    if (fileSizeError) {
-      setLessonError(fileSizeError)
-      return
-    }
-
     startTransition(async () => {
       try {
+        // Paso 1: Guardar lección sin archivos
         let result
+        let leccionId: string
+
         if (lessonModal?.leccion?.id) {
           formData.append('id', lessonModal.leccion.id)
           result = await updateLesson(formData)
+          leccionId = lessonModal.leccion.id
         } else {
           formData.append('modulo_id', lessonModal!.moduloId)
           result = await createLesson(formData)
+          leccionId = result.leccionId
         }
 
         if (result?.error) {
-          // Mejorar mensajes de error del servidor
           let errorMsg = result.error
-          if (errorMsg.includes('Body exceeded') || errorMsg.includes('413')) {
-            errorMsg = `El tamaño de los datos es muy grande. Intenta con archivos más pequeños, menos archivos, o texto más breve.`
-          }
           setLessonError(errorMsg)
-        } else {
-          setLessonModal(null)
-          setLessonContent('')
-          setFileSizeError(null)
-          setSelectedFilesSize(0)
-          setLessonError(null)
+          return
         }
+
+        // Paso 2: Subir archivos si existen
+        if (selectedFiles && selectedFiles.length > 0) {
+          setUploadingFiles(true)
+          const filesFormData = new FormData()
+          filesFormData.append('leccion_id', leccionId)
+          filesFormData.append('curso_id', cursoId)
+
+          for (let i = 0; i < selectedFiles.length; i++) {
+            filesFormData.append('archivos', selectedFiles[i])
+          }
+
+          const uploadResponse = await fetch('/api/upload-lesson-files', {
+            method: 'POST',
+            body: filesFormData
+          })
+
+          if (!uploadResponse.ok) {
+            const error = await uploadResponse.json()
+            setLessonError(`Lección creada, pero error al subir archivos: ${error.error}`)
+            setUploadingFiles(false)
+            return
+          }
+
+          setUploadingFiles(false)
+        }
+
+        // Éxito completo
+        setLessonModal(null)
+        setLessonContent('')
+        setFileSizeError(null)
+        setSelectedFilesSize(0)
+        setSelectedFiles(null)
+        setLessonError(null)
       } catch (err) {
         setLessonError(`Error inesperado: ${err instanceof Error ? err.message : 'Intenta de nuevo'}`)
       }
@@ -212,6 +238,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
     if (!files) {
       setFileSizeError(null)
       setSelectedFilesSize(0)
+      setSelectedFiles(null)
       return
     }
 
@@ -221,6 +248,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
     }
 
     setSelectedFilesSize(totalSize)
+    setSelectedFiles(files)
 
     if (totalSize > MAX_UPLOAD_SIZE) {
       const sizeMB = (totalSize / (1024 * 1024)).toFixed(2)
@@ -356,6 +384,9 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                             onClick={() => {
                                 setLessonContent('')
                                 setLessonError(null)
+                                setFileSizeError(null)
+                                setSelectedFiles(null)
+                                setSelectedFilesSize(0)
                                 setLessonModal({ moduloId: modulo.id })
                             }}
                             className="text-[10px] font-black text-[#28B4AD] uppercase tracking-widest bg-emerald-50 px-6 py-3 rounded-2xl border-2 border-emerald-100 hover:bg-emerald-100 transition-all"
@@ -489,10 +520,13 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
         <div
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto animate-in fade-in duration-300"
             onClick={() => {
-              setLessonModal(null)
-              setFileSizeError(null)
-              setSelectedFilesSize(0)
-              setLessonError(null)
+              if (!isPending && !uploadingFiles) {
+                setLessonModal(null)
+                setFileSizeError(null)
+                setSelectedFilesSize(0)
+                setLessonError(null)
+                setSelectedFiles(null)
+              }
             }}
         >
           <div
@@ -647,26 +681,36 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
               </div>
 
               {/* Modal Footer */}
-              <div className="border-t pt-6 flex justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLessonModal(null)
-                    setFileSizeError(null)
-                    setSelectedFilesSize(0)
-                    setLessonError(null)
-                  }}
-                  className="px-6 py-2 text-gray-600 font-semibold text-sm hover:bg-slate-100 rounded-lg transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPending || !!fileSizeError}
-                  className="px-6 py-2 bg-[#28B4AD] hover:bg-[#219892] text-white rounded-lg font-semibold text-sm disabled:opacity-50 transition-all"
-                >
-                  {isPending ? 'Guardando...' : (lessonModal.leccion ? 'Guardar' : 'Crear')}
-                </button>
+              <div className="border-t pt-6">
+                {uploadingFiles && (
+                  <div className="mb-4 p-3 bg-blue-50 text-blue-700 rounded-lg text-sm font-semibold border border-blue-100 flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-600 animate-pulse"></div>
+                    Subiendo archivos...
+                  </div>
+                )}
+                <div className="flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLessonModal(null)
+                      setFileSizeError(null)
+                      setSelectedFilesSize(0)
+                      setLessonError(null)
+                      setSelectedFiles(null)
+                    }}
+                    disabled={isPending || uploadingFiles}
+                    className="px-6 py-2 text-gray-600 font-semibold text-sm hover:bg-slate-100 rounded-lg transition-all disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isPending || uploadingFiles || !!fileSizeError}
+                    className="px-6 py-2 bg-[#28B4AD] hover:bg-[#219892] text-white rounded-lg font-semibold text-sm disabled:opacity-50 transition-all"
+                  >
+                    {isPending ? 'Guardando...' : uploadingFiles ? 'Subiendo...' : (lessonModal.leccion ? 'Guardar' : 'Crear')}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

@@ -8,21 +8,6 @@ import { z } from 'zod'
 import type { Database } from '@/types/database.types'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-// Límite máximo de carga: 50 MB
-const MAX_UPLOAD_SIZE = 50 * 1024 * 1024
-const MAX_UPLOAD_SIZE_MB = 50
-
-/**
- * Calcula el tamaño total de los archivos en FormData
- */
-function getTotalFormDataSize(formData: FormData): number {
-  let totalSize = 0
-  const files = formData.getAll('archivos') as File[]
-  for (const file of files) {
-    totalSize += file.size
-  }
-  return totalSize
-}
 
 // --- MÓDULOS ---
 
@@ -104,16 +89,6 @@ export async function createLesson(formData: FormData) {
   const tipo = formData.get('tipo') as Database['public']['Enums']['tipo_leccion']
   const video_url = formData.get('video_url') as string | null
   const contenido_html = formData.get('contenido_html') as string | null
-  const files = formData.getAll('archivos') as File[]
-
-  // Validar tamaño total de archivos
-  const totalSize = getTotalFormDataSize(formData)
-  if (totalSize > MAX_UPLOAD_SIZE) {
-    const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2)
-    return {
-      error: `El tamaño total de los archivos (${totalSizeMB} MB) supera el límite permitido de ${MAX_UPLOAD_SIZE_MB} MB.`
-    }
-  }
 
   // Validar campos requeridos
   const parsed = z.object({
@@ -156,36 +131,8 @@ export async function createLesson(formData: FormData) {
 
     if (lessonError) throw lessonError
 
-    if (files && files.length > 0) {
-      for (const file of files) {
-        if (file.size === 0) continue
-
-        const fileExt = file.name.split('.').pop()
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-        const filePath = `${curso_id}/${newLesson.id}/${fileName}`
-
-        const { error: uploadError } = await supabaseAdmin.storage
-          .from('archivos_lecciones')
-          .upload(filePath, file)
-
-        if (uploadError) continue
-
-        const { data: { publicUrl } } = supabaseAdmin.storage
-          .from('archivos_lecciones')
-          .getPublicUrl(filePath)
-        
-        await supabaseAdmin
-          .from('lecciones_archivos')
-          .insert([{
-            leccion_id: newLesson.id,
-            nombre_archivo: file.name,
-            archivo_url: publicUrl
-          }])
-      }
-    }
-
     revalidatePath(`/admin/cursos/${curso_id}`)
-    return { success: true }
+    return { success: true, leccionId: newLesson.id }
   } catch (error: any) {
     console.error('CRITICAL ERROR in createLesson:', error)
     return { error: error.message }
@@ -201,16 +148,6 @@ export async function updateLesson(formData: FormData) {
   const tipo = formData.get('tipo') as Database['public']['Enums']['tipo_leccion']
   const video_url = formData.get('video_url') as string | null
   const contenido_html = formData.get('contenido_html') as string | null
-  const files = formData.getAll('archivos') as File[]
-
-  // Validar tamaño total de archivos
-  const totalSize = getTotalFormDataSize(formData)
-  if (totalSize > MAX_UPLOAD_SIZE) {
-    const totalSizeMB = (totalSize / (1024 * 1024)).toFixed(2)
-    return {
-      error: `El tamaño total de los archivos (${totalSizeMB} MB) supera el límite permitido de ${MAX_UPLOAD_SIZE_MB} MB.`
-    }
-  }
 
   try {
     const updateData: Database['public']['Tables']['lecciones']['Update'] = {
@@ -226,34 +163,6 @@ export async function updateLesson(formData: FormData) {
       .eq('id', id)
 
     if (updateError) throw updateError
-
-    if (files && files.length > 0) {
-        for (const file of files) {
-          if (file.size === 0) continue
-  
-          const fileExt = file.name.split('.').pop()
-          const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-          const filePath = `${curso_id}/${id}/${fileName}`
-  
-          const { error: uploadError } = await supabaseAdmin.storage
-            .from('archivos_lecciones')
-            .upload(filePath, file)
-  
-          if (uploadError) continue
-  
-          const { data: { publicUrl } } = supabaseAdmin.storage
-            .from('archivos_lecciones')
-            .getPublicUrl(filePath)
-          
-          await supabaseAdmin
-            .from('lecciones_archivos')
-            .insert([{
-              leccion_id: id,
-              nombre_archivo: file.name,
-              archivo_url: publicUrl
-            }])
-        }
-      }
 
     revalidatePath(`/admin/cursos/${curso_id}`)
     return { success: true }

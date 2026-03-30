@@ -82,6 +82,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
   const [lessonModal, setLessonModal] = useState<{ moduloId: string, leccion?: any } | null>(null)
 
   const [error, setError] = useState<string | null>(null)
+  const [lessonError, setLessonError] = useState<string | null>(null)
   const [lessonContent, setLessonContent] = useState('')
   const [fileSizeError, setFileSizeError] = useState<string | null>(null)
   const [selectedFilesSize, setSelectedFilesSize] = useState<number>(0)
@@ -140,12 +141,13 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
   // --- Handlers Lecciones ---
   const openEditLesson = (moduloId: string, leccion: any) => {
     setLessonContent(leccion.contenido_html || '')
+    setLessonError(null)
     setLessonModal({ moduloId, leccion })
   }
 
   const handleLessonSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setError(null)
+    setLessonError(null)
 
     const formData = new FormData(e.currentTarget)
     formData.append('curso_id', cursoId)
@@ -153,7 +155,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
 
     // Validación final antes de enviar
     if (fileSizeError) {
-      setError(fileSizeError)
+      setLessonError(fileSizeError)
       return
     }
 
@@ -171,18 +173,19 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
         if (result?.error) {
           // Mejorar mensajes de error del servidor
           let errorMsg = result.error
-          if (errorMsg.includes('Body exceeded')) {
-            errorMsg = `El tamaño de los datos supera el límite permitido. Intenta con archivos más pequeños o menos archivos.`
+          if (errorMsg.includes('Body exceeded') || errorMsg.includes('413')) {
+            errorMsg = `El tamaño de los datos es muy grande. Intenta con archivos más pequeños, menos archivos, o texto más breve.`
           }
-          setError(errorMsg)
+          setLessonError(errorMsg)
         } else {
           setLessonModal(null)
           setLessonContent('')
           setFileSizeError(null)
           setSelectedFilesSize(0)
+          setLessonError(null)
         }
       } catch (err) {
-        setError(`Error inesperado: ${err instanceof Error ? err.message : 'Intenta de nuevo'}`)
+        setLessonError(`Error inesperado: ${err instanceof Error ? err.message : 'Intenta de nuevo'}`)
       }
     })
   }
@@ -352,6 +355,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                           <button
                             onClick={() => {
                                 setLessonContent('')
+                                setLessonError(null)
                                 setLessonModal({ moduloId: modulo.id })
                             }}
                             className="text-[10px] font-black text-[#28B4AD] uppercase tracking-widest bg-emerald-50 px-6 py-3 rounded-2xl border-2 border-emerald-100 hover:bg-emerald-100 transition-all"
@@ -488,6 +492,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
               setLessonModal(null)
               setFileSizeError(null)
               setSelectedFilesSize(0)
+              setLessonError(null)
             }}
         >
           <div
@@ -500,6 +505,19 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                 {lessonModal.leccion ? 'Editar' : 'Nueva'} Lección
               </h3>
             </div>
+
+            {/* Error Alert */}
+            {lessonError && (
+              <div className="mx-8 md:mx-10 mt-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm border border-red-100 font-semibold flex justify-between items-start gap-3">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle size={18} className="flex-shrink-0 mt-0.5" />
+                  <span>{lessonError}</span>
+                </div>
+                <button type="button" onClick={() => setLessonError(null)} className="text-red-400 hover:text-red-600 flex-shrink-0">
+                  <X size={18} />
+                </button>
+              </div>
+            )}
 
             {/* Modal Body - Compact */}
             <form onSubmit={handleLessonSubmit} className="p-8 md:p-10 space-y-6">
@@ -636,6 +654,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                     setLessonModal(null)
                     setFileSizeError(null)
                     setSelectedFilesSize(0)
+                    setLessonError(null)
                   }}
                   className="px-6 py-2 text-gray-600 font-semibold text-sm hover:bg-slate-100 rounded-lg transition-all"
                 >

@@ -4,6 +4,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth'
 import { revalidatePath } from 'next/cache'
 import type { CertificateTemplate, TextoLibre } from '@/lib/certificados/types'
+import type { Database } from '@/types/database.types'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // ─── Tipos de entrada ────────────────────────────────────────────────────────
 
@@ -90,6 +92,7 @@ export async function upsertTemplate(
   await requireAdmin()
   const admin = getSupabaseAdmin()
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const payload: any = {
     nombre: input.nombre,
     titulo_texto: input.titulo_texto,
@@ -155,7 +158,8 @@ export async function duplicateTemplate(
   if (fetchError || !original) return { error: fetchError?.message ?? 'Template no encontrado' }
 
   const { id: _id, created_at, updated_at, ...rest } = original
-  const payload = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const payload: any = {
     ...rest,
     nombre: nuevoNombre,
     curso_id: cursoId,

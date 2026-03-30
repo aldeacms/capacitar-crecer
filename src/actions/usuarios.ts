@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { requireAdmin } from '@/lib/auth'
 import { UsuarioSchema, ActualizarPerfilSchema, PasswordSchema } from '@/lib/validations'
 import { z } from 'zod'
+import type { Database } from '@/types/database.types'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 const EmailSchema = z.string().email('Formato de email inválido').max(254)
 
@@ -120,7 +122,8 @@ export async function crearUsuario(data: {
     // Si admin API falló, usar función SQL como fallback
     if (authError || !authUser?.user) {
       console.warn('Usando fallback: create_new_user RPC')
-      const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: rpcResult, error: rpcError } = await (supabaseAdmin as any).rpc(
         'create_new_user',
         {
           user_email: parsed.data.email,
@@ -145,15 +148,15 @@ export async function crearUsuario(data: {
 
     // 2. Crear perfil SOLO si usamos admin API (RPC ya lo crea)
     if (!authError) {
+      const perfilData: Database['public']['Tables']['perfiles']['Insert'] = {
+        id: authUser.user.id,
+        nombre_completo: parsed.data.nombre_completo,
+        rut: parsed.data.rut || 'sin-rut'
+      }
+
       const { error: perfilError } = await supabaseAdmin
         .from('perfiles')
-        .insert([
-          {
-            id: authUser.user.id,
-            nombre_completo: parsed.data.nombre_completo,
-            rut: parsed.data.rut || null
-          }
-        ])
+        .insert([perfilData])
 
       if (perfilError) {
         // Si falla el perfil, eliminar el usuario auth creado
@@ -168,14 +171,15 @@ export async function crearUsuario(data: {
 
     // 3. Si es admin, agregar a tabla admin_users
     if (isAdmin) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adminData: any = {
+        id: authUser.user.id,
+        is_active: true
+      }
+
       const { error: adminError } = await supabaseAdmin
         .from('admin_users')
-        .insert([
-          {
-            id: authUser.user.id,
-            is_active: true
-          }
-        ])
+        .insert([adminData])
 
       if (adminError) {
         throw new Error(`Error asignando rol admin: ${adminError.message}`)
@@ -250,12 +254,14 @@ export async function actualizarPerfil(
     return { error: dataParsed.error.issues[0]?.message || 'Datos inválidos' }
   }
 
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
 
   try {
+    const updateData: Database['public']['Tables']['perfiles']['Update'] = dataParsed.data as Database['public']['Tables']['perfiles']['Update']
+
     const { error } = await supabaseAdmin
       .from('perfiles')
-      .update(dataParsed.data)
+      .update(updateData)
       .eq('id', userIdParsed.data)
 
     if (error) {
@@ -371,7 +377,7 @@ export async function inscribirEnCurso(perfilId: string, cursoId: string) {
     return { error: cursoIdParsed.error.issues[0]?.message || 'ID de curso inválido' }
   }
 
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
 
   try {
     // Verificar que no está ya inscrito
@@ -387,16 +393,16 @@ export async function inscribirEnCurso(perfilId: string, cursoId: string) {
     }
 
     // Crear matrícula
+    const matriculaData: Database['public']['Tables']['matriculas']['Insert'] = {
+      perfil_id: perfilIdParsed.data,
+      curso_id: cursoIdParsed.data,
+      estado_pago_curso: false,
+      progreso_porcentaje: 0
+    }
+
     const { error } = await supabaseAdmin
       .from('matriculas')
-      .insert([
-        {
-          perfil_id: perfilIdParsed.data,
-          curso_id: cursoIdParsed.data,
-          estado_pago_curso: false,
-          progreso_porcentaje: 0
-        }
-      ])
+      .insert([matriculaData])
 
     if (error) {
       throw new Error(`Error inscribiendo usuario: ${error.message}`)
@@ -530,9 +536,11 @@ export async function cambiarRolUsuario(userId: string, nuevoRol: 'admin' | 'alu
   try {
     if (nuevoRol === 'admin') {
       // Promover a admin
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const adminUpsert: any = [{ id: userId, is_active: true }]
       const { error } = await supabaseAdmin
         .from('admin_users')
-        .upsert([{ id: userId, is_active: true }], { onConflict: 'id' })
+        .upsert(adminUpsert, { onConflict: 'id' })
       if (error) return { error: error.message }
     } else {
       // Degradar de admin

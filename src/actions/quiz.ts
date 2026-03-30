@@ -5,11 +5,13 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth'
 import { QuestionSchema } from '@/lib/validations'
 import { z } from 'zod'
+import type { Database } from '@/types/database.types'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export async function saveQuestion(data: {
   leccion_id: string
   texto: string
-  tipo: 'multiple' | 'vf' | 'abierta' | 'pareados'
+  tipo: Database['public']['Enums']['tipo_pregunta']
   puntos: number
   opciones: { texto: string; es_correcta: boolean; texto_pareado?: string }[]
 }) {
@@ -21,7 +23,7 @@ export async function saveQuestion(data: {
     return { error: parsed.error.issues[0]?.message || 'Datos de pregunta inválidos' }
   }
 
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
 
   try {
     // 1. Obtener el último orden para esta lección
@@ -36,15 +38,17 @@ export async function saveQuestion(data: {
     const nextOrder = (lastQuestion?.orden || 0) + 1
 
     // 2. Insertar la pregunta con el nuevo orden
+    const questionData: Database['public']['Tables']['quizzes_preguntas']['Insert'] = {
+      leccion_id: data.leccion_id,
+      texto: data.texto,
+      tipo: data.tipo,
+      puntos: data.puntos,
+      orden: nextOrder
+    }
+
     const { data: question, error: qError } = await supabaseAdmin
       .from('quizzes_preguntas')
-      .insert([{
-        leccion_id: data.leccion_id,
-        texto: data.texto,
-        tipo: data.tipo,
-        puntos: data.puntos,
-        orden: nextOrder
-      }])
+      .insert([questionData])
       .select()
       .single()
 
@@ -55,12 +59,7 @@ export async function saveQuestion(data: {
 
     // 3. Insertar las opciones si no es abierta
     if (data.tipo !== 'abierta' && data.opciones.length > 0) {
-      let opcionesFinales: Array<{
-        pregunta_id: string
-        texto: string
-        es_correcta: boolean
-        orden: number
-      }> = []
+      let opcionesFinales: Database['public']['Tables']['quizzes_opciones']['Insert'][] = []
 
       if (data.tipo === 'pareados') {
         // Para pareados: primero todos los términos A, luego todos los términos B
@@ -115,23 +114,25 @@ export async function saveQuestion(data: {
 export async function updateQuestion(data: {
   id: string
   texto: string
-  tipo: 'multiple' | 'vf' | 'abierta' | 'pareados'
+  tipo: Database['public']['Enums']['tipo_pregunta']
   puntos: number
   opciones: { id?: string; texto: string; es_correcta: boolean; texto_pareado?: string }[]
   leccionId: string
 }) {
   await requireAdmin()
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
 
   try {
     // 1. Actualizar la pregunta
+    const questionUpdate: Database['public']['Tables']['quizzes_preguntas']['Update'] = {
+      texto: data.texto,
+      tipo: data.tipo,
+      puntos: data.puntos
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from('quizzes_preguntas')
-      .update({
-        texto: data.texto,
-        tipo: data.tipo,
-        puntos: data.puntos
-      })
+      .update(questionUpdate)
       .eq('id', data.id)
 
     if (updateError) {
@@ -150,12 +151,7 @@ export async function updateQuestion(data: {
 
     // 3. Insertar nuevas opciones si no es abierta
     if (data.tipo !== 'abierta' && data.opciones.length > 0) {
-      let opcionesFinales: Array<{
-        pregunta_id: string
-        texto: string
-        es_correcta: boolean
-        orden: number
-      }> = []
+      let opcionesFinales: Database['public']['Tables']['quizzes_opciones']['Insert'][] = []
 
       if (data.tipo === 'pareados') {
         const terms = data.opciones.map((opt, idx) => ({
@@ -203,12 +199,18 @@ export async function updateQuestion(data: {
 
 export async function updateQuestionsOrder(questions: { id: string; orden: number }[]) {
   await requireAdmin()
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
 
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const questionsUpdate: any = questions.map(q => ({
+      id: q.id,
+      orden: q.orden
+    }))
+
     const { error } = await supabaseAdmin
       .from('quizzes_preguntas')
-      .upsert(questions.map(q => ({ id: q.id, orden: q.orden })), { onConflict: 'id' })
+      .upsert(questionsUpdate, { onConflict: 'id' })
 
     if (error) {
       console.error('Error updating questions order:', error)
@@ -226,7 +228,7 @@ export async function updateQuestionsOrder(questions: { id: string; orden: numbe
 
 export async function deleteQuestion(id: string) {
   await requireAdmin()
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
 
   try {
     const { error } = await supabaseAdmin
@@ -269,7 +271,7 @@ export async function uploadQuestionImage(formData: FormData) {
 
   const fileExt = file.name.split('.').pop()
   const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
 
   try {
     const { error: uploadError } = await supabaseAdmin.storage

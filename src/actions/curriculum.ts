@@ -4,8 +4,9 @@
 import { revalidatePath } from 'next/cache'
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth'
-import { LeccionSchema } from '@/lib/validations'
 import { z } from 'zod'
+import type { Database } from '@/types/database.types'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Límite máximo de carga: 50 MB
 const MAX_UPLOAD_SIZE = 50 * 1024 * 1024
@@ -95,13 +96,14 @@ export async function deleteModule(id: string, cursoId: string) {
 
 export async function createLesson(formData: FormData) {
   await requireAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
 
   const modulo_id = formData.get('modulo_id') as string
   const curso_id = formData.get('curso_id') as string
   const titulo = formData.get('titulo') as string
-  const tipo = formData.get('tipo') as 'video' | 'texto' | 'quiz'
-  const video_url = formData.get('video_url') as string
-  const contenido_html = formData.get('contenido_html') as string
+  const tipo = formData.get('tipo') as Database['public']['Enums']['tipo_leccion']
+  const video_url = formData.get('video_url') as string | null
+  const contenido_html = formData.get('contenido_html') as string | null
   const files = formData.getAll('archivos') as File[]
 
   // Validar tamaño total de archivos
@@ -126,8 +128,6 @@ export async function createLesson(formData: FormData) {
     return { error: zodError }
   }
 
-  const supabaseAdmin = getSupabaseAdmin()
-
   try {
     const { data: lastLesson } = await supabaseAdmin
       .from('lecciones')
@@ -139,16 +139,18 @@ export async function createLesson(formData: FormData) {
 
     const nextOrder = (lastLesson?.orden || 0) + 1
 
+    const lessonData: Database['public']['Tables']['lecciones']['Insert'] = {
+      modulo_id,
+      titulo,
+      tipo,
+      video_url: video_url || null,
+      contenido_html: contenido_html || null,
+      orden: nextOrder
+    }
+
     const { data: newLesson, error: lessonError } = await supabaseAdmin
       .from('lecciones')
-      .insert([{
-        modulo_id,
-        titulo,
-        tipo,
-        video_url,
-        contenido_html,
-        orden: nextOrder
-      }])
+      .insert([lessonData])
       .select()
       .single()
 
@@ -192,13 +194,13 @@ export async function createLesson(formData: FormData) {
 
 export async function updateLesson(formData: FormData) {
   await requireAdmin()
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
   const id = formData.get('id') as string
   const curso_id = formData.get('curso_id') as string
   const titulo = formData.get('titulo') as string
-  const tipo = formData.get('tipo') as any
-  const video_url = formData.get('video_url') as string
-  const contenido_html = formData.get('contenido_html') as string
+  const tipo = formData.get('tipo') as Database['public']['Enums']['tipo_leccion']
+  const video_url = formData.get('video_url') as string | null
+  const contenido_html = formData.get('contenido_html') as string | null
   const files = formData.getAll('archivos') as File[]
 
   // Validar tamaño total de archivos
@@ -211,14 +213,16 @@ export async function updateLesson(formData: FormData) {
   }
 
   try {
+    const updateData: Database['public']['Tables']['lecciones']['Update'] = {
+      titulo,
+      tipo,
+      video_url: video_url || null,
+      contenido_html: contenido_html || null
+    }
+
     const { error: updateError } = await supabaseAdmin
       .from('lecciones')
-      .update({
-        titulo,
-        tipo,
-        video_url,
-        contenido_html
-      })
+      .update(updateData)
       .eq('id', id)
 
     if (updateError) throw updateError

@@ -6,10 +6,11 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth'
 import { CursoSchema } from '@/lib/validations'
 import { z } from 'zod'
+import type { Database } from '@/types/database.types'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Al crear: auto-append numérico si el slug base ya existe
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function uniqueSlugForCreate(supabase: any, baseSlug: string): Promise<string> {
+async function uniqueSlugForCreate(supabase: SupabaseClient<Database>, baseSlug: string): Promise<string> {
   let slug = baseSlug
   let counter = 1
   while (true) {
@@ -21,15 +22,14 @@ async function uniqueSlugForCreate(supabase: any, baseSlug: string): Promise<str
 }
 
 // Al editar: sólo verifica si el slug ya está en uso por otro curso
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function slugTakenByOther(supabase: any, slug: string, currentId: string): Promise<boolean> {
+async function slugTakenByOther(supabase: SupabaseClient<Database>, slug: string, currentId: string): Promise<boolean> {
   const { data } = await supabase.from('cursos').select('id').eq('slug', slug).neq('id', currentId).maybeSingle()
   return !!data
 }
 
 export async function createCourse(formData: FormData) {
   await requireAdmin()
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
 
   const catIdStr = formData.get('categoria_id') as string
   const categoria_id = (catIdStr && catIdStr.trim() !== '') ? catIdStr : null
@@ -37,25 +37,24 @@ export async function createCourse(formData: FormData) {
   // Capturamos el nuevo campo SENCE
   const tiene_sence = formData.get('tiene_sence') === 'on'
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const insertData: any = {
+  const insertData: Database['public']['Tables']['cursos']['Insert'] = {
     titulo: formData.get('titulo') as string,
     slug: formData.get('slug') as string,
-    descripcion_breve: formData.get('descripcion_breve') as string,
-    dirigido_a: formData.get('dirigido_a') as string,
+    descripcion_breve: formData.get('descripcion_breve') as string | null,
+    dirigido_a: formData.get('dirigido_a') as string | null,
     categoria_id,
-    estado: formData.get('estado') as string,
-    modalidad: formData.get('modalidad') as string,
+    estado: formData.get('estado') as string | null,
+    modalidad: formData.get('modalidad') as string | null,
     horas: Number(formData.get('horas')),
-    tipo_acceso: formData.get('tipo_acceso') as string,
+    tipo_acceso: formData.get('tipo_acceso') as Database['public']['Enums']['tipo_acceso'],
     precio_curso: Number(formData.get('precio_curso')),
     precio_certificado: Number(formData.get('precio_certificado')),
     porcentaje_aprobacion: Number(formData.get('porcentaje_aprobacion')),
-    objetivos: formData.get('objetivos') as string,
-    metodologia: formData.get('metodologia') as string,
-    contenido_programatico: formData.get('contenido_programatico') as string,
-    caracteristicas_generales: formData.get('caracteristicas_generales') as string,
-    tiene_sence: tiene_sence,
+    objetivos: formData.get('objetivos') as string | null,
+    metodologia: formData.get('metodologia') as string | null,
+    contenido_programatico: formData.get('contenido_programatico') as string | null,
+    caracteristicas_generales: formData.get('caracteristicas_generales') as string | null,
+    tiene_sence,
     tiene_certificado: formData.get('tiene_certificado') === 'on'
   }
 
@@ -99,7 +98,7 @@ export async function createCourse(formData: FormData) {
 
 export async function updateCourse(formData: FormData) {
   await requireAdmin()
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
   const id = formData.get('id') as string
 
   if (!id) return { error: "ID del curso no proporcionado." }
@@ -110,25 +109,24 @@ export async function updateCourse(formData: FormData) {
   // Capturamos el nuevo campo SENCE
   const tiene_sence = formData.get('tiene_sence') === 'on'
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updateData: any = {
+  const updateData: Database['public']['Tables']['cursos']['Update'] = {
     titulo: formData.get('titulo') as string,
     slug: formData.get('slug') as string,
-    descripcion_breve: formData.get('descripcion_breve') as string,
-    dirigido_a: formData.get('dirigido_a') as string,
+    descripcion_breve: formData.get('descripcion_breve') as string | null,
+    dirigido_a: formData.get('dirigido_a') as string | null,
     categoria_id,
-    estado: formData.get('estado') as string,
-    modalidad: formData.get('modalidad') as string,
+    estado: formData.get('estado') as string | null,
+    modalidad: formData.get('modalidad') as string | null,
     horas: Number(formData.get('horas')),
-    tipo_acceso: formData.get('tipo_acceso') as string,
+    tipo_acceso: formData.get('tipo_acceso') as Database['public']['Enums']['tipo_acceso'],
     precio_curso: Number(formData.get('precio_curso')),
     precio_certificado: Number(formData.get('precio_certificado')),
     porcentaje_aprobacion: Number(formData.get('porcentaje_aprobacion')),
-    objetivos: formData.get('objetivos') as string,
-    metodologia: formData.get('metodologia') as string,
-    contenido_programatico: formData.get('contenido_programatico') as string,
-    caracteristicas_generales: formData.get('caracteristicas_generales') as string,
-    tiene_sence: tiene_sence,
+    objetivos: formData.get('objetivos') as string | null,
+    metodologia: formData.get('metodologia') as string | null,
+    contenido_programatico: formData.get('contenido_programatico') as string | null,
+    caracteristicas_generales: formData.get('caracteristicas_generales') as string | null,
+    tiene_sence,
     tiene_certificado: formData.get('tiene_certificado') === 'on'
   }
 
@@ -154,7 +152,7 @@ export async function updateCourse(formData: FormData) {
   }
 
   try {
-    if (await slugTakenByOther(supabaseAdmin, updateData.slug, id)) {
+    if (updateData.slug && await slugTakenByOther(supabaseAdmin, updateData.slug, id)) {
       return { error: `El slug "${updateData.slug}" ya está en uso por otro curso. Elige uno diferente.` }
     }
 
@@ -170,17 +168,18 @@ export async function updateCourse(formData: FormData) {
 
     if (imagen_url) updateData.imagen_url = imagen_url
 
-    Object.keys(updateData).forEach(key => {
-      if (updateData[key] === undefined) delete updateData[key]
-    })
+    // Remove undefined values from updateData for Supabase
+    const cleanedUpdateData = Object.fromEntries(
+      Object.entries(updateData).filter(([, value]) => value !== undefined)
+    ) as Database['public']['Tables']['cursos']['Update']
 
-    const { error: updateError } = await supabaseAdmin.from('cursos').update(updateData).eq('id', id)
+    const { error: updateError } = await supabaseAdmin.from('cursos').update(cleanedUpdateData).eq('id', id)
     if (updateError) return { error: `Error BD: ${updateError.message}` }
 
     revalidatePath(`/admin/cursos/${id}`)
     revalidatePath('/admin/cursos')
     revalidatePath('/')
-    revalidatePath(`/cursos/${updateData.slug}`)
+    if (updateData.slug) revalidatePath(`/cursos/${updateData.slug}`)
 
     return { success: true }
   } catch (error: unknown) {

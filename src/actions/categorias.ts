@@ -6,6 +6,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { requireAdmin } from '@/lib/auth'
 import { CategorySchema } from '@/lib/validations'
 import { z } from 'zod'
+import type { Database } from '@/types/database.types'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Al crear: auto-append numérico si el slug base ya existe
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,9 +49,9 @@ export async function createCategory(formData: FormData) {
 
   const nombre = formData.get('nombre') as string
   const slug = formData.get('slug') as string
-  const descripcion = formData.get('descripcion') as string
+  const descripcion = formData.get('descripcion') as string | null
   const imageFile = formData.get('imagen_file') as File | null
-  let imagen_url = ''
+  let imagen_url: string | null = null
 
   // Validar input
   const parsed = CategorySchema.safeParse({ nombre, slug, descripcion })
@@ -57,7 +59,7 @@ export async function createCategory(formData: FormData) {
     return { error: parsed.error.issues[0]?.message || 'Datos de categoría inválidos' }
   }
 
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
 
   try {
     const finalSlug = await uniqueSlugForCreate(supabaseAdmin, 'categorias', slug)
@@ -80,9 +82,16 @@ export async function createCategory(formData: FormData) {
       imagen_url = publicUrl
     }
 
+    const categoryData: Database['public']['Tables']['categorias']['Insert'] = {
+      nombre,
+      slug: finalSlug,
+      descripcion: descripcion || null,
+      imagen_url
+    }
+
     const { error: insertError } = await supabaseAdmin
       .from('categorias')
-      .insert([{ nombre, slug: finalSlug, descripcion, imagen_url }])
+      .insert([categoryData])
 
     if (insertError) throw insertError
 
@@ -99,9 +108,9 @@ export async function updateCategory(id: string, formData: FormData) {
 
   const nombre = formData.get('nombre') as string
   const slug = formData.get('slug') as string
-  const descripcion = formData.get('descripcion') as string
+  const descripcion = formData.get('descripcion') as string | null
   const imageFile = formData.get('imagen_file') as File | null
-  let imagen_url = formData.get('current_imagen_url') as string
+  let imagen_url = formData.get('current_imagen_url') as string | null
 
   // Validar ID
   const idParsed = z.string().uuid().safeParse(id)
@@ -115,7 +124,7 @@ export async function updateCategory(id: string, formData: FormData) {
     return { error: parsed.error.issues[0]?.message || 'Datos de categoría inválidos' }
   }
 
-  const supabaseAdmin = getSupabaseAdmin()
+  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
 
   try {
     if (await slugTakenByOther(supabaseAdmin, 'categorias', slug, id)) {
@@ -137,13 +146,20 @@ export async function updateCategory(id: string, formData: FormData) {
       const { data: { publicUrl } } = supabaseAdmin.storage
         .from('imagenes_cursos')
         .getPublicUrl(filePath)
-      
+
       imagen_url = publicUrl
+    }
+
+    const categoryUpdateData: Database['public']['Tables']['categorias']['Update'] = {
+      nombre,
+      slug: finalSlug,
+      descripcion: descripcion || null,
+      imagen_url
     }
 
     const { error: updateError } = await supabaseAdmin
       .from('categorias')
-      .update({ nombre, slug: finalSlug, descripcion, imagen_url })
+      .update(categoryUpdateData)
       .eq('id', id)
 
     if (updateError) throw updateError

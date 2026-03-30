@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { 
   createModule, updateModule, deleteModule,
   createLesson, updateLesson, deleteLesson,
@@ -74,6 +75,7 @@ const MAX_UPLOAD_SIZE_MB = 50
 const MAX_UPLOAD_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId: string, modulosInitial: any[] }) {
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [hasMounted, setHasMounted] = useState(false)
 
@@ -83,6 +85,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
 
   const [error, setError] = useState<string | null>(null)
   const [lessonError, setLessonError] = useState<string | null>(null)
+  const [isSubmittingLesson, setIsSubmittingLesson] = useState(false)
   const [uploadingFiles, setUploadingFiles] = useState(false)
   const [lessonContent, setLessonContent] = useState('')
   const [fileSizeError, setFileSizeError] = useState<string | null>(null)
@@ -150,70 +153,72 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
   const handleLessonSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setLessonError(null)
+    setIsSubmittingLesson(true)
 
     const formData = new FormData(e.currentTarget)
     formData.append('curso_id', cursoId)
     formData.append('contenido_html', lessonContent)
 
-    startTransition(async () => {
-      try {
-        // Paso 1: Guardar lección sin archivos
-        let result
-        let leccionId: string
+    try {
+      // Paso 1: Guardar lección sin archivos
+      let result
+      let leccionId: string
 
-        if (lessonModal?.leccion?.id) {
-          formData.append('id', lessonModal.leccion.id)
-          result = await updateLesson(formData)
-          leccionId = lessonModal.leccion.id
-        } else {
-          formData.append('modulo_id', lessonModal!.moduloId)
-          result = await createLesson(formData)
-          leccionId = result.leccionId
+      if (lessonModal?.leccion?.id) {
+        formData.append('id', lessonModal.leccion.id)
+        result = await updateLesson(formData)
+        leccionId = lessonModal.leccion.id
+      } else {
+        formData.append('modulo_id', lessonModal!.moduloId)
+        result = await createLesson(formData)
+        leccionId = result.leccionId
+      }
+
+      if (result?.error) {
+        setLessonError(result.error)
+        return
+      }
+
+      // Paso 2: Subir archivos si existen
+      if (selectedFiles && selectedFiles.length > 0) {
+        setUploadingFiles(true)
+        const filesFormData = new FormData()
+        filesFormData.append('leccion_id', leccionId)
+        filesFormData.append('curso_id', cursoId)
+
+        for (let i = 0; i < selectedFiles.length; i++) {
+          filesFormData.append('archivos', selectedFiles[i])
         }
 
-        if (result?.error) {
-          let errorMsg = result.error
-          setLessonError(errorMsg)
+        const uploadResponse = await fetch('/api/upload-lesson-files', {
+          method: 'POST',
+          body: filesFormData
+        })
+
+        if (!uploadResponse.ok) {
+          const errorData = await uploadResponse.json()
+          setLessonError(`Lección guardada, pero error al subir archivos: ${errorData.error}`)
+          setUploadingFiles(false)
           return
         }
 
-        // Paso 2: Subir archivos si existen
-        if (selectedFiles && selectedFiles.length > 0) {
-          setUploadingFiles(true)
-          const filesFormData = new FormData()
-          filesFormData.append('leccion_id', leccionId)
-          filesFormData.append('curso_id', cursoId)
-
-          for (let i = 0; i < selectedFiles.length; i++) {
-            filesFormData.append('archivos', selectedFiles[i])
-          }
-
-          const uploadResponse = await fetch('/api/upload-lesson-files', {
-            method: 'POST',
-            body: filesFormData
-          })
-
-          if (!uploadResponse.ok) {
-            const error = await uploadResponse.json()
-            setLessonError(`Lección creada, pero error al subir archivos: ${error.error}`)
-            setUploadingFiles(false)
-            return
-          }
-
-          setUploadingFiles(false)
-        }
-
-        // Éxito completo
-        setLessonModal(null)
-        setLessonContent('')
-        setFileSizeError(null)
-        setSelectedFilesSize(0)
-        setSelectedFiles(null)
-        setLessonError(null)
-      } catch (err) {
-        setLessonError(`Error inesperado: ${err instanceof Error ? err.message : 'Intenta de nuevo'}`)
+        setUploadingFiles(false)
       }
-    })
+
+      // Éxito completo — recargar datos
+      router.refresh()
+      setLessonModal(null)
+      setLessonContent('')
+      setFileSizeError(null)
+      setSelectedFilesSize(0)
+      setSelectedFiles(null)
+      setLessonError(null)
+    } catch (err) {
+      setLessonError(`Error inesperado: ${err instanceof Error ? err.message : 'Intenta de nuevo'}`)
+    } finally {
+      setIsSubmittingLesson(false)
+      setUploadingFiles(false)
+    }
   }
 
   const handleDeleteLess = async (id: string) => {
@@ -520,7 +525,7 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
         <div
             className="fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4 overflow-y-auto animate-in fade-in duration-300"
             onClick={() => {
-              if (!isPending && !uploadingFiles) {
+              if (!isSubmittingLesson && !uploadingFiles) {
                 setLessonModal(null)
                 setFileSizeError(null)
                 setSelectedFilesSize(0)
@@ -698,17 +703,17 @@ export default function CurriculumBuilder({ cursoId, modulosInitial }: { cursoId
                       setLessonError(null)
                       setSelectedFiles(null)
                     }}
-                    disabled={isPending || uploadingFiles}
+                    disabled={isSubmittingLesson || uploadingFiles}
                     className="px-6 py-2 text-gray-600 font-semibold text-sm hover:bg-slate-100 rounded-lg transition-all disabled:opacity-50"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    disabled={isPending || uploadingFiles || !!fileSizeError}
+                    disabled={isSubmittingLesson || uploadingFiles || !!fileSizeError}
                     className="px-6 py-2 bg-[#28B4AD] hover:bg-[#219892] text-white rounded-lg font-semibold text-sm disabled:opacity-50 transition-all"
                   >
-                    {isPending ? 'Guardando...' : uploadingFiles ? 'Subiendo...' : (lessonModal.leccion ? 'Guardar' : 'Crear')}
+                    {isSubmittingLesson ? 'Guardando...' : uploadingFiles ? 'Subiendo...' : (lessonModal.leccion ? 'Guardar' : 'Crear')}
                   </button>
                 </div>
               </div>

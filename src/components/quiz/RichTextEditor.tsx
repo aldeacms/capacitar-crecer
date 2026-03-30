@@ -146,7 +146,7 @@ export function RichTextEditor({ value, onChange, placeholder }: RichTextEditorP
 
       <EditorContent
         editor={editor}
-        className="prose prose-sm max-w-none w-full px-4 py-3 border border-gray-300 rounded-b-xl bg-white outline-none focus-within:border-[#28B4AD] focus-within:ring-4 focus-within:ring-[#28B4AD]/20 shadow-sm transition-all"
+        className="prose prose-sm max-w-none w-full px-4 py-3 border border-gray-300 rounded-b-xl bg-white outline-none focus-within:border-[#28B4AD] shadow-sm transition-all"
       />
     </div>
   )

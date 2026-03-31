@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { toast } from 'sonner'
 import { ArrowLeft, Save, Globe, EyeOff, Loader2, ExternalLink } from 'lucide-react'
 import { getPaginaById, upsertPagina, type Pagina } from '@/actions/paginas'
+import { SafeHTML } from '@/components/ui/SafeHTML'
 
 type FormData = {
   slug: string
@@ -199,10 +200,9 @@ export default function PaginaEditorPage() {
             </div>
 
             {preview ? (
-              <div
-                className="p-6 prose prose-sm max-w-none min-h-[400px]"
-                dangerouslySetInnerHTML={{ __html: form.contenido_html }}
-              />
+              <div className="p-6 prose prose-sm max-w-none min-h-[400px]">
+                <SafeHTML html={form.contenido_html || ''} />
+              </div>
             ) : (
               <textarea
                 className="w-full p-6 font-mono text-sm text-gray-800 min-h-[400px] resize-y border-0 focus:outline-none focus:ring-0"

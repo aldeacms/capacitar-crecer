@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getPaginaBySlug } from '@/actions/paginas'
+import { SafeHTML } from '@/components/ui/SafeHTML'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -25,10 +26,9 @@ export default async function PaginaCMSPage({ params }: Props) {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-16">
-      <article
-        className="prose prose-gray max-w-none"
-        dangerouslySetInnerHTML={{ __html: pagina.contenido_html }}
-      />
+      <article className="prose prose-gray max-w-none">
+        <SafeHTML html={pagina.contenido_html || ''} />
+      </article>
     </div>
   )
 }

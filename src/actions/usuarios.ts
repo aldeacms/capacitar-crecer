@@ -285,31 +285,24 @@ export async function eliminarUsuario(userId: string) {
   const supabaseAdmin = getSupabaseAdmin()
 
   try {
-    // 1. Eliminar matrículas
-    const { error: matriculasError } = await supabaseAdmin
-      .from('matriculas')
-      .delete()
-      .eq('perfil_id', userId)
+    // Usar función RPC transaccional para eliminación atómica
+    const { data: result, error: rpcError } = await supabaseAdmin.rpc(
+      'delete_user_transactional',
+      { user_id: userId }
+    )
 
-    if (matriculasError) {
-      throw new Error(`Error eliminando matrículas: ${matriculasError.message}`)
+    if (rpcError) {
+      throw new Error(`Error en eliminación transaccional: ${rpcError.message}`)
     }
 
-    // 2. Eliminar perfil
-    const { error: perfilError } = await supabaseAdmin
-      .from('perfiles')
-      .delete()
-      .eq('id', userId)
-
-    if (perfilError) {
-      throw new Error(`Error eliminando perfil: ${perfilError.message}`)
+    if (!result || result.length === 0) {
+      throw new Error('No se recibió respuesta de la función transaccional')
     }
 
-    // 3. Eliminar usuario auth
-    const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(userId)
+    const { success, error_message } = result[0]
 
-    if (authError) {
-      throw new Error(`Error eliminando usuario auth: ${authError.message}`)
+    if (!success) {
+      throw new Error(`Error eliminando usuario: ${error_message || 'Error desconocido'}`)
     }
 
     revalidatePath('/admin/alumnos')

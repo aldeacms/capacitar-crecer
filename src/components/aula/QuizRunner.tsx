@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle2, XCircle, ArrowRight, Trophy, Loader2 } from 'lucide-react'
 import PairedQuestionsMatch from './PairedQuestionsMatch'
 import { marcarLeccionCompletada } from '@/actions/progreso'
+import { SafeHTML } from '@/components/ui/SafeHTML'
 
 interface Opcion {
   id: string
@@ -140,7 +141,7 @@ export default function QuizRunner({ preguntas, cursoSlug, leccionId }: QuizRunn
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-gray-900 mb-2 prose prose-sm max-w-none">
                         <span>{idx + 1}. </span>
-                        <span dangerouslySetInnerHTML={{ __html: pregunta.texto }} />
+                        <SafeHTML html={pregunta.texto || ''} tag="span" className="inline" />
                       </p>
                       <p className="text-sm text-blue-700">
                         Tu respuesta: <span className="font-medium">{respuestaTexto}</span>
@@ -164,7 +165,7 @@ export default function QuizRunner({ preguntas, cursoSlug, leccionId }: QuizRunn
                 >
                   <p className="font-semibold text-sm text-gray-900 mb-3 prose prose-sm max-w-none">
                     <span>{idx + 1}. </span>
-                    <span dangerouslySetInnerHTML={{ __html: pregunta.texto }} />
+                    <SafeHTML html={pregunta.texto || ''} tag="span" className="inline" />
                   </p>
                   <div className="space-y-2">
                     {terminos.map((termino) => {
@@ -207,7 +208,7 @@ export default function QuizRunner({ preguntas, cursoSlug, leccionId }: QuizRunn
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-gray-900 mb-1 prose prose-sm max-w-none">
                       <span>{idx + 1}. </span>
-                      <span dangerouslySetInnerHTML={{ __html: pregunta.texto }} />
+                      <SafeHTML html={pregunta.texto || ''} tag="span" className="inline" />
                     </p>
                     {opcionSeleccionada && (
                       <p className={`text-sm ${esCorrecta ? 'text-emerald-700' : 'text-red-700'}`}>
@@ -293,7 +294,7 @@ export default function QuizRunner({ preguntas, cursoSlug, leccionId }: QuizRunn
           <div key={pregunta.id} className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
             <h4 className="font-semibold text-gray-900 mb-4 prose prose-sm max-w-none">
               <span>{idx + 1}. </span>
-              <span dangerouslySetInnerHTML={{ __html: pregunta.texto }} />
+              <SafeHTML html={pregunta.texto || ''} tag="span" className="inline" />
             </h4>
 
             {pregunta.tipo === 'multiple' && (

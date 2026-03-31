@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
+import { SafeHTML } from '@/components/ui/SafeHTML'
 
 interface AccordionItemProps {
   title: string
@@ -33,14 +34,15 @@ function AccordionItem({ title, content, isOpen, onClick }: AccordionItemProps) 
       <div className={`grid transition-all duration-500 ease-in-out ${isOpen ? 'grid-rows-[1fr] pb-10 opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
         <div className="overflow-hidden">
           <div className="pr-4"> {/* Ajustado el padding al quitar el número */}
-            <div
+            <SafeHTML
+              html={content || ''}
+              tag="div"
               className="prose prose-slate prose-sm md:prose-base max-w-none 
                          prose-p:text-slate-600 prose-p:leading-relaxed 
                          prose-strong:text-slate-900 prose-strong:font-black 
                          prose-headings:text-slate-900 prose-headings:font-bold
                          prose-ul:list-disc prose-ul:pl-5
                          prose-li:text-slate-600 prose-li:my-1"
-              dangerouslySetInnerHTML={{ __html: content }}
             />
           </div>
         </div>

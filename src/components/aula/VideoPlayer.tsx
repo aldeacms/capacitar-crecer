@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Play, X } from 'lucide-react'
+import { SafeHTML } from '@/components/ui/SafeHTML'
 
 interface VideoPlayerProps {
   videoUrl: string | null
@@ -177,9 +178,10 @@ export default function VideoPlayer({ videoUrl }: VideoPlayerProps) {
             {/* Video Embed */}
             {videoSource.platform === 'custom' ? (
               // For custom embed codes, render them safely (as close as we can get)
-              <div
+              <SafeHTML
+                html={videoSource.embedUrl || ''}
+                tag="div"
                 className="w-full h-full"
-                dangerouslySetInnerHTML={{ __html: videoSource.embedUrl }}
               />
             ) : (
               <iframe

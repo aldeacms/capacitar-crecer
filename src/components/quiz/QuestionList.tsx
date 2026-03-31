@@ -22,6 +22,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Trash2, HelpCircle, ArrowRightLeft, GripVertical, CheckCircle2, ListFilter, Edit2, Plus } from 'lucide-react'
 import { deleteQuestion, updateQuestionsOrder } from '@/actions/quiz'
 import { QuestionModal } from './QuestionModal'
+import { SafeHTML } from '@/components/ui/SafeHTML'
 import { toast } from 'sonner'
 
 interface QuestionListProps {
@@ -168,9 +169,10 @@ function SortableQuestionItem({ q, qIndex, onEdit }: { q: any; qIndex: number; o
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start gap-4 mb-4">
             <div className="space-y-1 flex-1">
-              <div
+              <SafeHTML
+                html={q.texto || ''}
+                tag="div"
                 className="font-bold text-gray-900 leading-tight text-base tracking-tight prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: q.texto }}
               />
               <div className="flex gap-2">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">

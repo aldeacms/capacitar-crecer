@@ -1,0 +1,105 @@
+# Docker Compose para migración a PocketBase (Self-hosted)
+# Incluye Next.js + PocketBase con SQLite embebido
+
+version: '3.8'
+
+services:
+  # PocketBase - Base de datos y backend autónomo
+  pocketbase:
+    image: pocketbase/pocketbase:latest
+    container_name: capacitar-pocketbase
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - pocketbase_data:/pb_data
+      - ./pocketbase/pb_migrations:/pb_migrations
+      - ./pocketbase/pb_hooks:/pb_hooks
+    environment:
+      - PB_ADMIN_EMAIL=admin@capacitarycrecer.cl
+      - PB_ADMIN_PASSWORD=${POCKETBASE_ADMIN_PASSWORD:-ChangeMe123!}
+      - PB_SERVER_URL=http://localhost:8090
+      - PB_DB_PATH=/pb_data/data.db
+    command:
+      - --dir=/pb_data
+      - --publicDir=/pb_data/public
+      - --migrationsDir=/pb_migrations
+      - --hooksDir=/pb_hooks
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8090/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - capacitar-network
+
+  # Aplicación Next.js
+  nextjs:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_POCKETBASE_URL: http://pocketbase:8090
+        NEXT_PUBLIC_POCKETBASE_EMAIL: ${POCKETBASE_ADMIN_EMAIL:-admin@capacitarycrecer.cl}
+        NEXT_PUBLIC_POCKETBASE_PASSWORD: ${POCKETBASE_ADMIN_PASSWORD:-ChangeMe123!}
+    container_name: capacitar-nextjs
+    restart: unless-stopped
+    ports:
+      - "3002:3000"
+    depends_on:
+      pocketbase:
+        condition: service_healthy
+    environment:
+      # Variables de PocketBase
+      - POCKETBASE_URL=http://pocketbase:8090
+      - POCKETBASE_ADMIN_EMAIL=${POCKETBASE_ADMIN_EMAIL:-admin@capacitarycrecer.cl}
+      - POCKETBASE_ADMIN_PASSWORD=${POCKETBASE_ADMIN_PASSWORD:-ChangeMe123!}
+      - POCKETBASE_ADMIN_TOKEN=${POCKETBASE_ADMIN_TOKEN:-}
+      
+      # Variables de aplicación (mantener compatibilidad durante transición)
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL:-}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+      
+      # Email (Resend)
+      - RESEND_API_KEY=${RESEND_API_KEY:-}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL:-}
+      
+      # Entorno
+      - NODE_ENV=production
+    env_file:
+      - .env.production
+    volumes:
+      # Volumen para uploads persistentes (si se usa filesystem en lugar de PocketBase Storage)
+      - uploads_data:/app/uploads
+    networks:
+      - capacitar-network
+
+  # Nginx reverse proxy (opcional, para producción)
+  nginx:
+    image: nginx:alpine
+    container_name: capacitar-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - nextjs
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/logs:/var/log/nginx
+    networks:
+      - capacitar-network
+
+# Volúmenes persistentes
+volumes:
+  pocketbase_data:
+    driver: local
+  uploads_data:
+    driver: local
+
+# Redes
+networks:
+  capacitar-network:
+    driver: bridge

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase-client'
+import { signUpWithEmail } from '@/lib/pocketbase-client'
 import { ArrowRight, Mail, Lock, User, AlertCircle, Fingerprint, Phone } from 'lucide-react'
 
 export default function RegisterPage() {
@@ -15,7 +15,6 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const validarRut = (rut: string) => {
     // Limpiar el rut de puntos y guion para la validación si es necesario, 
@@ -45,27 +44,21 @@ export default function RegisterPage() {
       return
     }
 
-    const { data, error: authError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { 
-        data: { 
-          full_name: nombre,
-          rut: rut,
-          telefono: telefono
-        },
-        emailRedirectTo: `${window.location.origin}/auth/callback` 
-      }
+    const result = await signUpWithEmail(email, password, {
+      name: nombre,
+      rut,
+      telefono
     })
 
-    if (authError) {
-      setError(authError.message)
+    if (!result.success) {
+      setError(result.error || 'Error en el registro')
       setLoading(false)
       return
     }
 
     // Create perfil server-side to avoid client-side DB writes and FK issues
-    if (data.user) {
+    // TODO: Migrar este endpoint a PocketBase
+    if (result.user) {
       try {
         await fetch('/api/perfiles', {
           method: 'POST',
@@ -77,8 +70,7 @@ export default function RegisterPage() {
       }
     }
 
-    // Forzamos el login inmediato tras el registro exitoso
-    await supabase.auth.signInWithPassword({ email, password })
+    // signUpWithEmail ya autentica al usuario, no necesitamos login adicional
     router.push('/dashboard')
     router.refresh()
   }

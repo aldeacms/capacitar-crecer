@@ -3,14 +3,13 @@
 import Link from 'next/link'
 import { Toaster } from 'sonner'
 import { LogOut, Shield } from 'lucide-react'
-import { requireAdmin } from '@/lib/auth'
-import { createClient } from '@/lib/supabase-server'
+import { requireAdmin } from '@/lib/pocketbase-server'
+import { clearServerAuth } from '@/lib/pocketbase-server'
 import SidebarNav from '@/components/admin/SidebarNav'
 
 async function handleLogout() {
   'use server'
-  const supabase = await createClient()
-  await supabase.auth.signOut()
+  await clearServerAuth()
   // Note: Redirect happens client-side via form submission
 }
 
@@ -25,7 +24,7 @@ export default async function AdminLayout({
         .split('@')[0]
         .split('')
         .slice(0, 2)
-        .map((c) => c.toUpperCase())
+        .map((c: string) => c.toUpperCase())
         .join('')
     : 'AD'
 

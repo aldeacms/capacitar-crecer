@@ -1,31 +1,45 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server'
-import { createClient as createServerClient } from '@/lib/supabase-server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
-import { Database } from '@/types/database.types'
+import { getServerAuthUser } from '@/lib/pocketbase-server'
+import { getPocketBaseAdminClient } from '@/lib/pocketbase-server'
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { nombre_completo, rut, telefono } = body
 
-    const serverSupabase = await createServerClient()
-    const { data: { user }, error: userError } = await serverSupabase.auth.getUser()
-    if (userError || !user) return NextResponse.json({ ok: false, error: 'NO_SESSION' }, { status: 401 })
+    // Obtener usuario autenticado desde cookies de PocketBase
+    const user = await getServerAuthUser()
+    if (!user) {
+      return NextResponse.json({ ok: false, error: 'NO_SESSION' }, { status: 401 })
+    }
 
-    const admin = createAdminClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    // Cliente admin para operaciones privilegiadas (similar a service role)
+    const pbAdmin = await getPocketBaseAdminClient()
 
-    const { error } = await admin.from('perfiles').upsert({
+    // Datos del perfil
+    const perfilData: any = {
       id: user.id,
-      nombre_completo: nombre_completo || user.user_metadata?.full_name || user.email || 'Alumno',
-      rut: rut || user.id,
+      nombre_completo: nombre_completo || user.name || user.email || 'Alumno',
+      rut: rut || user.id, // Usar ID como fallback
       telefono: telefono || null,
-      rol: 'alumno'
-    })
+      rol: 'alumno',
+      user: user.id, // Relación con colección 'users' de PocketBase
+      created: new Date().toISOString(),
+      updated: new Date().toISOString()
+    }
 
-    if (error) {
-      console.error('API perfiles upsert error:', error)
-      return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    // Intentar crear o actualizar perfil
+    // PocketBase no tiene upsert nativo, intentamos crear y capturar error de duplicado
+    try {
+      await pbAdmin.collection('perfiles').create(perfilData)
+    } catch (createError: any) {
+      // Si el error es por registro duplicado (id ya existe), actualizar
+      if (createError.status === 400 && createError.data?.code === 'DUPLICATE_RECORD') {
+        await pbAdmin.collection('perfiles').update(user.id, perfilData)
+      } else {
+        throw createError
+      }
     }
 
     return NextResponse.json({ ok: true })
@@ -34,4 +48,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: err.message || String(err) }, { status: 500 })
   }
 }
-

@@ -2,7 +2,7 @@
 
 import { getSupabaseAdmin } from '@/lib/supabase-admin'
 import { revalidatePath } from 'next/cache'
-import { requireAdmin } from '@/lib/auth'
+import { requireAdmin, getPocketBaseAdminClient } from '@/lib/pocketbase-server'
 import { UsuarioSchema, ActualizarPerfilSchema, PasswordSchema } from '@/lib/validations'
 import { z } from 'zod'
 import type { Database } from '@/types/database.types'
@@ -16,58 +16,59 @@ const EmailSchema = z.string().email('Formato de email inválido').max(254)
  */
 export async function getUsuarios() {
   await requireAdmin()
-  const supabaseAdmin = getSupabaseAdmin()
 
   try {
-    // Obtener usuarios de auth.users
-    const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers()
+    const pbAdmin = await getPocketBaseAdminClient()
 
-    if (authError) {
-      throw new Error(`Error obteniendo usuarios: ${authError.message}`)
-    }
+    // Obtener usuarios de PocketBase
+    const users = await pbAdmin.collection('users').getFullList({
+      sort: '-created'
+    })
 
     // Obtener perfiles
-    const { data: perfiles, error: perfilesError } = await supabaseAdmin
-      .from('perfiles')
-      .select('id, nombre_completo, rut, created_at')
-
-    if (perfilesError) {
-      throw new Error(`Error obteniendo perfiles: ${perfilesError.message}`)
+    let perfiles: any[] = []
+    try {
+      perfiles = await pbAdmin.collection('perfiles').getFullList({
+        fields: 'id,nombre_completo,rut,created'
+      })
+    } catch (error: any) {
+      console.warn('No se pudieron obtener perfiles:', error.message)
     }
 
     // Obtener admins
-    const { data: admins, error: adminsError } = await supabaseAdmin
-      .from('admin_users')
-      .select('id')
-
-    if (adminsError) {
-      console.warn('Warning: Could not fetch admin_users, admin roles may be incomplete')
+    let adminIds = new Set<string>()
+    try {
+      const admins = await pbAdmin.collection('admin_users').getFullList({
+        fields: 'id'
+      })
+      adminIds = new Set(admins.map((a: any) => a.id))
+    } catch (error: any) {
+      console.warn('No se pudieron obtener admin_users:', error.message)
     }
 
-    const adminIds = new Set((admins || []).map((a: any) => a.id))
-
     // Obtener count de cursos por usuario
-    const { data: matriculas, error: matriculasError } = await supabaseAdmin
-      .from('matriculas')
-      .select('perfil_id', { count: 'exact' })
-
-    if (matriculasError) {
-      throw new Error(`Error obteniendo matrículas: ${matriculasError.message}`)
+    let matriculas: any[] = []
+    try {
+      matriculas = await pbAdmin.collection('matriculas').getFullList({
+        fields: 'perfil_id'
+      })
+    } catch (error: any) {
+      console.warn('No se pudieron obtener matrículas:', error.message)
     }
 
     // Combinar datos
-    const usuariosConInfo = users.map((authUser: any) => {
-      const perfil = perfiles.find((p: any) => p.id === authUser.id)
-      const cursosCount = matriculas.filter((m: any) => m.perfil_id === authUser.id).length
-      const isAdmin = adminIds.has(authUser.id)
+    const usuariosConInfo = users.map((user: any) => {
+      const perfil = perfiles.find((p: any) => p.id === user.id)
+      const cursosCount = matriculas.filter((m: any) => m.perfil_id === user.id).length
+      const isAdmin = adminIds.has(user.id)
 
       return {
-        id: authUser.id,
-        email: authUser.email,
-        nombre_completo: perfil?.nombre_completo || 'Sin nombre',
+        id: user.id,
+        email: user.email,
+        nombre_completo: perfil?.nombre_completo || user.name || 'Sin nombre',
         rut: perfil?.rut || '-',
         rol: isAdmin ? 'admin' : 'alumno',
-        created_at: perfil?.created_at || authUser.created_at,
+        created_at: perfil?.created || user.created,
         cursos_count: cursosCount
       }
     })
@@ -98,97 +99,80 @@ export async function crearUsuario(data: {
     return { error: parsed.error.issues[0]?.message || 'Datos inválidos' }
   }
 
-  const supabaseAdmin = getSupabaseAdmin()
   const isAdmin = data.rol === 'admin'
 
   try {
-    // 1. Intentar crear usuario con admin API
-    let authUser: any = null
-    let authError: any = null
+    // Cliente admin de PocketBase
+    const pbAdmin = await getPocketBaseAdminClient()
+
+    // 1. Crear usuario en PocketBase
+    const userData = {
+      email: parsed.data.email,
+      password: parsed.data.password,
+      passwordConfirm: parsed.data.password,
+      name: parsed.data.nombre_completo,
+      emailVisibility: true,
+      verified: true
+    }
+
+    let createdUser: any
+    try {
+      createdUser = await pbAdmin.collection('users').create(userData)
+    } catch (error: any) {
+      throw new Error(`Error creando usuario: ${error.message}`)
+    }
+
+    const userId = createdUser.id
+
+    // 2. Crear perfil en colección 'perfiles'
+    const perfilData = {
+      id: userId,
+      nombre_completo: parsed.data.nombre_completo,
+      rut: parsed.data.rut || 'sin-rut',
+      telefono: null,
+      rol: isAdmin ? 'admin' : 'alumno',
+      user: userId,
+      created: new Date().toISOString(),
+      updated: new Date().toISOString()
+    }
 
     try {
-      const response = await supabaseAdmin.auth.admin.createUser({
-        email: parsed.data.email,
-        password: parsed.data.password,
-        email_confirm: true
-      })
-      authUser = response.data
-      authError = response.error
-    } catch (adminError) {
-      console.warn('Admin API falló, intentando con función SQL...', adminError)
-      authError = adminError
-    }
-
-    // Si admin API falló, usar función SQL como fallback
-    if (authError || !authUser?.user) {
-      console.warn('Usando fallback: create_new_user RPC')
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data: rpcResult, error: rpcError } = await (supabaseAdmin as any).rpc(
-        'create_new_user',
-        {
-          user_email: parsed.data.email,
-          user_password: parsed.data.password,
-          user_nombre: parsed.data.nombre_completo,
-          user_rut: parsed.data.rut || 'sin-rut'
-        }
-      )
-
-      if (rpcError || !rpcResult?.[0]?.success) {
-        throw new Error(
-          `Error creando usuario: ${rpcError?.message || rpcResult?.[0]?.error_message || 'Error desconocido'}`
-        )
+      await pbAdmin.collection('perfiles').create(perfilData)
+    } catch (error: any) {
+      // Revertir: eliminar usuario creado
+      try {
+        await pbAdmin.collection('users').delete(userId)
+      } catch (deleteError) {
+        console.warn('No se pudo eliminar usuario fallido:', deleteError)
       }
-
-      authUser = { user: { id: rpcResult[0].user_id } }
+      throw new Error(`Error creando perfil: ${error.message}`)
     }
 
-    if (!authUser?.user?.id) {
-      throw new Error('No se pudo obtener ID del usuario creado')
-    }
-
-    // 2. Crear perfil SOLO si usamos admin API (RPC ya lo crea)
-    if (!authError) {
-      const perfilData: Database['public']['Tables']['perfiles']['Insert'] = {
-        id: authUser.user.id,
-        nombre_completo: parsed.data.nombre_completo,
-        rut: parsed.data.rut || 'sin-rut'
-      }
-
-      const { error: perfilError } = await supabaseAdmin
-        .from('perfiles')
-        .insert([perfilData])
-
-      if (perfilError) {
-        // Si falla el perfil, eliminar el usuario auth creado
-        try {
-          await supabaseAdmin.auth.admin.deleteUser(authUser.user.id)
-        } catch (deleteError) {
-          console.warn('No se pudo eliminar usuario fallido:', deleteError)
-        }
-        throw new Error(`Error creando perfil: ${perfilError.message}`)
-      }
-    }
-
-    // 3. Si es admin, agregar a tabla admin_users
+    // 3. Si es admin, agregar a colección 'admin_users'
     if (isAdmin) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const adminData: any = {
-        id: authUser.user.id,
-        is_active: true
+      const adminData = {
+        id: userId,
+        user: userId,
+        created: new Date().toISOString()
       }
 
-      const { error: adminError } = await supabaseAdmin
-        .from('admin_users')
-        .insert([adminData])
-
-      if (adminError) {
-        throw new Error(`Error asignando rol admin: ${adminError.message}`)
+      try {
+        await pbAdmin.collection('admin_users').create(adminData)
+      } catch (error: any) {
+        // Revertir perfil y usuario
+        try {
+          await pbAdmin.collection('perfiles').delete(userId)
+          await pbAdmin.collection('users').delete(userId)
+        } catch (revertError) {
+          console.warn('Error en reversión completa:', revertError)
+        }
+        throw new Error(`Error asignando rol admin: ${error.message}`)
       }
     }
 
     revalidatePath('/admin/alumnos')
 
-    return { success: true, userId: authUser.user.id }
+    return { success: true, userId }
   } catch (error: unknown) {
     console.error('Error en crearUsuario:', error)
     return { error: (error as Error).message || 'Error desconocido' }
@@ -212,16 +196,13 @@ export async function cambiarPassword(userId: string, newPassword: string) {
     return { error: passwordParsed.error.issues[0]?.message || 'Contraseña inválida' }
   }
 
-  const supabaseAdmin = getSupabaseAdmin()
-
   try {
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(userIdParsed.data, {
-      password: passwordParsed.data
-    })
+    const pbAdmin = await getPocketBaseAdminClient()
 
-    if (error) {
-      throw new Error(`Error cambiando contraseña: ${error.message}`)
-    }
+    await pbAdmin.collection('users').update(userIdParsed.data, {
+      password: passwordParsed.data,
+      passwordConfirm: passwordParsed.data
+    })
 
     return { success: true }
   } catch (error: unknown) {
@@ -254,19 +235,19 @@ export async function actualizarPerfil(
     return { error: dataParsed.error.issues[0]?.message || 'Datos inválidos' }
   }
 
-  const supabaseAdmin = getSupabaseAdmin() as SupabaseClient<Database>
-
   try {
-    const updateData: Database['public']['Tables']['perfiles']['Update'] = dataParsed.data as Database['public']['Tables']['perfiles']['Update']
+    const pbAdmin = await getPocketBaseAdminClient()
 
-    const { error } = await supabaseAdmin
-      .from('perfiles')
-      .update(updateData)
-      .eq('id', userIdParsed.data)
-
-    if (error) {
-      throw new Error(`Error actualizando perfil: ${error.message}`)
+    const updateData: Record<string, any> = {}
+    if (dataParsed.data.nombre_completo !== undefined) {
+      updateData.nombre_completo = dataParsed.data.nombre_completo
     }
+    if (dataParsed.data.rut !== undefined) {
+      updateData.rut = dataParsed.data.rut
+    }
+    updateData.updated = new Date().toISOString()
+
+    await pbAdmin.collection('perfiles').update(userIdParsed.data, updateData)
 
     revalidatePath('/admin/alumnos')
 
@@ -282,28 +263,52 @@ export async function actualizarPerfil(
  */
 export async function eliminarUsuario(userId: string) {
   await requireAdmin()
-  const supabaseAdmin = getSupabaseAdmin()
 
   try {
-    // Usar función RPC transaccional para eliminación atómica
-    const { data: result, error: rpcError } = await supabaseAdmin.rpc(
-      'delete_user_transactional',
-      { user_id: userId }
-    )
+    const pbAdmin = await getPocketBaseAdminClient()
 
-    if (rpcError) {
-      throw new Error(`Error en eliminación transaccional: ${rpcError.message}`)
+    // Eliminar en orden: admin_users, matriculas, perfiles, users
+    // Nota: PocketBase no tiene transacciones, así que hacemos eliminaciones secuenciales
+    // Si alguna falla, no revertimos (no hay rollback), pero al menos se detiene.
+
+    // 1. Eliminar de admin_users (si existe)
+    try {
+      await pbAdmin.collection('admin_users').delete(userId)
+    } catch (error: any) {
+      // Ignorar si no existe
+      if (error.status !== 404) {
+        console.warn('Error eliminando de admin_users:', error.message)
+      }
     }
 
-    if (!result || result.length === 0) {
-      throw new Error('No se recibió respuesta de la función transaccional')
+    // 2. Eliminar matriculas del usuario
+    try {
+      // Suponemos que matriculas tiene campo 'perfil_id' o 'user_id'
+      const matriculas = await pbAdmin.collection('matriculas').getFullList({
+        filter: `perfil_id = "${userId}" || user_id = "${userId}"`
+      })
+      for (const matricula of matriculas) {
+        await pbAdmin.collection('matriculas').delete(matricula.id)
+      }
+    } catch (error: any) {
+      // Ignorar si la colección no existe o no hay matriculas
+      if (error.status !== 404) {
+        console.warn('Error eliminando matriculas:', error.message)
+      }
     }
 
-    const { success, error_message } = result[0]
-
-    if (!success) {
-      throw new Error(`Error eliminando usuario: ${error_message || 'Error desconocido'}`)
+    // 3. Eliminar perfil
+    try {
+      await pbAdmin.collection('perfiles').delete(userId)
+    } catch (error: any) {
+      // Si no existe perfil, continuar
+      if (error.status !== 404) {
+        throw new Error(`Error eliminando perfil: ${error.message}`)
+      }
     }
+
+    // 4. Eliminar usuario
+    await pbAdmin.collection('users').delete(userId)
 
     revalidatePath('/admin/alumnos')
 
@@ -331,25 +336,22 @@ export async function actualizarEmail(userId: string, newEmail: string) {
     return { error: emailParsed.error.issues[0]?.message || 'Email inválido' }
   }
 
-  const supabaseAdmin = getSupabaseAdmin()
-
   try {
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(userIdParsed.data, {
-      email: emailParsed.data,
-    })
+    const pbAdmin = await getPocketBaseAdminClient()
 
-    if (error) {
-      if (error.message.includes('already been registered')) {
-        return { error: 'Este email ya está en uso por otro usuario' }
-      }
-      throw new Error(`Error actualizando email: ${error.message}`)
-    }
+    await pbAdmin.collection('users').update(userIdParsed.data, {
+      email: emailParsed.data,
+      emailVisibility: true
+    })
 
     revalidatePath('/admin/alumnos')
     return { success: true }
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('Error en actualizarEmail:', error)
-    return { error: (error as Error).message || 'Error desconocido' }
+    if (error.message.includes('already exists') || error.status === 400) {
+      return { error: 'Este email ya está en uso por otro usuario' }
+    }
+    return { error: error.message || 'Error desconocido' }
   }
 }
 

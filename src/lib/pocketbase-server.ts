@@ -128,7 +128,7 @@ export async function requireAuth(): Promise<PBUser> {
     redirect('/login')
   }
   
-  return user
+  return user!
 }
 
 /**

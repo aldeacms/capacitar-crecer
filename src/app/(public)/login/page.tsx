@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase-client'
+import { signInWithEmail } from '@/lib/pocketbase-client'
 import { ArrowRight, Mail, Lock, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
@@ -12,14 +12,13 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
+    const result = await signInWithEmail(email, password)
+    if (!result.success) {
       setError('Credenciales incorrectas o usuario no confirmado.')
       setLoading(false)
     } else {

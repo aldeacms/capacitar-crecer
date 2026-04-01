@@ -58,6 +58,24 @@ export async function signInWithEmail(email: string, password: string) {
   
   try {
     const authData = await pb.collection('users').authWithPassword(email, password)
+    
+    // Establecer cookie de sesión para el servidor
+    if (typeof window !== 'undefined') {
+      try {
+        await fetch('/api/auth/pocketbase/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: authData.token,
+            model: authData.record
+          })
+        })
+      } catch (fetchError) {
+        console.warn('No se pudo establecer cookie de sesión:', fetchError)
+        // Continuar sin cookie; el servidor no reconocerá la sesión
+      }
+    }
+    
     return { success: true, user: authData.record, token: authData.token }
   } catch (error: any) {
     console.error('Error de autenticación PocketBase:', error)
@@ -82,6 +100,23 @@ export async function signUpWithEmail(email: string, password: string, data?: Re
     // Autenticar automáticamente después del registro
     const authData = await pb.collection('users').authWithPassword(email, password)
     
+    // Establecer cookie de sesión para el servidor
+    if (typeof window !== 'undefined') {
+      try {
+        await fetch('/api/auth/pocketbase/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token: authData.token,
+            model: authData.record
+          })
+        })
+      } catch (fetchError) {
+        console.warn('No se pudo establecer cookie de sesión:', fetchError)
+        // Continuar sin cookie; el servidor no reconocerá la sesión
+      }
+    }
+    
     return { success: true, user: authData.record, token: authData.token }
   } catch (error: any) {
     console.error('Error de registro PocketBase:', error)
@@ -90,11 +125,20 @@ export async function signUpWithEmail(email: string, password: string, data?: Re
 }
 
 // Helper para cerrar sesión
-export function signOut() {
+export async function signOut() {
   const pb = getPocketBaseClient()
   pb.authStore.clear()
   
   if (typeof window !== 'undefined') {
+    // Limpiar cookie de sesión en el servidor
+    try {
+      await fetch('/api/auth/pocketbase/session', {
+        method: 'DELETE'
+      })
+    } catch (fetchError) {
+      console.warn('No se pudo limpiar cookie de sesión:', fetchError)
+    }
+    
     // Redirigir a login o página principal
     window.location.href = '/login'
   }

@@ -104,7 +104,7 @@ export async function validateFile(
     isValid: errors.length === 0,
     errors,
     sanitizedFileName: errors.length === 0 ? sanitizedFileName : undefined,
-    mimeType,
+    mimeType: mimeType || undefined,
   }
 }
 

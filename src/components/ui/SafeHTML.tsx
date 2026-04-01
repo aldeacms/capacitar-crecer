@@ -65,7 +65,7 @@ export function SafeHTML({
 
         // Sanitizar el HTML
         const clean = DOMPurify.sanitize(html, config)
-        setSanitizedHtml(clean)
+        setSanitizedHtml(String(clean))
       } catch (error) {
         console.error('Error sanitizing HTML:', error)
         setSanitizedHtml('')
